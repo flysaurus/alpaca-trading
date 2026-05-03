@@ -1,8 +1,23 @@
 import { NextResponse } from 'next/server';
+import { parseDate } from '@/lib/parse-date';
 
-let lastWorkout: Record<string, unknown> | null = null;
-let lastPayloadTime: string | null = null;
-let payloadSize = 0;
+let lastCapture: {
+  time: string;
+  workoutCount: number;
+  rawStartDate?: unknown;
+  rawDate?: unknown;
+  rawCreationDate?: unknown;
+  parsedDate: string | null;
+  schema: Record<string, string>;
+} | null = null;
+
+function detectType(v: unknown): string {
+  if (v === null) return 'null';
+  if (Array.isArray(v)) return `Array[${v.length}]`;
+  if (typeof v === 'object') return `Object(${Object.keys(v as object).slice(0,5).join(',')}...)`;
+  if (typeof v === 'number') return 'number';
+  return typeof v;
+}
 
 export async function POST(request: Request) {
   try {
@@ -14,12 +29,30 @@ export async function POST(request: Request) {
       workouts = (obj.data as Record<string, unknown>).workouts as unknown[];
     }
 
-    if (workouts.length > 0 && workouts[0] && typeof workouts[0] === 'object') {
-      lastWorkout = workouts[0] as Record<string, unknown>;
-    }
+    let rawStartDate: unknown;
+    let rawDate: unknown;
+    let rawCreationDate: unknown;
+    let schema: Record<string, string> = {};
     
-    lastPayloadTime = new Date().toISOString();
-    payloadSize = JSON.stringify(body).length;
+    if (workouts.length > 0 && workouts[0] && typeof workouts[0] === 'object') {
+      const w = workouts[0] as Record<string, unknown>;
+      rawStartDate = w.startDate;
+      rawDate = w.date;
+      rawCreationDate = w.creationDate;
+      schema = Object.fromEntries(
+        Object.entries(w).map(([k, v]) => [k, detectType(v)])
+      );
+    }
+
+    lastCapture = {
+      time: new Date().toISOString(),
+      workoutCount: workouts.length,
+      rawStartDate,
+      rawDate,
+      rawCreationDate,
+      parsedDate: parseDate(rawStartDate || rawDate || rawCreationDate),
+      schema,
+    };
 
     return NextResponse.json({ success: true, workoutCount: workouts.length });
   } catch {
@@ -28,28 +61,8 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
-  if (!lastWorkout) {
-    return NextResponse.json({
-      message: 'No workout captured yet. Point your HAE webhook to /api/capture and trigger a manual export.',
-    });
+  if (!lastCapture) {
+    return NextResponse.json({ message: 'No capture yet. Send HAE webhook here first.' });
   }
-
-  const schema: Record<string, string> = {};
-  for (const [k, v] of Object.entries(lastWorkout)) {
-    if (Array.isArray(v)) {
-      schema[k] = `Array[${v.length}]`;
-    } else if (v && typeof v === 'object') {
-      schema[k] = JSON.stringify(v).slice(0, 120);
-    } else {
-      schema[k] = String(v).slice(0, 60);
-    }
-  }
-
-  return NextResponse.json({
-    capturedAt: lastPayloadTime,
-    payloadSize,
-    workoutSchema: schema,
-    startDateField: lastWorkout.startDate || lastWorkout.date || lastWorkout.creationDate || 'NOT FOUND',
-    dateFormatDetected: typeof lastWorkout.startDate || typeof lastWorkout.date,
-  });
+  return NextResponse.json(lastCapture);
 }
