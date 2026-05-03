@@ -37,7 +37,21 @@ interface Props {
   workouts: Workout[];
 }
 
-function groupByDay(items: { date: string; value: number }[]) {
+function groupByDayAvg(items: { date: string; value: number }[]) {
+  const map = new Map<string, { sum: number; count: number }>();
+  for (const item of items) {
+    const day = format(parseISO(item.date), 'yyyy-MM-dd');
+    const prev = map.get(day) || { sum: 0, count: 0 };
+    prev.sum += item.value;
+    prev.count += 1;
+    map.set(day, prev);
+  }
+  return Array.from(map.entries())
+    .map(([date, { sum, count }]) => ({ date, value: count > 0 ? Math.round(sum / count) : 0 }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function groupByDaySum(items: { date: string; value: number }[]) {
   const map = new Map<string, number>();
   for (const item of items) {
     const day = format(parseISO(item.date), 'yyyy-MM-dd');
@@ -50,7 +64,7 @@ function groupByDay(items: { date: string; value: number }[]) {
 
 export function StepsChart({ metrics }: { metrics: Metric[] }) {
   const steps = metrics.filter(m => m.metricType === 'steps');
-  const data = groupByDay(steps);
+  const data = groupByDaySum(steps);
 
   if (data.length === 0) {
     return (
@@ -106,8 +120,8 @@ export function HeartRateChart({ metrics }: { metrics: Metric[] }) {
   const resting = hr.filter(m => m.metricType === 'restingHeartRate');
   const all = hr.filter(m => m.metricType === 'heartRate');
 
-  const restingData = groupByDay(resting.map(r => ({ date: r.date, value: r.value })));
-  const allData = groupByDay(all.map(r => ({ date: r.date, value: r.value })));
+  const restingData = groupByDayAvg(resting.map(r => ({ date: r.date, value: r.value })));
+  const allData = groupByDayAvg(all.map(r => ({ date: r.date, value: r.value })));
 
   if (restingData.length === 0 && allData.length === 0) {
     return (
