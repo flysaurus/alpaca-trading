@@ -1,21 +1,8 @@
 import { NextResponse } from 'next/server';
 
-interface CaptureEntry {
-  time: string;
-  workoutCount: number;
-  workoutSchema: Record<string, string>;
-  firstWorkout: Record<string, unknown>;
-}
-
-const captures: CaptureEntry[] = [];
-
-function detectType(v: unknown): string {
-  if (v === null) return 'null';
-  if (Array.isArray(v)) return `Array[${v.length}]`;
-  if (typeof v === 'object') return 'Object';
-  if (typeof v === 'number') return 'number';
-  return typeof v;
-}
+let lastWorkout: Record<string, unknown> | null = null;
+let lastPayloadTime: string | null = null;
+let payloadSize = 0;
 
 export async function POST(request: Request) {
   try {
@@ -27,34 +14,42 @@ export async function POST(request: Request) {
       workouts = (obj.data as Record<string, unknown>).workouts as unknown[];
     }
 
-    let schema: Record<string, string> = {};
-    let firstWorkout: Record<string, unknown> = {};
-    
     if (workouts.length > 0 && workouts[0] && typeof workouts[0] === 'object') {
-      const w = workouts[0] as Record<string, unknown>;
-      firstWorkout = w;
-      schema = Object.fromEntries(
-        Object.entries(w).map(([k, v]) => [k, detectType(v)])
-      );
+      lastWorkout = workouts[0] as Record<string, unknown>;
     }
+    
+    lastPayloadTime = new Date().toISOString();
+    payloadSize = JSON.stringify(body).length;
 
-    captures.unshift({
-      time: new Date().toISOString(),
-      workoutCount: workouts.length,
-      workoutSchema: schema,
-      firstWorkout,
-    });
-    if (captures.length > 10) captures.pop();
-
-    return NextResponse.json({ success: true, captured: captures.length });
+    return NextResponse.json({ success: true, workoutCount: workouts.length });
   } catch {
     return NextResponse.json({ success: false });
   }
 }
 
 export async function GET() {
+  if (!lastWorkout) {
+    return NextResponse.json({
+      message: 'No workout captured yet. Point your HAE webhook to /api/capture and trigger a manual export.',
+    });
+  }
+
+  const schema: Record<string, string> = {};
+  for (const [k, v] of Object.entries(lastWorkout)) {
+    if (Array.isArray(v)) {
+      schema[k] = `Array[${v.length}]`;
+    } else if (v && typeof v === 'object') {
+      schema[k] = JSON.stringify(v).slice(0, 120);
+    } else {
+      schema[k] = String(v).slice(0, 60);
+    }
+  }
+
   return NextResponse.json({
-    captures,
-    instruction: 'Change webhook URL in Health Auto Export to this /api/capture endpoint, then trigger a manual export',
+    capturedAt: lastPayloadTime,
+    payloadSize,
+    workoutSchema: schema,
+    startDateField: lastWorkout.startDate || lastWorkout.date || lastWorkout.creationDate || 'NOT FOUND',
+    dateFormatDetected: typeof lastWorkout.startDate || typeof lastWorkout.date,
   });
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { dataStore } from '@/lib/data';
 import type { HealthMetric, Workout } from '@/lib/data';
+import { parseDate } from '@/lib/parse-date';
 
 function verifyAuth(request: Request): boolean {
   const expected = process.env.WEBHOOK_TOKEN;
@@ -235,34 +236,6 @@ function detectMetricType(item: Record<string, unknown>): HealthMetric['metricTy
   if (unit.includes('m') && !unit.includes('km')) return 'elevation';
 
   return null;
-}
-
-function parseDate(val: unknown): string | null {
-  if (!val) return null;
-  const s = String(val).trim();
-  if (!s) return null;
-
-  // Apple Health / HAE format: "2026-05-02 15:52:38 -0400"
-  const haeMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})\s+([+-]\d{4})$/);
-  if (haeMatch) {
-    const tz = haeMatch[7];
-    const tzHours = parseInt(tz.slice(0, 3), 10);
-    const tzMinutes = parseInt(tz[0] + tz.slice(3, 5), 10);
-    const offsetMs = (tzHours * 60 + tzMinutes) * 60 * 1000;
-    const utc = Date.UTC(
-      parseInt(haeMatch[1], 10),
-      parseInt(haeMatch[2], 10) - 1,
-      parseInt(haeMatch[3], 10),
-      parseInt(haeMatch[4], 10),
-      parseInt(haeMatch[5], 10),
-      parseInt(haeMatch[6], 10)
-    );
-    return new Date(utc - offsetMs).toISOString();
-  }
-
-  const d = new Date(s);
-  if (isNaN(d.getTime())) return null;
-  return d.toISOString();
 }
 
 function parseDuration(val: unknown): number {
