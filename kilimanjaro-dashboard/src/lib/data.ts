@@ -43,23 +43,36 @@ function hasSupabase(): boolean {
   return !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY);
 }
 
-function dedupeItems<T extends { date: string } & Record<string, unknown>>(items: T[]): T[] {
+function dedupeWorkouts(workouts: Workout[]): Workout[] {
   const seen = new Set<string>();
-  return items.filter(item => {
-    const key = `${item.date}-${JSON.stringify(item).slice(0, 200)}`;
+  return workouts.filter(w => {
+    const key = `${w.date.slice(0, 19)}|${w.workoutType}|${w.duration}|${w.distance ?? -1}|${w.elevationGain ?? -1}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
   });
 }
 
-function mergeData<T extends { date: string } & Record<string, unknown>>(
-  remote: T[],
-  local: T[]
-): T[] {
-  const cutoff = getCutoffDate(90); // keep last 90 days
-  const all = [...remote, ...local].filter(item => new Date(item.date) >= cutoff);
-  return dedupeItems(all).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+function dedupeMetrics(metrics: HealthMetric[]): HealthMetric[] {
+  const seen = new Set<string>();
+  return metrics.filter(m => {
+    const key = `${m.date}|${m.metricType}|${m.source}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function mergeWorkouts(remote: Workout[], local: Workout[]): Workout[] {
+  const cutoff = getCutoffDate(90);
+  const all = [...remote, ...local].filter(w => new Date(w.date) >= cutoff);
+  return dedupeWorkouts(all).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+}
+
+function mergeMetrics(remote: HealthMetric[], local: HealthMetric[]): HealthMetric[] {
+  const cutoff = getCutoffDate(90);
+  const all = [...remote, ...local].filter(m => new Date(m.date) >= cutoff);
+  return dedupeMetrics(all).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 }
 
 // In-memory storage with Supabase persistence
@@ -111,7 +124,7 @@ class DataStore {
     }
 
     // Merge remote + local static data, dedupe
-    const all = mergeData(remote, this.metrics).filter(m => new Date(m.date) >= cutoff);
+    const all = mergeMetrics(remote, this.metrics).filter(m => new Date(m.date) >= cutoff);
 
     if (type) return all.filter(m => m.metricType === type);
     return all;
@@ -123,9 +136,8 @@ class DataStore {
     if (this.useSupabase) {
       remote = await getWorkoutsFromSupabase(days);
     }
-    return mergeData(remote, this.workouts)
-      .filter(w => new Date(w.date) >= cutoff)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return mergeWorkouts(remote, this.workouts)
+      .filter(w => new Date(w.date) >= cutoff);
   }
 
   getAllData() {

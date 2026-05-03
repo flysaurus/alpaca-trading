@@ -177,7 +177,7 @@ export const exercises: Exercise[] = [
     targetMuscles: ['Full Body', 'Cardiovascular System'],
     description: 'Find trails with elevation gain. Wear your actual hiking boots and pack with weight.',
     duration: '2-6 hours',
-    youtubeId: 'dQw4w9WgXcQ',
+    // youtubeId: 'TODO-find-real-video',
     tips: [
       'Use the boots you\'ll wear on Kili — break them in!',
       'Start with 10 lbs, add 2-3 lbs per week to 20-25 lbs',
