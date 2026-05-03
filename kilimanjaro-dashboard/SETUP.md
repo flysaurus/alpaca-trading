@@ -41,6 +41,8 @@ Open **Health Auto Export** → **Automated Exports** → **New Automation** →
 
 **Batch Requests:** ON (if you have a lot of historical data)
 
+> ⚠️ **Important about Data Interval:** Health Auto Export's `days` interval only works with CSV format. For JSON (which this app requires), HAE sends per-minute data for most metrics and per-second for Heart Rate. The dashboard aggregates this automatically.
+
 **Data Types to export:**
 - Health Metrics → Steps, Heart Rate, Distance, Active Energy, Resting Heart Rate, Weight, Sleep
 - Workouts → enable "Include Workout Metrics"

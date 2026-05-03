@@ -41,14 +41,23 @@ export async function addMetricToSupabase(metric: Omit<HealthMetric, 'id' | 'cre
   const client = getSupabase();
   if (!client) return false;
   try {
-    const { error } = await client.from('metrics').insert({
-      date: metric.date,
-      metric_type: metric.metricType,
-      value: metric.value,
-      unit: metric.unit,
-      source: metric.source,
-    });
+    // Upsert: if same metric_type + date + source exists, update the value
+    const { error } = await client.from('metrics').upsert(
+      {
+        date: metric.date,
+        metric_type: metric.metricType,
+        value: metric.value,
+        unit: metric.unit,
+        source: metric.source,
+      },
+      { onConflict: 'date,metric_type,source' }
+    );
     if (error) {
+      // Log but don't fail — dedup collisions are expected for re-exports
+      if (error.message?.includes('unique') || error.code === '23505') {
+        console.log('[Supabase metric dedup] skipped duplicate metric:', metric.metricType, metric.date);
+        return true; // treat as success
+      }
       console.error('[Supabase insert metric]', error.message);
       return false;
     }
@@ -63,18 +72,26 @@ export async function addWorkoutToSupabase(workout: Omit<Workout, 'id' | 'create
   const client = getSupabase();
   if (!client) return false;
   try {
-    const { error } = await client.from('workouts').insert({
-      date: workout.date,
-      workout_type: workout.workoutType,
-      duration: workout.duration,
-      distance: workout.distance ?? null,
-      elevation_gain: workout.elevationGain ?? null,
-      active_energy: workout.activeEnergy ?? null,
-      avg_heart_rate: workout.avgHeartRate ?? null,
-      max_heart_rate: workout.maxHeartRate ?? null,
-      notes: workout.notes ?? null,
-    });
+    // Upsert: if same date + workout_type exists, skip/overwrite (handles HAE re-exports gracefully)
+    const { error } = await client.from('workouts').upsert(
+      {
+        date: workout.date,
+        workout_type: workout.workoutType,
+        duration: workout.duration,
+        distance: workout.distance ?? null,
+        elevation_gain: workout.elevationGain ?? null,
+        active_energy: workout.activeEnergy ?? null,
+        avg_heart_rate: workout.avgHeartRate ?? null,
+        max_heart_rate: workout.maxHeartRate ?? null,
+        notes: workout.notes ?? null,
+      },
+      { onConflict: 'date,workout_type' }
+    );
     if (error) {
+      if (error.message?.includes('unique') || error.code === '23505') {
+        console.log('[Supabase workout dedup] skipped duplicate workout:', workout.workoutType, workout.date);
+        return true; // treat as success
+      }
       console.error('[Supabase insert workout]', error.message);
       return false;
     }

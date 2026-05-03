@@ -30,6 +30,15 @@ CREATE TABLE IF NOT EXISTS workouts (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Unique constraints for idempotent inserts (HAE re-exports won't fail)
+ALTER TABLE metrics
+ADD CONSTRAINT IF NOT EXISTS unique_metric_per_point
+UNIQUE (date, metric_type, source);
+
+ALTER TABLE workouts
+ADD CONSTRAINT IF NOT EXISTS unique_workout_per_day
+UNIQUE (date, workout_type);
+
 -- Indexes for common queries
 CREATE INDEX IF NOT EXISTS idx_metrics_date ON metrics(date DESC);
 CREATE INDEX IF NOT EXISTS idx_metrics_type_date ON metrics(metric_type, date DESC);

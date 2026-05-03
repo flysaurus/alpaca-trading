@@ -5,8 +5,13 @@ import { getSupabase } from '@/lib/supabase';
 const ADD_UNIQUE_CONSTRAINTS = `
 -- Add unique constraint to prevent duplicate workouts
 ALTER TABLE workouts 
-ADD CONSTRAINT unique_workout_per_day 
+ADD CONSTRAINT IF NOT EXISTS unique_workout_per_day 
 UNIQUE (date, workout_type);
+
+-- Add unique constraint to prevent duplicate metrics  
+ALTER TABLE metrics
+ADD CONSTRAINT IF NOT EXISTS unique_metric_per_point
+UNIQUE (date, metric_type, source);
 `;
 
 export async function GET() {
