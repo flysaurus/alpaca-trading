@@ -147,7 +147,8 @@ function extractValue(field: unknown): number | undefined {
 }
 
 async function storeHaeWorkout(item: Record<string, unknown>): Promise<{ ok: boolean; error?: string }> {
-  const date = parseDate(item.startDate || item.date || item.creationDate) || new Date().toISOString();
+  // HAE v2 uses "start" / "end", older versions use "startDate" / "date" / "creationDate"
+  const date = parseDate(item.start || item.startDate || item.date || item.creationDate) || new Date().toISOString();
   const workoutType = String(item.name || item.workoutType || item.type || 'Unknown');
   const dedupKey = makeDedupKey('workout', date, workoutType);
   if (isDuplicate(dedupKey)) return { ok: false, error: 'duplicate' };
@@ -172,6 +173,8 @@ async function detectAndStoreSingle(item: Record<string, unknown>): Promise<{ ty
   const isWorkout = 
     item.workoutType || 
     item.type === 'Workout' || 
+    item.name ||                // HAE v2 uses "name" for workout type
+    (item.start !== undefined && item.end !== undefined) || // HAE v2 start/end
     (item.duration !== undefined && (item.distance !== undefined || item.activeEnergyBurned !== undefined || item.calories !== undefined)) ||
     (item.startDate !== undefined && item.endDate !== undefined && (item.activeEnergyBurned !== undefined || item.averageHeartRate !== undefined));
   
@@ -182,7 +185,7 @@ async function detectAndStoreSingle(item: Record<string, unknown>): Promise<{ ty
 
   const metricType = detectMetricType(item);
   if (metricType) {
-    const date = parseDate(item.startDate || item.date || item.creationDate || item.endDate) || new Date().toISOString();
+    const date = parseDate(item.start || item.startDate || item.date || item.creationDate || item.endDate) || new Date().toISOString();
     const source = String(item.sourceName || item.source || 'Health Auto Export');
     const dedupKey = makeDedupKey(metricType, date, source);
     if (isDuplicate(dedupKey)) {
