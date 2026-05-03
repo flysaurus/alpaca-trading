@@ -282,12 +282,24 @@ export async function POST(request: Request) {
   const result = await detectAndStore(body);
   const hasErrors = result.errors.length > 0;
 
+  // Diagnostic: show what date the first workout parsed to
+  let firstWorkoutDate: { raw: string; parsed: string | null } | undefined;
+  if (result.workouts > 0 && Array.isArray((body as Record<string, unknown>).data)) {
+    const data = (body as Record<string, unknown>).data as Record<string, unknown>;
+    if (Array.isArray(data.workouts) && data.workouts[0]) {
+      const w = data.workouts[0] as Record<string, unknown>;
+      const rawDate = String(w.start || w.startDate || w.date || w.creationDate || 'NOT FOUND');
+      firstWorkoutDate = { raw: rawDate, parsed: parseDate(rawDate) };
+    }
+  }
+
   return NextResponse.json(
     {
       success: !hasErrors,
       stored: { metrics: result.metrics, workouts: result.workouts },
       skipped: result.skipped,
       errors: result.errors.length > 0 ? result.errors : undefined,
+      diagnostic: firstWorkoutDate,
     },
     { status: hasErrors ? 207 : 200 }
   );
