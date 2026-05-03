@@ -1,41 +1,52 @@
 import { NextResponse } from 'next/server';
 
-// Temporary raw payload capture for debugging
-const payloadLog: Array<{ time: string; preview: string; size: number; type: string }> = [];
+interface CaptureEntry {
+  time: string;
+  workoutCount: number;
+  workoutSchema: Record<string, string>;
+  firstWorkout: Record<string, unknown>;
+}
+
+const captures: CaptureEntry[] = [];
+
+function detectType(v: unknown): string {
+  if (v === null) return 'null';
+  if (Array.isArray(v)) return `Array[${v.length}]`;
+  if (typeof v === 'object') return 'Object';
+  if (typeof v === 'number') return 'number';
+  return typeof v;
+}
 
 export async function POST(request: Request) {
   try {
-    let body: unknown;
-    const contentType = request.headers.get('content-type') || '';
+    const body = await request.json();
+    const obj = (body && typeof body === 'object') ? body as Record<string, unknown> : {};
     
-    try {
-      body = await request.json();
-    } catch {
-      const text = await request.text();
-      body = { rawText: text.slice(0, 5000) };
+    let workouts: unknown[] = [];
+    if (obj.data && typeof obj.data === 'object' && Array.isArray((obj.data as Record<string, unknown>).workouts)) {
+      workouts = (obj.data as Record<string, unknown>).workouts as unknown[];
     }
 
-    const bodyStr = JSON.stringify(body);
-    const preview = bodyStr.slice(0, 800);
+    let schema: Record<string, string> = {};
+    let firstWorkout: Record<string, unknown> = {};
     
-    // Detect if this contains workouts
-    const hasWorkouts = bodyStr.toLowerCase().includes('workout');
-    const hasMetrics = bodyStr.toLowerCase().includes('step') || bodyStr.toLowerCase().includes('heart');
-    const type = hasWorkouts && hasMetrics ? 'both' : hasWorkouts ? 'workouts' : hasMetrics ? 'metrics' : 'unknown';
+    if (workouts.length > 0 && workouts[0] && typeof workouts[0] === 'object') {
+      const w = workouts[0] as Record<string, unknown>;
+      firstWorkout = w;
+      schema = Object.fromEntries(
+        Object.entries(w).map(([k, v]) => [k, detectType(v)])
+      );
+    }
 
-    payloadLog.unshift({
+    captures.unshift({
       time: new Date().toISOString(),
-      preview,
-      size: bodyStr.length,
-      type,
+      workoutCount: workouts.length,
+      workoutSchema: schema,
+      firstWorkout,
     });
-    if (payloadLog.length > 10) payloadLog.pop();
+    if (captures.length > 10) captures.pop();
 
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Captured',
-      detectedType: type,
-    });
+    return NextResponse.json({ success: true, captured: captures.length });
   } catch {
     return NextResponse.json({ success: false });
   }
@@ -43,10 +54,7 @@ export async function POST(request: Request) {
 
 export async function GET() {
   return NextResponse.json({
-    captured: payloadLog.length,
-    payloads: payloadLog,
-    instruction: 'Temporarily change your Health Auto Export webhook URL to this endpoint to inspect payloads',
-    currentEndpoint: '/api/capture',
-    realEndpoint: '/api/webhook/health',
+    captures,
+    instruction: 'Change webhook URL in Health Auto Export to this /api/capture endpoint, then trigger a manual export',
   });
 }
