@@ -1,33 +1,19 @@
 import { NextResponse } from 'next/server';
 import { dataStore } from '@/lib/data';
 import type { HealthMetric, Workout } from '@/lib/data';
-import { addMetricToSupabase, addWorkoutToSupabase } from '@/lib/supabase';
 
-// Health Auto Export REST API sends health data via HTTP POST.
-// Supported formats:
-//   1. { data: { metrics: [...], workouts: [...] } } — structured Health Auto Export
-//   2. Array of flat metric/workout records
-//   3. Single flat record
-
-// ---------------------------------------------------------------------------
-// Auth
-// ---------------------------------------------------------------------------
 function verifyAuth(request: Request): boolean {
   const expected = process.env.WEBHOOK_TOKEN;
-  if (!expected) return true; // no token set → open
+  if (!expected) return true;
   const authHeader = request.headers.get('authorization') || '';
   const match = authHeader.match(/^Bearer\s+(.+)$/i);
   return !!(match && match[1] === expected);
 }
 
-// ---------------------------------------------------------------------------
-// Deduplication helpers
-// ---------------------------------------------------------------------------
 let recentIds = new Set<string>();
 const recentMax = 2000;
 
 function makeDedupKey(itemType: string, date: string, subKey: string): string {
-  // group by minute for dedup tolerance
   const d = new Date(date);
   d.setSeconds(0, 0);
   return `${itemType}::${d.toISOString()}::${subKey}`;
@@ -37,16 +23,12 @@ function isDuplicate(key: string): boolean {
   if (recentIds.has(key)) return true;
   recentIds.add(key);
   if (recentIds.size > recentMax) {
-    // prune oldest half
     const arr = Array.from(recentIds);
     recentIds = new Set(arr.slice(Math.floor(recentMax / 2)));
   }
   return false;
 }
 
-// ---------------------------------------------------------------------------
-// Process incoming payload
-// ---------------------------------------------------------------------------
 interface ProcessResult {
   metrics: number;
   workouts: number;
@@ -54,7 +36,7 @@ interface ProcessResult {
   errors: string[];
 }
 
-export function detectAndStore(body: unknown): ProcessResult {
+export async function detectAndStore(body: unknown): Promise<ProcessResult> {
   const result: ProcessResult = { metrics: 0, workouts: 0, skipped: 0, errors: [] };
 
   if (!body || typeof body !== 'object') {
@@ -64,31 +46,31 @@ export function detectAndStore(body: unknown): ProcessResult {
 
   const obj = body as Record<string, unknown>;
 
-  // --- Format 1: structured HAE wrapper ---
   if (obj.data && typeof obj.data === 'object') {
     const data = obj.data as Record<string, unknown>;
 
     if (Array.isArray(data.metrics)) {
       for (const group of data.metrics) {
-        const r = storeHaeMetricGroup(group as Record<string, unknown>);
+        const r = await storeHaeMetricGroup(group as Record<string, unknown>);
         result.metrics += r.stored;
         result.skipped += r.skipped;
+        result.errors.push(...r.errors);
       }
     }
 
     if (Array.isArray(data.workouts)) {
       for (const w of data.workouts) {
-        const ok = storeHaeWorkout(w as Record<string, unknown>);
-        if (ok) result.workouts++;
+        const res = await storeHaeWorkout(w as Record<string, unknown>);
+        if (res.ok) result.workouts++;
+        if (res.error) result.errors.push(res.error);
       }
     }
     return result;
   }
 
-  // --- Format 2: array of flat records ---
   if (Array.isArray(body)) {
     for (const item of body) {
-      const r = detectAndStoreSingle(item);
+      const r = await detectAndStoreSingle(item);
       if (r.type === 'metric') result.metrics++;
       if (r.type === 'workout') result.workouts++;
       if (r.skipped) result.skipped++;
@@ -97,8 +79,7 @@ export function detectAndStore(body: unknown): ProcessResult {
     return result;
   }
 
-  // --- Format 3: single flat record ---
-  const r = detectAndStoreSingle(obj);
+  const r = await detectAndStoreSingle(obj);
   if (r.type === 'metric') result.metrics++;
   if (r.type === 'workout') result.workouts++;
   if (r.skipped) result.skipped++;
@@ -106,18 +87,16 @@ export function detectAndStore(body: unknown): ProcessResult {
   return result;
 }
 
-// ---------------------------------------------------------------------------
-// Health Auto Export metric group → { name, units, data: [...] }
-// ---------------------------------------------------------------------------
-function storeHaeMetricGroup(group: Record<string, unknown>): { stored: number; skipped: number } {
+async function storeHaeMetricGroup(group: Record<string, unknown>): Promise<{ stored: number; skipped: number; errors: string[] }> {
   let stored = 0;
   let skipped = 0;
+  const errors: string[] = [];
 
   const metricType = mapHaeMetricName(String(group.name || ''));
-  if (!metricType) return { stored, skipped };
+  if (!metricType) return { stored, skipped, errors };
 
   const dataArray = group.data;
-  if (!Array.isArray(dataArray)) return { stored, skipped };
+  if (!Array.isArray(dataArray)) return { stored, skipped, errors };
 
   const unit = String(group.units || 'count');
 
@@ -149,12 +128,12 @@ function storeHaeMetricGroup(group: Record<string, unknown>): { stored: number; 
       unit,
       source,
     };
-    dataStore.addMetric(metric);
-    addMetricToSupabase(metric).catch(() => {}); // background persist
+    const { supabaseOk } = await dataStore.addMetric(metric);
     stored++;
+    if (!supabaseOk) errors.push(`supabase-metric-fail: ${metricType}`);
   }
 
-  return { stored, skipped };
+  return { stored, skipped, errors };
 }
 
 function extractValue(field: unknown): number | undefined {
@@ -166,11 +145,11 @@ function extractValue(field: unknown): number | undefined {
   return parseFloatAny(field);
 }
 
-function storeHaeWorkout(item: Record<string, unknown>): boolean {
+async function storeHaeWorkout(item: Record<string, unknown>): Promise<{ ok: boolean; error?: string }> {
   const date = parseDate(item.startDate || item.date || item.creationDate) || new Date().toISOString();
   const workoutType = String(item.name || item.workoutType || item.type || 'Unknown');
   const dedupKey = makeDedupKey('workout', date, workoutType);
-  if (isDuplicate(dedupKey)) return false;
+  if (isDuplicate(dedupKey)) return { ok: false, error: 'duplicate' };
 
   const workout: Omit<Workout, 'id' | 'createdAt'> = {
     date,
@@ -183,13 +162,12 @@ function storeHaeWorkout(item: Record<string, unknown>): boolean {
     maxHeartRate: extractValue(item.maximumHeartRate) || extractValue(item.maxHeartRate),
     notes: item.notes ? String(item.notes) : undefined,
   };
-  dataStore.addWorkout(workout);
-  addWorkoutToSupabase(workout).catch(() => {}); // background persist
-  return true;
+  const { supabaseOk } = await dataStore.addWorkout(workout);
+  if (!supabaseOk) return { ok: true, error: 'supabase-workout-failed' };
+  return { ok: true };
 }
 
-function detectAndStoreSingle(item: Record<string, unknown>): { type: string; skipped?: boolean; error?: string } {
-  // Detect flat workout records more aggressively
+async function detectAndStoreSingle(item: Record<string, unknown>): Promise<{ type: string; skipped?: boolean; error?: string }> {
   const isWorkout = 
     item.workoutType || 
     item.type === 'Workout' || 
@@ -197,8 +175,8 @@ function detectAndStoreSingle(item: Record<string, unknown>): { type: string; sk
     (item.startDate !== undefined && item.endDate !== undefined && (item.activeEnergyBurned !== undefined || item.averageHeartRate !== undefined));
   
   if (isWorkout) {
-    const ok = storeHaeWorkout(item);
-    return ok ? { type: 'workout' } : { type: 'workout', skipped: true };
+    const res = await storeHaeWorkout(item);
+    return res.ok ? { type: 'workout' } : { type: 'workout', skipped: true, error: res.error };
   }
 
   const metricType = detectMetricType(item);
@@ -217,17 +195,13 @@ function detectAndStoreSingle(item: Record<string, unknown>): { type: string; sk
       unit: String(item.unit || 'count'),
       source,
     };
-    dataStore.addMetric(metric);
-    addMetricToSupabase(metric).catch(() => {}); // background persist
-    return { type: 'metric' };
+    const { supabaseOk } = await dataStore.addMetric(metric);
+    return { type: 'metric', error: supabaseOk ? undefined : 'supabase-metric-failed' };
   }
 
-  return { type: 'unknown', error: `Could not identify metric type: ${JSON.stringify(item).slice(0, 200)}` };
+  return { type: 'unknown', error: `unrecognized: ${JSON.stringify(item).slice(0, 200)}` };
 }
 
-// ---------------------------------------------------------------------------
-// Mappings / Parsers
-// ---------------------------------------------------------------------------
 function mapHaeMetricName(name: string): HealthMetric['metricType'] | null {
   const n = name.toLowerCase();
   if (n.includes('step')) return 'steps';
@@ -243,7 +217,6 @@ function mapHaeMetricName(name: string): HealthMetric['metricType'] | null {
 
 function detectMetricType(item: Record<string, unknown>): HealthMetric['metricType'] | null {
   const typeField = String(item.type || item.dataType || item.metricType || item.name || '').toLowerCase();
-
   if (typeField.includes('step')) return 'steps';
   if (typeField.includes('distance') && !typeField.includes('elevation')) return 'distance';
   if (typeField.includes('activeenergy') || typeField.includes('calorie')) return 'activeEnergy';
@@ -269,7 +242,7 @@ function parseDate(val: unknown): string | null {
   const s = String(val).trim();
   if (!s) return null;
 
-  // HAE format: "2026-05-02 15:52:38 -0400"  (space between date and time)
+  // Apple Health / HAE format: "2026-05-02 15:52:38 -0400"
   const haeMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})\s+([+-]\d{4})$/);
   if (haeMatch) {
     const tz = haeMatch[7];
@@ -287,16 +260,13 @@ function parseDate(val: unknown): string | null {
     return new Date(utc - offsetMs).toISOString();
   }
 
-  // Standard ISO / RFC format
   const d = new Date(s);
   if (isNaN(d.getTime())) return null;
   return d.toISOString();
 }
 
 function parseDuration(val: unknown): number {
-  if (typeof val === 'number') {
-    return val > 100 ? Math.round(val / 60) : val;
-  }
+  if (typeof val === 'number') return val > 100 ? Math.round(val / 60) : val;
   if (typeof val === 'string') {
     const num = parseFloat(val);
     if (!isNaN(num)) return num > 100 ? Math.round(num / 60) : num;
@@ -323,8 +293,6 @@ export async function POST(request: Request) {
 
   try {
     if (contentType.includes('multipart/form-data') && contentType.includes('boundary=')) {
-      // Health Auto Export sends CSV as multipart/form-data.
-      // We won't support CSV in this route; reject gracefully.
       return NextResponse.json(
         { success: false, error: 'CSV multipart not supported. Set Export Format to JSON in Health Auto Export.' },
         { status: 415 }
@@ -335,19 +303,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  // Health Auto Export v2 can send batched requests. Each batch is a
-  // standalone POST but the payload shape is the same.
-  const result = detectAndStore(body);
-
-  console.log('Webhook received:', {
-    metrics: result.metrics,
-    workouts: result.workouts,
-    skipped: result.skipped,
-    errors: result.errors.length,
-  });
-
-  // 207 Multi-Status if we had partial failures; 200 on success
+  const result = await detectAndStore(body);
   const hasErrors = result.errors.length > 0;
+
   return NextResponse.json(
     {
       success: !hasErrors,
@@ -359,7 +317,6 @@ export async function POST(request: Request) {
   );
 }
 
-// GET for quick debugging
 export async function GET() {
   const data = dataStore.getAllData();
   return NextResponse.json({

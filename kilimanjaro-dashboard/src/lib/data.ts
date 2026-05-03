@@ -4,7 +4,6 @@ import {
   addWorkoutToSupabase,
   getMetricsFromSupabase,
   getWorkoutsFromSupabase,
-  getStatsFromSupabase,
 } from './supabase';
 import { getCutoffDate } from './date-utils';
 
@@ -70,7 +69,7 @@ class DataStore {
   private maxItems = 5000;
   private useSupabase = hasSupabase();
 
-  addMetric(metric: Omit<HealthMetric, 'id' | 'createdAt'>) {
+  async addMetric(metric: Omit<HealthMetric, 'id' | 'createdAt'>) {
     const newMetric: HealthMetric = {
       ...metric,
       id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -80,13 +79,14 @@ class DataStore {
     if (this.metrics.length > this.maxItems) {
       this.metrics = this.metrics.slice(-this.maxItems);
     }
+    let supabaseOk = false;
     if (this.useSupabase) {
-      addMetricToSupabase(metric).catch(() => {});
+      supabaseOk = await addMetricToSupabase(metric);
     }
-    return newMetric;
+    return { metric: newMetric, supabaseOk };
   }
 
-  addWorkout(workout: Omit<Workout, 'id' | 'createdAt'>) {
+  async addWorkout(workout: Omit<Workout, 'id' | 'createdAt'>) {
     const newWorkout: Workout = {
       ...workout,
       id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -96,10 +96,11 @@ class DataStore {
     if (this.workouts.length > this.maxItems / 2) {
       this.workouts = this.workouts.slice(-Math.floor(this.maxItems / 2));
     }
+    let supabaseOk = false;
     if (this.useSupabase) {
-      addWorkoutToSupabase(workout).catch(() => {});
+      supabaseOk = await addWorkoutToSupabase(workout);
     }
-    return newWorkout;
+    return { workout: newWorkout, supabaseOk };
   }
 
   async getMetrics(type?: string, days = 90): Promise<HealthMetric[]> {
@@ -124,7 +125,7 @@ class DataStore {
     }
     return mergeData(remote, this.workouts)
       .filter(w => new Date(w.date) >= cutoff)
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }
 
   getAllData() {
@@ -150,12 +151,23 @@ class DataStore {
   }
 
   async getStats(days = 30) {
-    // Compute stats from merged data
     const metrics = await this.getMetrics(undefined, days);
     const workouts = await this.getWorkouts(days);
 
-    const steps = metrics.filter(m => m.metricType === 'steps');
-    const avgSteps = steps.length ? Math.round(steps.reduce((a, b) => a + b.value, 0) / steps.length) : 0;
+    const stepMap = new Map<number, number[]>();
+    for (const m of metrics.filter(m => m.metricType === 'steps')) {
+      const dayMs = new Date(m.date).setHours(0, 0, 0, 0);
+      if (!stepMap.has(dayMs)) stepMap.set(dayMs, []);
+      stepMap.get(dayMs)!.push(m.value);
+    }
+
+    const dailySteps = Array.from(stepMap.entries()).map(([dayMs, vals]) => ({
+      dayMs,
+      steps: vals.reduce((a, b) => a + b, 0),
+    }));
+
+    const totalSteps = dailySteps.reduce((a, b) => a + b.steps, 0);
+    const avgSteps = dailySteps.length ? Math.round(totalSteps / dailySteps.length) : 0;
 
     const totalWorkouts = workouts.length;
     const totalDuration = workouts.reduce((a, b) => a + b.duration, 0);
@@ -167,6 +179,8 @@ class DataStore {
       totalDuration,
       totalElevation: Math.round(totalElevation),
       avgWorkoutDuration: totalWorkouts ? Math.round(totalDuration / totalWorkouts) : 0,
+      dailySteps,
+      workouts: workouts.slice(0, 20),
     };
   }
 }

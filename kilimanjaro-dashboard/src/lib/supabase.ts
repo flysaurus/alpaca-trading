@@ -2,26 +2,38 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { HealthMetric, Workout } from './data';
 import { getCutoffDate } from './date-utils';
 
-// Supabase client — lazily initialized
 let supabase: SupabaseClient | null = null;
 
-function getSupabase(): SupabaseClient | null {
+export function getSupabase(): SupabaseClient | null {
   if (supabase) return supabase;
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_KEY;
-  if (!url || !key) return null;
+  if (!url || !key) {
+    console.warn('[Supabase] Missing env vars: SUPABASE_URL or SUPABASE_SERVICE_KEY');
+    return null;
+  }
   supabase = createClient(url, key);
   return supabase;
 }
 
-export async function initSupabaseTables(): Promise<boolean> {
+export async function checkSupabaseHealth(): Promise<{ ok: boolean; tables?: string[]; error?: string }> {
   const client = getSupabase();
-  if (!client) return false;
+  if (!client) return { ok: false, error: 'No Supabase client' };
   try {
-    const { error } = await client.rpc('create_health_tables');
-    return !error;
-  } catch {
-    return false;
+    // Check if tables exist by querying metrics and workouts
+    const [mRes, wRes] = await Promise.all([
+      client.from('metrics').select('id', { count: 'exact', head: true }),
+      client.from('workouts').select('id', { count: 'exact', head: true }),
+    ]);
+    return {
+      ok: true,
+      tables: [
+        `metrics: ${mRes.error ? 'MISSING/ERROR' : 'OK'}`,
+        `workouts: ${wRes.error ? 'MISSING/ERROR' : 'OK'}`,
+      ],
+    };
+  } catch (e) {
+    return { ok: false, error: String(e) };
   }
 }
 
@@ -36,8 +48,13 @@ export async function addMetricToSupabase(metric: Omit<HealthMetric, 'id' | 'cre
       unit: metric.unit,
       source: metric.source,
     });
-    return !error;
-  } catch {
+    if (error) {
+      console.error('[Supabase insert metric]', error.message);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error('[Supabase insert metric] exception:', e);
     return false;
   }
 }
@@ -57,8 +74,13 @@ export async function addWorkoutToSupabase(workout: Omit<Workout, 'id' | 'create
       max_heart_rate: workout.maxHeartRate ?? null,
       notes: workout.notes ?? null,
     });
-    return !error;
-  } catch {
+    if (error) {
+      console.error('[Supabase insert workout]', error.message);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error('[Supabase insert workout] exception:', e);
     return false;
   }
 }
@@ -77,7 +99,11 @@ export async function getMetricsFromSupabase(type?: string, days = 90): Promise<
       query = query.eq('metric_type', type);
     }
     const { data, error } = await query;
-    if (error || !data) return [];
+    if (error) {
+      console.error('[Supabase getMetrics]', error.message);
+      return [];
+    }
+    if (!data) return [];
     return data.map((row: Record<string, unknown>) => ({
       id: String(row.id),
       date: String(row.date),
@@ -87,7 +113,8 @@ export async function getMetricsFromSupabase(type?: string, days = 90): Promise<
       source: String(row.source),
       createdAt: String(row.created_at),
     }));
-  } catch {
+  } catch (e) {
+    console.error('[Supabase getMetrics] exception:', e);
     return [];
   }
 }
@@ -101,8 +128,12 @@ export async function getWorkoutsFromSupabase(days = 90): Promise<Workout[]> {
       .from('workouts')
       .select('*')
       .gte('date', cutoff.toISOString())
-      .order('date', { ascending: true });
-    if (error || !data) return [];
+      .order('date', { ascending: false });
+    if (error) {
+      console.error('[Supabase getWorkouts]', error.message);
+      return [];
+    }
+    if (!data) return [];
     return data.map((row: Record<string, unknown>) => ({
       id: String(row.id),
       date: String(row.date),
@@ -116,28 +147,50 @@ export async function getWorkoutsFromSupabase(days = 90): Promise<Workout[]> {
       notes: row.notes ? String(row.notes) : undefined,
       createdAt: String(row.created_at),
     }));
-  } catch {
+  } catch (e) {
+    console.error('[Supabase getWorkouts] exception:', e);
     return [];
   }
 }
 
-export async function getStatsFromSupabase(days = 30) {
-  const metrics = await getMetricsFromSupabase(undefined, days);
-  const workouts = await getWorkoutsFromSupabase(days);
+export async function getStatsFromSupabase(days = 30, metricDays = 30) {
+  const [metrics, workouts] = await Promise.all([
+    getMetricsFromSupabase(undefined, metricDays),
+    getWorkoutsFromSupabase(days),
+  ]);
 
-  const steps = metrics.filter(m => m.metricType === 'steps');
-  const avgSteps = steps.length ? Math.round(steps.reduce((a, b) => a + b.value, 0) / steps.length) : 0;
+  // Aggregate steps by day to get daily totals
+  const stepMap = new Map<number, number[]>();
+  for (const m of metrics.filter(m => m.metricType === 'steps')) {
+    const dayMs = new Date(m.date).setHours(0, 0, 0, 0);
+    if (!stepMap.has(dayMs)) stepMap.set(dayMs, []);
+    stepMap.get(dayMs)!.push(m.value);
+  }
+
+  const dailySteps = Array.from(stepMap.entries()).map(([dayMs, vals]) => ({
+    dayMs,
+    steps: vals.reduce((a, b) => a + b, 0),
+  }));
+
+  const totalSteps = dailySteps.reduce((a, b) => a + b.steps, 0);
+  const avgSteps = dailySteps.length ? Math.round(totalSteps / dailySteps.length) : 0;
 
   const totalWorkouts = workouts.length;
   const totalDuration = workouts.reduce((a, b) => a + b.duration, 0);
+  const totalDistance = workouts.reduce((a, b) => a + (b.distance || 0), 0);
   const totalElevation = workouts.reduce((a, b) => a + (b.elevationGain || 0), 0);
+  const totalEnergy = workouts.reduce((a, b) => a + (b.activeEnergy || 0), 0);
 
   return {
     avgSteps,
     totalWorkouts,
     totalDuration,
+    totalDistance: Math.round(totalDistance * 100) / 100,
     totalElevation: Math.round(totalElevation),
+    totalEnergy: Math.round(totalEnergy),
     avgWorkoutDuration: totalWorkouts ? Math.round(totalDuration / totalWorkouts) : 0,
+    workouts: workouts.slice(0, 20), // return top 20 for detail
+    dailySteps,
   };
 }
 
