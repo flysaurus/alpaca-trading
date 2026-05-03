@@ -40,7 +40,7 @@ export const exercises: Exercise[] = [
     description: 'Step forward into a lunge, lowering back knee toward ground. Push through front heel to stand, bring back foot forward into next lunge.',
     sets: '3',
     reps: '10-12 each leg',
-    youtubeId: 'L8fvyBHUPew',
+    youtubeId: 'L8fvyBHUPew', // TODO: video unavailable
     tips: [
       'Keep torso upright — no leaning forward',
       'Front knee stays over ankle, not past toes',
@@ -57,7 +57,7 @@ export const exercises: Exercise[] = [
     description: 'Step onto a sturdy bench or box (12-20 inches). Drive through heel, bring other foot up. Step back down controlled.',
     sets: '3-4',
     reps: '12-15 each leg',
-    youtubeId: '9wT7oyr7XEE',
+    youtubeId: '9wT7oyr7XEE', // TODO: video unavailable
     tips: [
       'Box height: start at knee height, progress to mid-thigh',
       'Drive through full foot, not just toes',
@@ -110,7 +110,7 @@ export const exercises: Exercise[] = [
     description: 'Forearms on ground, elbows under shoulders. Body in straight line from head to heels. Hold.',
     sets: '3',
     duration: '30-60 seconds',
-    youtubeId: 'pSHjTRCQW-0',
+    youtubeId: 'pSHjTRCQW-0', // TODO: video unavailable
     tips: [
       'Don\'t let hips sag or pike up',
       'Breathe normally — don\'t hold breath',
@@ -145,7 +145,7 @@ export const exercises: Exercise[] = [
     targetMuscles: ['Quadriceps', 'Glutes', 'Calves', 'Cardiovascular System'],
     description: 'Continuous stepping on rotating stairs. Maintain upright posture, don\'t lean on handles.',
     duration: '20-45 minutes',
-    youtubeId: 'Zwdv9S9p7Ho',
+    youtubeId: 'Zwdv9S9p7Ho', // TODO: video unavailable
     tips: [
       'Don\'t lean on the handles — hands lightly touching only',
       'Full foot on each step',
@@ -161,7 +161,7 @@ export const exercises: Exercise[] = [
     targetMuscles: ['Quadriceps', 'Glutes', 'Calves', 'Cardiovascular System'],
     description: 'Set treadmill to 10-15% incline. Walk at 3-3.5 mph with pack or vest.',
     duration: '30-60 minutes',
-    youtubeId: '8mPp1rR0A5o',
+    youtubeId: '8mPp1rR0A5o', // TODO: video unavailable
     tips: [
       'Add weight via pack or vest for specificity',
       'Don\'t hold the handrails',
@@ -196,7 +196,7 @@ export const exercises: Exercise[] = [
     description: 'Kneel with toes tucked under. Sit back on heels. Also do knee-to-wall dorsiflexion test.',
     sets: '2-3',
     duration: '30-60 seconds',
-    youtubeId: 'VFu28M9H234',
+    youtubeId: 'VFu28M9H234', // TODO: video unavailable
     tips: [
       'Essential for ankle injury recovery/prevention',
       'Do before every lower body workout',
@@ -213,7 +213,7 @@ export const exercises: Exercise[] = [
     description: 'Stand on one leg, slight knee bend. Hold 30 seconds. Progress to eyes closed or unstable surface.',
     sets: '2-3',
     duration: '30-45 seconds each',
-    youtubeId: '3OeZ6j5Q1i0',
+    youtubeId: '3OeZ6j5Q1i0', // TODO: video unavailable
     tips: [
       'Barefoot for extra proprioception benefit',
       'Don\'t let hip hike — keep pelvis level',
@@ -230,7 +230,7 @@ export const exercises: Exercise[] = [
     description: 'Sit with both legs at 90 degrees (one front, one back). Keep back straight, lean forward over front leg.',
     sets: '2',
     duration: '45-60 seconds each side',
-    youtubeId: 'K6WD8tTTXI8',
+    youtubeId: 'K6WD8tTTXI8', // TODO: video unavailable
     tips: [
       'Keep both sit bones grounded if possible',
       'Back straight — hinge from hips, not round spine',
@@ -248,7 +248,7 @@ export const exercises: Exercise[] = [
     targetMuscles: ['Quadriceps', 'IT Band', 'Calves'],
     description: 'Slowly roll each muscle group, pausing on tender spots. 30-60 seconds per area.',
     duration: '10-15 minutes',
-    youtubeId: 'p7sn2DHRhLc',
+    youtubeId: 'p7sn2DHRhLc', // TODO: video unavailable
     tips: [
       'Not too painful — discomfort yes, agony no',
       'Breathe and relax into it',
