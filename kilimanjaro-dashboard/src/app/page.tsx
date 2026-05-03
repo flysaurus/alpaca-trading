@@ -82,7 +82,7 @@ function StatCard({
 export default function DashboardPage() {
   const [data, setData] = useState<DataResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [days, setDays] = useState(30);
+  const [days, setDays] = useState(1);
 
   const fetchData = async () => {
     setLoading(true);
