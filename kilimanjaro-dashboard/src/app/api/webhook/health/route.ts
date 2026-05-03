@@ -157,9 +157,18 @@ function storeHaeMetricGroup(group: Record<string, unknown>): { stored: number; 
   return { stored, skipped };
 }
 
+function extractValue(field: unknown): number | undefined {
+  if (field === null || field === undefined) return undefined;
+  if (typeof field === 'number') return field;
+  if (typeof field === 'object' && field && 'qty' in field) {
+    return parseFloatAny((field as Record<string, unknown>).qty);
+  }
+  return parseFloatAny(field);
+}
+
 function storeHaeWorkout(item: Record<string, unknown>): boolean {
   const date = parseDate(item.startDate || item.date || item.creationDate) || new Date().toISOString();
-  const workoutType = String(item.workoutType || item.name || item.type || 'Unknown');
+  const workoutType = String(item.name || item.workoutType || item.type || 'Unknown');
   const dedupKey = makeDedupKey('workout', date, workoutType);
   if (isDuplicate(dedupKey)) return false;
 
@@ -167,11 +176,11 @@ function storeHaeWorkout(item: Record<string, unknown>): boolean {
     date,
     workoutType,
     duration: parseDuration(item.duration),
-    distance: parseFloatAny(item.distance),
-    elevationGain: parseFloatAny(item.elevationAscended || item.totalElevationGain),
-    activeEnergy: parseFloatAny(item.activeEnergyBurned || item.activeEnergy || item.calories),
-    avgHeartRate: parseFloatAny(item.averageHeartRate || item.heartRate),
-    maxHeartRate: parseFloatAny(item.maximumHeartRate || item.maxHeartRate),
+    distance: extractValue(item.distance),
+    elevationGain: extractValue(item.totalElevationGain) || extractValue(item.elevationAscended),
+    activeEnergy: extractValue(item.activeEnergyBurned) || extractValue(item.activeEnergy) || extractValue(item.calories),
+    avgHeartRate: extractValue(item.averageHeartRate) || extractValue(item.heartRate),
+    maxHeartRate: extractValue(item.maximumHeartRate) || extractValue(item.maxHeartRate),
     notes: item.notes ? String(item.notes) : undefined,
   };
   dataStore.addWorkout(workout);
