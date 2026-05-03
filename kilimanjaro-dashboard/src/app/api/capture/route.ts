@@ -4,20 +4,9 @@ import { parseDate } from '@/lib/parse-date';
 let lastCapture: {
   time: string;
   workoutCount: number;
-  rawStartDate?: unknown;
-  rawDate?: unknown;
-  rawCreationDate?: unknown;
+  rawValues: Record<string, unknown>;
   parsedDate: string | null;
-  schema: Record<string, string>;
 } | null = null;
-
-function detectType(v: unknown): string {
-  if (v === null) return 'null';
-  if (Array.isArray(v)) return `Array[${v.length}]`;
-  if (typeof v === 'object') return `Object(${Object.keys(v as object).slice(0,5).join(',')}...)`;
-  if (typeof v === 'number') return 'number';
-  return typeof v;
-}
 
 export async function POST(request: Request) {
   try {
@@ -29,29 +18,29 @@ export async function POST(request: Request) {
       workouts = (obj.data as Record<string, unknown>).workouts as unknown[];
     }
 
-    let rawStartDate: unknown;
-    let rawDate: unknown;
-    let rawCreationDate: unknown;
-    let schema: Record<string, string> = {};
+    let rawValues: Record<string, unknown> = {};
+    let parsedDate: string | null = null;
     
     if (workouts.length > 0 && workouts[0] && typeof workouts[0] === 'object') {
       const w = workouts[0] as Record<string, unknown>;
-      rawStartDate = w.startDate;
-      rawDate = w.date;
-      rawCreationDate = w.creationDate;
-      schema = Object.fromEntries(
-        Object.entries(w).map(([k, v]) => [k, detectType(v)])
-      );
+      rawValues = {
+        start: w.start,
+        end: w.end,
+        startDate: w.startDate,
+        date: w.date,
+        creationDate: w.creationDate,
+        name: w.name,
+        duration: w.duration,
+        workoutType: w.workoutType,
+      };
+      parsedDate = parseDate(w.start || w.startDate || w.date || w.creationDate);
     }
 
     lastCapture = {
       time: new Date().toISOString(),
       workoutCount: workouts.length,
-      rawStartDate,
-      rawDate,
-      rawCreationDate,
-      parsedDate: parseDate(rawStartDate || rawDate || rawCreationDate),
-      schema,
+      rawValues,
+      parsedDate,
     };
 
     return NextResponse.json({ success: true, workoutCount: workouts.length });
