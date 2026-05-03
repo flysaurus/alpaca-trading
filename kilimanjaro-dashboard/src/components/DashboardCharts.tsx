@@ -165,12 +165,15 @@ export function WorkoutChart({ workouts }: { workouts: Workout[] }) {
     );
   }
 
-  const data = workouts.map(w => ({
-    date: w.date,
-    duration: w.duration,
-    elevation: w.elevationGain || 0,
-    type: w.workoutType,
-  }));
+  // Aggregate durations by day
+  const dayMap = new Map<string, number>();
+  for (const w of workouts) {
+    const key = format(parseISO(w.date), 'yyyy-MM-dd');
+    dayMap.set(key, (dayMap.get(key) || 0) + w.duration);
+  }
+  const data = Array.from(dayMap.entries())
+    .map(([date, duration]) => ({ date, duration }))
+    .sort((a, b) => a.date.localeCompare(b.date));
 
   return (
     <div className="space-y-2">
