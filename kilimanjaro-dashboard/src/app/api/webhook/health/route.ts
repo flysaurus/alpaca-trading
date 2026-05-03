@@ -266,7 +266,29 @@ function detectMetricType(item: Record<string, unknown>): HealthMetric['metricTy
 
 function parseDate(val: unknown): string | null {
   if (!val) return null;
-  const d = new Date(String(val));
+  const s = String(val).trim();
+  if (!s) return null;
+
+  // HAE format: "2026-05-02 15:52:38 -0400"  (space between date and time)
+  const haeMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})\s+([+-]\d{4})$/);
+  if (haeMatch) {
+    const tz = haeMatch[7];
+    const tzHours = parseInt(tz.slice(0, 3), 10);
+    const tzMinutes = parseInt(tz[0] + tz.slice(3, 5), 10);
+    const offsetMs = (tzHours * 60 + tzMinutes) * 60 * 1000;
+    const utc = Date.UTC(
+      parseInt(haeMatch[1], 10),
+      parseInt(haeMatch[2], 10) - 1,
+      parseInt(haeMatch[3], 10),
+      parseInt(haeMatch[4], 10),
+      parseInt(haeMatch[5], 10),
+      parseInt(haeMatch[6], 10)
+    );
+    return new Date(utc - offsetMs).toISOString();
+  }
+
+  // Standard ISO / RFC format
+  const d = new Date(s);
   if (isNaN(d.getTime())) return null;
   return d.toISOString();
 }
