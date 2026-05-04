@@ -150,7 +150,15 @@ export default function DashboardPage() {
     : 0;
 
   const activeEnergy = data?.metrics.filter(m => m.metricType === 'activeEnergy') || [];
-  const totalEnergy = Math.round(activeEnergy.reduce((a, b) => a + b.value, 0));
+  // Convert any stale kJ entries to kcal (unit-aware)
+  const totalEnergyKcal = Math.round(
+    activeEnergy.reduce((sum, m) => {
+      const unit = String(m.unit).toLowerCase();
+      const isKj = unit.includes('j') && !unit.includes('cal');
+      const valueKcal = isKj ? m.value / 4.184 : m.value;
+      return sum + valueKcal;
+    }, 0)
+  );
 
   return (
     <div className="space-y-6">
@@ -272,7 +280,7 @@ export default function DashboardPage() {
         <StatCard
           icon={TrendingUp}
           label="Active Energy"
-          value={totalEnergy > 0 ? `${totalEnergy.toLocaleString()} kJ` : '—'}
+          value={totalEnergyKcal > 0 ? `${totalEnergyKcal.toLocaleString()} kcal` : '—'}
           sub="total"
           color="bg-teal-500"
         />
