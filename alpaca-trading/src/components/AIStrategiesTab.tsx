@@ -18,6 +18,7 @@ import {
   BarChart2,
   Brain,
 } from 'lucide-react';
+import AIAdvisorPage from '@/app/advisor/page';
 
 // ── Performance Data Interface ────────────────────────────────────
 interface PerformanceData {
@@ -353,10 +354,7 @@ function NewsSentimentPanel() {
 export default function AIStrategiesTab({ positions }: { positions: any[] }) {
   const [timeframe, setTimeframe] = useState<'1D' | '1M' | '3M' | 'YTD' | 'ALL'>('1M');
   const [showChart, setShowChart] = useState<'value' | 'pnl' | 'cash'>('value');
-  const [allocationTab, setAllocationTab] = useState<'assetType' | 'sector'>('assetType');
-
   const performanceData = fetchPerformanceData();
-  const allocationData = fetchAllocationData();
 
   return (
     <div className="space-y-4">
@@ -428,38 +426,16 @@ export default function AIStrategiesTab({ positions }: { positions: any[] }) {
         <PerformanceChart data={performanceData} metric={showChart} />
       </div>
 
-      {/* Allocation Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-4">
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="text-xs font-bold text-[var(--text-secondary)] flex items-center gap-2">
-              <Layers className="w-4 h-4" />
-              Asset Allocation
-            </h3>
-            <div className="flex gap-1">
-              {(['assetType', 'sector'] as const).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setAllocationTab(t)}
-                  className={`px-2 py-0.5 text-[9px] font-bold rounded transition ${
-                    allocationTab === t
-                      ? 'bg-amber-500 text-black'
-                      : 'bg-[var(--app-bg)] text-[var(--text-muted)] hover:bg-[var(--hover-bg)]'
-                  }`}
-                >
-                  {t === 'assetType' ? 'Asset Type' : 'Sector'}
-                </button>
-              ))}
-            </div>
-          </div>
-          
-          <DonutChart 
-            data={allocationTab === 'assetType' ? allocationData.assetType : allocationData.sector} 
-            title={allocationTab === 'assetType' ? 'By Asset Type' : 'By Sector'} 
-          />
+      {/* AI Advisor Section */}
+      <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-4">
+        <div className="flex justify-between items-center mb-3">
+          <h3 className="text-xs font-bold text-[var(--text-secondary)] flex items-center gap-2">
+            <Brain className="w-4 h-4" />
+            AI Trading Advisor
+          </h3>
         </div>
-
-        <StrategyStats />
+        
+        <AIAdvisorPage />
       </div>
 
       {/* News & AI Summary */}

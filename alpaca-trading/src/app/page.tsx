@@ -103,8 +103,7 @@ function Sidebar({ active, onChange }: { active: string; onChange: (s: string) =
   const items = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { id: 'positions', icon: CandlestickChart, label: 'Positions' },
-    { id: 'ai-advisor', icon: Brain, label: 'AI Advisor' },
-    { id: 'ai-strategies', icon: BarChart3, label: 'AI & Strategies' },
+    { id: 'ai-strategies', icon: Brain, label: 'AI & Strategies' },
     { id: 'orders', icon: List, label: 'Orders' },
     { id: 'scanner', icon: Zap, label: 'Scanner' },
     { id: 'news', icon: Newspaper, label: 'News' },
@@ -1144,7 +1143,6 @@ export default function Dashboard() {
 
           {activeTab === 'settings' && <SettingsPanel account={account} />}
 
-          {activeTab === 'ai-advisor' && <AIAdvisorPage />}
           {activeTab === 'ai-strategies' && <AIStrategiesTab positions={positions} />}
         </main>
       </div>
