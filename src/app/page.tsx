@@ -99,6 +99,47 @@ function fmtPct(n: number): string {
 }
 
 /* ─────────── Sidebar ─────────── */
+const RISK_KEY = 'alpaca-trading-risk-threshold';
+
+function RiskThresholdSelector() {
+  const [risk, setRisk] = useState<'conservative' | 'moderate' | 'aggressive'>(() => {
+    try { const r = localStorage.getItem(RISK_KEY); if (r === 'conservative' || r === 'moderate' || r === 'aggressive') return r; } catch { /*ignore*/ }
+    return 'moderate';
+  });
+
+  const update = (r: 'conservative' | 'moderate' | 'aggressive') => {
+    setRisk(r);
+    try { localStorage.setItem(RISK_KEY, r); } catch { /*ignore*/ }
+  };
+
+  const styles: Record<string, string> = {
+    conservative: 'border-amber-500/40 text-amber-400 bg-amber-500/10',
+    moderate: 'border-blue-400/40 text-blue-400 bg-blue-400/10',
+    aggressive: 'border-red-500/40 text-red-400 bg-red-500/10',
+  };
+
+  return (
+    <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-3">
+      <div className="flex items-center gap-3">
+        <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wide font-bold">Risk Threshold</span>
+        <div className="flex gap-1">
+          {(['conservative', 'moderate', 'aggressive'] as const).map(r => (
+            <button
+              key={r}
+              onClick={() => update(r)}
+              className={`px-3 py-1 text-xs font-bold rounded-lg border transition ${
+                risk === r ? styles[r] : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+              }`}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Sidebar({ active, onChange }: { active: string; onChange: (s: string) => void }) {
   const items = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -1097,6 +1138,9 @@ export default function Dashboard() {
 
           {/* Watchlist */}
           <WatchlistWidget />
+
+          {/* Risk Threshold */}
+          <RiskThresholdSelector />
 
           {/* Grid */}
           {activeTab === 'dashboard' && (
