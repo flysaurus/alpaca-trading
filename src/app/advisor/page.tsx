@@ -132,11 +132,16 @@ export default function AIAdvisorPage() {
         body: JSON.stringify({ watchlist: activeSymbols, config: { risk_tolerance: getStoredRisk() } }),
       });
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `HTTP ${res.status}`);
-      const { suggestions: s } = await res.json();
+      const data = await res.json();
+      const s = Array.isArray(data.suggestions) ? data.suggestions : [];
       setCurrentSuggestions(s);
       // Save to history
       const now = new Date().toISOString();
-      s.forEach((sg: AISuggestion) => saveHistory({ id: `${sg.symbol}-${Date.now()}`, date: now, symbol: sg.symbol, suggestion: sg }));
+      s.forEach((sg: AISuggestion) => {
+        if (sg && sg.symbol) {
+          saveHistory({ id: `${sg.symbol}-${Date.now()}`, date: now, symbol: sg.symbol, suggestion: sg });
+        }
+      });
       setHistory(loadHistory());
     } catch (err: any) { setError(err.message || 'Failed'); }
     finally { setIsGenerating(false); }
