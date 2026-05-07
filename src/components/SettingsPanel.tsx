@@ -7,7 +7,6 @@ import { getTheme, setTheme } from '@/lib/theme';
 interface RiskSettings {
   maxPositionSize: number; // % of portfolio
   maxDailyLoss: number; // % of portfolio
-  maxOpenPositions: number;
   enableShorting: boolean;
   allowAfterHours: boolean;
 }
@@ -17,7 +16,6 @@ const STORAGE_KEY = 'alpaca-trading-risk-settings';
 const DEFAULTS: RiskSettings = {
   maxPositionSize: 5,
   maxDailyLoss: 2,
-  maxOpenPositions: 10,
   enableShorting: false,
   allowAfterHours: true,
 };
@@ -150,28 +148,6 @@ export default function SettingsPanel({ account }: Props) {
           />
           <p className="text-[10px] text-[var(--text-muted)]">
             Trading halts if daily unrealized loss exceeds {settings.maxDailyLoss}%
-          </p>
-        </div>
-
-        {/* Max Open Positions */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="text-xs text-[var(--text-secondary)]">Max Open Positions</label>
-            <span className="text-xs font-bold text-[var(--text-primary)] font-[family-name:var(--font-mono)]">
-              {settings.maxOpenPositions}
-            </span>
-          </div>
-          <input
-            type="range"
-            min={1}
-            max={50}
-            step={1}
-            value={settings.maxOpenPositions}
-            onChange={(e) => update({ maxOpenPositions: Number(e.target.value) })}
-            className="w-full h-1.5 bg-[var(--hover-bg)] rounded-full appearance-none cursor-pointer accent-amber-500"
-          />
-          <p className="text-[10px] text-[var(--text-muted)]">
-            Maximum number of simultaneous open positions
           </p>
         </div>
 

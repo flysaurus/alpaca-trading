@@ -7,6 +7,9 @@ import { getBars } from './alpaca';
 // import { getNewsSentiment } from './news';
 // import { getInsiderActivity } from './insider';
 // import { getUpcomingMacroEvents } from './macro';
+
+const RISK_KEY = 'alpaca-trading-risk-threshold';
+
 // ── Types ───────────────────────────────────────────────────────
 export interface PriceAction {
   symbol: string;
@@ -90,6 +93,71 @@ export interface AdvisorConfig {
   risk_tolerance: 'conservative' | 'moderate' | 'aggressive';
 }
 
+// ── Helpers ─────────────────────────────────────────────────────
+function getStoredRiskTolerance(): 'conservative' | 'moderate' | 'aggressive' {
+  try {
+    const stored = typeof window !== 'undefined' ? localStorage.getItem(RISK_KEY) : null;
+    if (stored === 'conservative' || stored === 'moderate' || stored === 'aggressive') return stored;
+  } catch { /* ignore */ }
+  return 'moderate';
+}
+
+function weightedRandomAction(risk: 'conservative' | 'moderate' | 'aggressive'): 'buy' | 'sell' | 'hold' | 'watch' {
+  const rand = Math.random();
+  if (risk === 'conservative') {
+    if (rand < 0.45) return 'hold';
+    if (rand < 0.75) return 'watch';
+    if (rand < 0.90) return 'buy';
+    return 'sell';
+  }
+  if (risk === 'aggressive') {
+    if (rand < 0.35) return 'buy';
+    if (rand < 0.60) return 'sell';
+    if (rand < 0.80) return 'hold';
+    return 'watch';
+  }
+  // moderate — balanced
+  if (rand < 0.20) return 'buy';
+  if (rand < 0.35) return 'sell';
+  if (rand < 0.60) return 'hold';
+  return 'watch';
+}
+
+function riskBasedValues(risk: 'conservative' | 'moderate' | 'aggressive') {
+  if (risk === 'conservative') {
+    return {
+      positionSizeMin: 2,
+      positionSizeMax: 5,
+      stopLossMin: 5,
+      stopLossMax: 8,
+      takeProfitMin: 10,
+      takeProfitMax: 15,
+      confidenceOffset: -10, // lower avg confidence
+    };
+  }
+  if (risk === 'aggressive') {
+    return {
+      positionSizeMin: 5,
+      positionSizeMax: 10,
+      stopLossMin: 3,
+      stopLossMax: 5,
+      takeProfitMin: 12,
+      takeProfitMax: 20,
+      confidenceOffset: 5, // higher avg confidence
+    };
+  }
+  // moderate
+  return {
+    positionSizeMin: 3,
+    positionSizeMax: 7,
+    stopLossMin: 4,
+    stopLossMax: 7,
+    takeProfitMin: 10,
+    takeProfitMax: 17,
+    confidenceOffset: 0,
+  };
+}
+
 // ── Technical Analysis Helpers ───────────────────────────────────
 function calculateRSI(prices: number[], period: number = 14): number {
   if (prices.length < period + 1) return 50;
@@ -128,7 +196,7 @@ function calculateMACD(prices: number[], fast: number = 12, slow: number = 26, s
   const emaFast = ema(prices.slice(-slow), fast);
   const emaSlow = ema(prices.slice(-slow), slow);
   const macd = emaFast - emaSlow;
-  
+
   // For simplicity, using static signal line
   const signalLine = macd * 0.9;
   const histogram = macd - signalLine;
@@ -150,19 +218,19 @@ function interpretRSI(rsi: number): 'overbought' | 'oversold' | 'neutral' {
 export async function collectPriceAction(symbol: string): Promise<PriceAction> {
   try {
     const bars = await getBars({ symbol, timeframe: '1D', limit: 30 });
-    
+
     if (bars.length >= 2) {
       const prices = bars.map(bar => bar.c);
       const volumes = bars.map(bar => bar.v);
       const currentPrice = prices[prices.length - 1];
       const price30DaysAgo = prices[0];
-      
+
       const rsi = calculateRSI(prices);
       const macd = calculateMACD(prices);
-      
+
       const avgVolume30d = volumes.reduce((sum, vol) => sum + vol, 0) / volumes.length;
       const recentVolumeAvg = volumes.slice(-5).reduce((sum, vol) => sum + vol, 0) / 5;
-      
+
       let volumeTrend: 'increasing' | 'decreasing' | 'neutral' = 'neutral';
       if (recentVolumeAvg > avgVolume30d * 1.2) volumeTrend = 'increasing';
       else if (recentVolumeAvg < avgVolume30d * 0.8) volumeTrend = 'decreasing';
@@ -190,7 +258,6 @@ export async function collectPriceAction(symbol: string): Promise<PriceAction> {
     ? (symbol.charCodeAt(0) + symbol.charCodeAt(1)) * 5 + 50
     : 150;
   const change30d = (Math.random() - 0.4) * 20; // -8% to +12%
-  const price30dAgo = basePrice / (1 + change30d / 100);
   const rsi = Math.random() * 60 + 20; // 20-80
   const volumeTrends: Array<'increasing' | 'decreasing' | 'neutral'> = ['increasing', 'decreasing', 'neutral'];
 
@@ -223,7 +290,7 @@ export async function collectNewsSentiment(symbol: string): Promise<NewsSentimen
       `Analysts upgrade ${symbol} rating`,
       `${symbol} faces market headwinds`,
     ].slice(0, 3);
-    
+
     let trend: 'improving' | 'declining' | 'stable' = 'stable';
     if (sentimentScore > 0.2) trend = 'improving';
     else if (sentimentScore < -0.2) trend = 'declining';
@@ -276,7 +343,7 @@ export async function collectMacroContext(symbol: string): Promise<MacroContext>
     // Mock sector classification
     const sectors = ['Technology', 'Healthcare', 'Finance', 'Energy', 'Consumer'];
     const sector = sectors[Math.floor(Math.random() * sectors.length)];
-    
+
     const events = [
       {
         date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -306,7 +373,7 @@ export async function collectPortfolioExposure(symbol: string): Promise<Portfoli
     // Mock implementation - would integrate with portfolio data
     const sectorExposure = Math.random() * 30; // 0-30%
     const symbolExposure = Math.random() * 10; // 0-10%
-    
+
     return {
       symbol,
       sector: 'Technology', // Would derive from symbol
@@ -322,13 +389,17 @@ export async function collectPortfolioExposure(symbol: string): Promise<Portfoli
 // ── AI Suggestion Generation ─────────────────────────────────────
 export async function generateSuggestions(
   watchlist: string[],
-  config: AdvisorConfig = {
+  config?: Partial<AdvisorConfig>
+): Promise<AISuggestion[]> {
+  const storedRisk = getStoredRiskTolerance();
+  const mergedCfg: AdvisorConfig = {
     confidence_threshold: 70,
     max_position_size_pct: 10,
     allowed_actions: ['buy', 'sell', 'hold', 'watch'],
-    risk_tolerance: 'moderate',
-  }
-): Promise<AISuggestion[]> {
+    risk_tolerance: storedRisk,
+    ...config,
+  };
+
   const suggestions: AISuggestion[] = [];
 
   for (const symbol of watchlist) {
@@ -351,9 +422,9 @@ export async function generateSuggestions(
         portfolioExposure,
       });
 
-      // Get AI suggestion (using mock for now)
-      const aiResponse = await getAISuggestion(prompt, symbol);
-      
+      // Get AI suggestion
+      const aiResponse = await getAISuggestion(prompt, symbol, mergedCfg.risk_tolerance);
+
       // Validate and create suggestion
       const suggestion: AISuggestion = {
         symbol,
@@ -369,7 +440,7 @@ export async function generateSuggestions(
       };
 
       // Apply confidence filter
-      if (suggestion.confidence >= config.confidence_threshold) {
+      if (suggestion.confidence >= mergedCfg.confidence_threshold) {
         suggestions.push(suggestion);
       }
     } catch (error) {
@@ -390,11 +461,11 @@ function buildPrompt(symbol: string, signals: {
   return `You are a quantitative trading analyst. Analyze the following data for ${symbol} and provide a trading suggestion. Be conservative and risk-aware.
 
 Price action (30d): Current price $${signals.priceAction.current_price.toFixed(2)}, 30d change ${signals.priceAction.price_change_30d.toFixed(2)}%
-RSI: ${signals.priceAction.rsi.toFixed(2)} — interpretation: ${signals.priceAction.rsi_interpretation}
+RSI: ${signals.priceAction.rsi.toFixed(2)} \u2014 interpretation: ${signals.priceAction.rsi_interpretation}
 MACD: ${signals.priceAction.macd.macd.toFixed(4)}, trend: ${signals.priceAction.macd.trend}
 Volume trend: ${signals.priceAction.volume_trend.trend} (recent avg: ${signals.priceAction.volume_trend.recent_volume_avg.toFixed(0)}, 30d avg: ${signals.priceAction.volume_trend.avg_volume_30d.toFixed(0)})
 
-News sentiment (7d avg): ${signals.newsSentiment.sentiment_score_7d.toFixed(3)} — recent headlines: ${signals.newsSentiment.recent_headlines.join(', ')}
+News sentiment (7d avg): ${signals.newsSentiment.sentiment_score_7d.toFixed(3)} \u2014 recent headlines: ${signals.newsSentiment.recent_headlines.join(', ')}
 
 Insider activity (90d): Net ${signals.insiderActivity.net_buys_sells_90d > 0 ? 'buys' : 'sells'} of $${Math.abs(signals.insiderActivity.net_buys_sells_90d).toLocaleString()}, notable: ${signals.insiderActivity.notable_transactions.map(t => `${t.insider} ${t.type} ${t.shares} shares`).join(', ')}
 
@@ -415,40 +486,59 @@ Respond in JSON only:
 }`;
 }
 
-async function getAISuggestion(prompt: string, symbol: string): Promise<Omit<AISuggestion, 'symbol' | 'generated_at' | 'signals'>> {
-  // Mock AI response for testing - would integrate with Kimi API
-  const actions: Array<'buy' | 'sell' | 'hold' | 'watch'> = ['buy', 'sell', 'hold', 'watch'];
-  const randomAction = actions[Math.floor(Math.random() * actions.length)];
-  
+async function getAISuggestion(
+  prompt: string,
+  symbol: string,
+  riskTolerance: 'conservative' | 'moderate' | 'aggressive'
+): Promise<Omit<AISuggestion, 'symbol' | 'generated_at' | 'signals'>> {
+  // Mock AI response weighted by risk tolerance
+  const r = riskBasedValues(riskTolerance);
+
+  const action = weightedRandomAction(riskTolerance);
+
+  const positionSize = Math.floor(Math.random() * (r.positionSizeMax - r.positionSizeMin + 1)) + r.positionSizeMin;
+  const stopLoss = Math.floor(Math.random() * (r.stopLossMax - r.stopLossMin + 1)) + r.stopLossMin;
+  const takeProfit = Math.floor(Math.random() * (r.takeProfitMax - r.takeProfitMin + 1)) + r.takeProfitMin;
+  const confidence = Math.min(100, Math.max(50, Math.floor(Math.random() * 30) + 70 + r.confidenceOffset));
+
   return {
-    action: randomAction,
-    confidence: Math.floor(Math.random() * 30) + 70, // 70-100
-    reasoning: `Based on technical indicators and market sentiment, ${randomAction} action appears appropriate for ${symbol}.`,
-    suggested_position_size_pct: Math.floor(Math.random() * 8) + 2, // 2-10%
+    action,
+    confidence,
+    reasoning: `Based on ${riskTolerance} risk profile, ${action} action appears appropriate for ${symbol}.`,
+    suggested_position_size_pct: positionSize,
     risk_factors: [
       'Market volatility',
       'Sector uncertainty',
     ].slice(0, Math.floor(Math.random() * 2) + 1),
     time_horizon: ['short', 'medium', 'long'][Math.floor(Math.random() * 3)] as 'short' | 'medium' | 'long',
-    stop_loss_pct: Math.floor(Math.random() * 5) + 3, // 3-8%
-    take_profit_pct: Math.floor(Math.random() * 10) + 8, // 8-18%
+    stop_loss_pct: stopLoss,
+    take_profit_pct: takeProfit,
   };
 }
 
 // ── Suggestion Storage ───────────────────────────────────────────
 const SUGGESTIONS_KEY = 'alpaca-trading-ai-suggestions';
 
+export interface StoredSuggestion extends AISuggestion {
+  _id: string;
+}
+
+function makeId(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
 export async function storeSuggestions(suggestions: AISuggestion[]): Promise<void> {
   try {
     const existing = await getSuggestions();
-    const updated = [...suggestions, ...existing].slice(0, 100); // Keep last 100
+    const newEntries: StoredSuggestion[] = suggestions.map(s => ({ ...s, _id: makeId() }));
+    const updated = [...newEntries, ...existing].slice(0, 200); // Keep last 200
     localStorage.setItem(SUGGESTIONS_KEY, JSON.stringify(updated));
   } catch (error) {
     console.error('[AI Advisor] Failed to store suggestions:', error);
   }
 }
 
-export async function getSuggestions(): Promise<AISuggestion[]> {
+export async function getSuggestions(): Promise<StoredSuggestion[]> {
   try {
     const stored = localStorage.getItem(SUGGESTIONS_KEY);
     return stored ? JSON.parse(stored) : [];

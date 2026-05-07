@@ -1,7 +1,6 @@
 export interface RiskParameters {
   maxPositionSize: number; // % of portfolio
   maxDailyLoss: number; // % of portfolio
-  maxOpenPositions: number;
   stopLossPercent: number;
   trailingStopPercent: number;
   enableShorting: boolean;
@@ -11,7 +10,6 @@ export interface RiskParameters {
 export const DEFAULT_RISK: RiskParameters = {
   maxPositionSize: 0.05, // 5%
   maxDailyLoss: 0.02, // 2%
-  maxOpenPositions: 10,
   stopLossPercent: 0.05, // 5%
   trailingStopPercent: 0.08, // 8%
   enableShorting: false,
@@ -52,11 +50,25 @@ export function checkRiskLimits(
   portfolioValue: number,
   openPositions: any[],
   newOrder: { symbol: string; side: 'buy' | 'sell'; notional: number; qty?: number },
-  risk: RiskParameters = DEFAULT_RISK
+  risk: RiskParameters = DEFAULT_RISK,
+  account?: { equity: number; last_equity: number },
+  clock?: { is_open: boolean }
 ): { allowed: boolean; reason?: string } {
-  // Check max open positions
-  if (openPositions.length >= risk.maxOpenPositions) {
-    return { allowed: false, reason: `Max ${risk.maxOpenPositions} open positions reached` };
+  // Check after-hours trading
+  if (!risk.allowAfterHours && clock && !clock.is_open) {
+    return { allowed: false, reason: 'After-hours trading is disabled' };
+  }
+
+  // Check daily loss limit
+  if (account && risk.maxDailyLoss > 0) {
+    const dailyLoss = account.equity - account.last_equity;
+    const dailyLossPercent = portfolioValue > 0 ? Math.abs(dailyLoss) / portfolioValue : 0;
+    if (dailyLoss < 0 && dailyLossPercent >= risk.maxDailyLoss) {
+      return {
+        allowed: false,
+        reason: `Daily loss ${(dailyLossPercent * 100).toFixed(1)}% exceeds max ${(risk.maxDailyLoss * 100).toFixed(0)}%`,
+      };
+    }
   }
 
   // Check position size
