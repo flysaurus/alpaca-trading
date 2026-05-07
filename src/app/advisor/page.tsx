@@ -54,7 +54,8 @@ function loadHistory(): HistoryEntry[] {
   try {
     if (typeof window === 'undefined') return [];
     const raw = localStorage.getItem(HISTORY_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
   } catch { return []; }
 }
 
@@ -304,20 +305,24 @@ export default function AIAdvisorPage() {
             <History className="w-3.5 h-3.5" /> All Past Recommendations
           </h2>
           <div className="space-y-2 max-h-60 overflow-y-auto">
-            {history.slice(0, 20).map(h => (
-              <div key={h.id} className="flex items-center justify-between p-2 bg-[var(--card-bg)] border border-[var(--border)] rounded-lg text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-[var(--text-primary)]">{h.symbol}</span>
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                    h.suggestion.action === 'buy' ? 'bg-green-500/10 text-green-400' :
-                    h.suggestion.action === 'sell' ? 'bg-red-500/10 text-red-400' :
-                    h.suggestion.action === 'hold' ? 'bg-yellow-500/10 text-yellow-400' :
-                    'bg-blue-400/10 text-blue-400'
-                  }`}>{h.suggestion.action.toUpperCase()}</span>
+            {history.slice(0, 20).map((h, idx) => {
+              const action = h?.suggestion?.action || 'watch';
+              const symbol = h?.symbol || '—';
+              return (
+                <div key={h?.id || idx} className="flex items-center justify-between p-2 bg-[var(--card-bg)] border border-[var(--border)] rounded-lg text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-[var(--text-primary)]">{symbol}</span>
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                      action === 'buy' ? 'bg-green-500/10 text-green-400' :
+                      action === 'sell' ? 'bg-red-500/10 text-red-400' :
+                      action === 'hold' ? 'bg-yellow-500/10 text-yellow-400' :
+                      'bg-blue-400/10 text-blue-400'
+                    }`}>{action.toUpperCase()}</span>
+                  </div>
+                  <span className="text-[var(--text-muted)]">{h?.date ? new Date(h.date).toLocaleDateString() : '—'}</span>
                 </div>
-                <span className="text-[var(--text-muted)]">{new Date(h.date).toLocaleDateString()}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -370,12 +375,13 @@ function RiskBadge() {
   Compact suggestion (for prior history preview)
 ───────────────────────────────────────────────────────────*/
 function CompactSuggestion({ suggestion }: { suggestion: AISuggestion }) {
-  const color = { buy: 'text-green-400', sell: 'text-red-400', hold: 'text-yellow-400', watch: 'text-blue-400' }[suggestion.action];
+  const safeAction = (suggestion?.action || 'watch') as 'buy' | 'sell' | 'hold' | 'watch';
+  const color = { buy: 'text-green-400', sell: 'text-red-400', hold: 'text-yellow-400', watch: 'text-blue-400' }[safeAction] || 'text-blue-400';
   return (
     <div className="p-2 bg-[var(--app-bg)] rounded-lg text-xs flex items-center gap-3 opacity-60">
-      <span className="font-bold text-[var(--text-primary)]">{suggestion.symbol}</span>
-      <span className={`font-bold ${color}`}>{suggestion.action.toUpperCase()}</span>
-      <span className="text-[var(--text-muted)] ml-auto">{suggestion.confidence}% conf</span>
+      <span className="font-bold text-[var(--text-primary)]">{suggestion?.symbol || '—'}</span>
+      <span className={`font-bold ${color}`}>{safeAction.toUpperCase()}</span>
+      <span className="text-[var(--text-muted)] ml-auto">{(suggestion?.confidence ?? 0)}% conf</span>
     </div>
   );
 }
