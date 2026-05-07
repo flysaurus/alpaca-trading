@@ -18,7 +18,6 @@ import {
   BarChart2,
   Brain,
 } from 'lucide-react';
-import AIAdvisorPage from '@/app/advisor/page';
 
 // ── Performance Data Interface ────────────────────────────────────
 interface PerformanceData {
@@ -433,9 +432,28 @@ export default function AIStrategiesTab({ positions }: { positions: any[] }) {
             <Brain className="w-4 h-4" />
             AI Trading Advisor
           </h3>
+          <a 
+            href="/advisor" 
+            className="px-3 py-1 text-xs bg-amber-500 text-black rounded hover:bg-amber-600 transition-colors"
+          >
+            Open Full Advisor
+          </a>
         </div>
         
-        <AIAdvisorPage />
+        <div className="text-center py-8">
+          <Brain className="w-12 h-12 text-amber-400 mx-auto mb-3" />
+          <p className="text-sm text-[var(--text-primary)] mb-2">AI Trading Advisor</p>
+          <p className="text-xs text-[var(--text-muted)] mb-4">
+            Get AI-powered trading suggestions with multi-signal analysis
+          </p>
+          <a 
+            href="/advisor" 
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm bg-amber-500 text-black rounded-lg hover:bg-amber-600 transition-colors"
+          >
+            <Brain className="w-4 h-4" />
+            Launch AI Advisor
+          </a>
+        </div>
       </div>
 
       {/* News & AI Summary */}

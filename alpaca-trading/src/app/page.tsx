@@ -37,7 +37,7 @@ import { AlertRule } from '@/lib/notifications';
 import OrderFilterBar, { applyOrderFilters, type OrderFilters } from '@/components/OrderFilters';
 import { initTheme } from '@/lib/theme';
 import AIStrategiesTab from '@/components/AIStrategiesTab';
-import AIAdvisorPage from '@/app/advisor/page';
+
 
 /* ─────────── Types ─────────── */
 interface Position {
