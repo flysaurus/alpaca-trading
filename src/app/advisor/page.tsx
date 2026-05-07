@@ -103,14 +103,29 @@ export default function AIAdvisorPage() {
   const loadPositions = async () => {
     try {
       const r = await fetch('/api/positions');
-      if (r.ok) setPositions(await r.json());
+      if (r.ok) {
+        const data = await r.json();
+        const list = (data?.positions || []).map((p: any) => ({
+          symbol: p.symbol || '',
+          qty: Number(p.qty) || 0,
+          market_value: Number(p.marketValue) || 0,
+          avg_entry_price: Number(p.avgEntryPrice) || 0,
+        }));
+        setPositions(list);
+      }
     } catch { /*ignore*/ }
   };
 
   const loadAccount = async () => {
     try {
       const r = await fetch('/api/account');
-      if (r.ok) setAccount(await r.json());
+      if (r.ok) {
+        const data = await r.json();
+        setAccount({
+          buying_power: Number(data?.account?.buyingPower) || 0,
+          portfolio_value: Number(data?.account?.portfolioValue) || 0,
+        });
+      }
     } catch { /*ignore*/ }
   };
 
