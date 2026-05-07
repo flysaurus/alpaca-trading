@@ -237,6 +237,20 @@ export default function SettingsPanel({ account }: Props) {
         </div>
       </div>
 
+      {/* Autonomous Settings Link */}
+      <div className="bg-[var(--card-bg)] rounded-xl border border-[#1e232b] p-4">
+        <a 
+          href="/settings/autonomous" 
+          className="flex items-center justify-between p-3 bg-red-500/10 border border-red-500/20 rounded-lg hover:bg-red-500/20 transition-colors"
+        >
+          <div>
+            <label className="text-xs text-red-500 font-medium">Autonomous Trading</label>
+            <p className="text-[10px] text-[var(--text-muted)]">Configure AI-powered automatic trading</p>
+          </div>
+          <Shield className="w-4 h-4 text-red-500" />
+        </a>
+      </div>
+
       {/* Disclaimer */}
       <div className="flex items-start gap-2 text-[10px] text-[var(--text-muted)]">
         <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
