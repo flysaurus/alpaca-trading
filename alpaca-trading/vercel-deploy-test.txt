@@ -1,0 +1,3 @@
+Deployment test - changes should be visible
+AI Advisor section updated: cd65f12
+Current commit: 842dbd2
