@@ -114,9 +114,9 @@ function RiskThresholdSelector() {
   };
 
   const styles: Record<string, string> = {
-    conservative: 'border-amber-500/40 text-amber-400 bg-amber-500/10',
-    moderate: 'border-blue-400/40 text-blue-400 bg-blue-400/10',
-    aggressive: 'border-red-500/40 text-red-400 bg-red-500/10',
+    conservative: 'border-amber-400/60 text-amber-300 bg-amber-400/15 shadow-[0_0_8px_rgba(251,191,36,0.15)]',
+    moderate: 'border-blue-400/60 text-blue-300 bg-blue-400/15 shadow-[0_0_8px_rgba(96,165,250,0.15)]',
+    aggressive: 'border-red-400/60 text-red-300 bg-red-400/15 shadow-[0_0_8px_rgba(248,113,113,0.15)]',
   };
 
   return (
@@ -1179,6 +1179,7 @@ export default function Dashboard() {
 
           {activeTab === 'orders' && (
             <>
+              <TradeWidget onRefresh={refreshAll} />
               <OrderFilterBar filters={orderFilters} onChange={setOrderFilters} />
               <OrdersWidget orders={filteredOrders} onCancel={cancelOrder} />
             </>
