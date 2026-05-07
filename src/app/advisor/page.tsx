@@ -397,45 +397,52 @@ function SuggestionDetail({
   const [showAnalysis, setShowAnalysis] = useState(false);
   const pos = positions.find(p => p.symbol === suggestion.symbol);
   const currentQty = pos ? pos.qty : 0;
-  const price = suggestion.signals.price_action.current_price;
 
-  // Calculate recommended qty based on position size % of portfolio
+  // — defensive extraction —
+  const sig = suggestion.signals || ({} as any);
+  const priceAction = sig.price_action || { current_price: 0, price_change_30d: 0, rsi: 50, rsi_interpretation: 'neutral', macd: { trend: 'neutral' }, volume_trend: {} };
+  const newsSentiment = sig.news_sentiment || { sentiment_score_7d: 0 };
+  const insiderActivity = sig.insider_activity || { net_buys_sells_90d: 0 };
+  const macroContext = sig.macro_context || { sector: '—', upcoming_events: [] };
+  const price = Number(priceAction.current_price) || 0;
+
   const portfolioVal = account?.portfolio_value || 100000;
-  const targetValue = portfolioVal * (suggestion.suggested_position_size_pct / 100);
-  const recommendedBuyQty = Math.max(1, Math.floor(targetValue / price));
-  // For sell: recommend selling all or partial based on action
+  const targetValue = portfolioVal * ((suggestion.suggested_position_size_pct ?? 5) / 100);
+  const recommendedBuyQty = price > 0 ? Math.max(1, Math.floor(targetValue / price)) : 1;
   const recommendedSellQty = currentQty > 0 ? currentQty : 0;
 
-  const actionColor = {
+  const action = suggestion.action || 'watch';
+  const confidence = suggestion.confidence ?? 50;
+
+  const actionColor: any = {
     buy: 'text-green-500 bg-green-500/10 border-green-500/20',
     sell: 'text-red-500 bg-red-500/10 border-red-500/20',
     hold: 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20',
     watch: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
-  }[suggestion.action];
+  };
 
-  // Composite score calculation
-  const rsiScore = suggestion.signals.price_action.rsi > 70 ? -20 : suggestion.signals.price_action.rsi < 30 ? 20 : 0;
-  const macdScore = suggestion.signals.price_action.macd.trend === 'bullish' ? 15 : suggestion.signals.price_action.macd.trend === 'bearish' ? -15 : 0;
-  const sentimentScore = suggestion.signals.news_sentiment.sentiment_score_7d * 10;
-  const insiderScore = suggestion.signals.insider_activity.net_buys_sells_90d > 0 ? 10 : -10;
+  // Composite score (guarded)
+  const rsiScore = (priceAction.rsi || 50) > 70 ? -20 : (priceAction.rsi || 50) < 30 ? 20 : 0;
+  const macdTrend = priceAction.macd?.trend || 'neutral';
+  const macdScore = macdTrend === 'bullish' ? 15 : macdTrend === 'bearish' ? -15 : 0;
+  const sentimentScore = (newsSentiment.sentiment_score_7d || 0) * 10;
+  const insiderScore = (insiderActivity.net_buys_sells_90d || 0) > 0 ? 10 : -10;
   const compositeScore = Math.min(100, Math.max(0, 50 + rsiScore + macdScore + sentimentScore + insiderScore));
 
   return (
-    <div className={`rounded-xl border ${actionColor} p-4`}>
+    <div className={`rounded-xl border ${actionColor[action] || actionColor.watch} p-4`}>
       {/* Header row */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-lg font-bold text-[var(--text-primary)]">{suggestion.symbol}</span>
-          <span className={`text-xs font-bold uppercase px-2 py-0.5 rounded bg-current/10`}>
-            {suggestion.action}
-          </span>
+          <span className="text-lg font-bold text-[var(--text-primary)]">{suggestion.symbol || '—'}</span>
+          <span className="text-xs font-bold uppercase px-2 py-0.5 rounded bg-current/10">{action}</span>
         </div>
-        <span className="text-xs text-[var(--text-muted)]">{suggestion.confidence}% confidence</span>
+        <span className="text-xs text-[var(--text-muted)]">{confidence}% confidence</span>
       </div>
 
       {/* Recommendation line */}
       <div className="mt-2 p-2.5 bg-[var(--app-bg)] rounded-lg">
-        {suggestion.action === 'buy' && (
+        {action === 'buy' && (
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-[var(--text-primary)]">
@@ -447,12 +454,11 @@ function SuggestionDetail({
               onClick={() => onOrderClick('buy', recommendedBuyQty)}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500 text-white text-xs font-bold rounded-lg hover:bg-green-600 transition-colors"
             >
-              <ShoppingCart className="w-3.5 h-3.5" />
-              Buy
+              <ShoppingCart className="w-3.5 h-3.5" /> Buy
             </button>
           </div>
         )}
-        {suggestion.action === 'sell' && currentQty > 0 && (
+        {action === 'sell' && currentQty > 0 && (
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-[var(--text-primary)]">
@@ -464,31 +470,30 @@ function SuggestionDetail({
               onClick={() => onOrderClick('sell', recommendedSellQty)}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white text-xs font-bold rounded-lg hover:bg-red-600 transition-colors"
             >
-              <TrendingDown className="w-3.5 h-3.5" />
-              Sell
+              <TrendingDown className="w-3.5 h-3.5" /> Sell
             </button>
           </div>
         )}
-        {suggestion.action === 'sell' && currentQty === 0 && (
+        {action === 'sell' && currentQty === 0 && (
           <p className="text-sm text-[var(--text-muted)]">Sell recommended but you hold 0 shares</p>
         )}
-        {(suggestion.action === 'hold' || suggestion.action === 'watch') && (
+        {(action === 'hold' || action === 'watch') && (
           <p className="text-sm text-[var(--text-primary)]">
-            {suggestion.action === 'hold'
+            {action === 'hold'
               ? `Hold position${currentQty > 0 ? ` (${currentQty} shares)` : ''}. No action needed.`
-              : `Watch ${suggestion.symbol}. Not a good entry/exit point yet.`}
+              : `Watch ${suggestion.symbol || ''}. Not a good entry/exit point yet.`}
           </p>
         )}
       </div>
 
       {/* Reasoning */}
-      <p className="text-sm text-[var(--text-secondary)] mt-2">{suggestion.reasoning}</p>
+      <p className="text-sm text-[var(--text-secondary)] mt-2">{suggestion.reasoning || 'No reasoning available'}</p>
 
       {/* Key metrics */}
       <div className="flex items-center gap-3 text-xs text-[var(--text-muted)] mt-2">
-        <span>SL: {suggestion.stop_loss_pct}%</span>
-        <span>TP: {suggestion.take_profit_pct}%</span>
-        <span>Horizon: {suggestion.time_horizon}</span>
+        <span>SL: {(suggestion.stop_loss_pct ?? 5)}%</span>
+        <span>TP: {(suggestion.take_profit_pct ?? 10)}%</span>
+        <span>Horizon: {suggestion.time_horizon || 'medium'}</span>
       </div>
 
       {/* Analysis toggle */}
@@ -519,19 +524,19 @@ function SuggestionDetail({
           {/* Signal grid */}
           <div className="grid grid-cols-2 gap-2 text-xs">
             <AnalysisRow label="Price" value={`$${price.toFixed(2)}`} />
-            <AnalysisRow label="30d Change" value={`${suggestion.signals.price_action.price_change_30d >= 0 ? '+' : ''}${suggestion.signals.price_action.price_change_30d.toFixed(1)}%`} positive={suggestion.signals.price_action.price_change_30d >= 0} />
-            <AnalysisRow label="RSI" value={`${suggestion.signals.price_action.rsi.toFixed(1)} (${suggestion.signals.price_action.rsi_interpretation})`} warn={suggestion.signals.price_action.rsi_interpretation !== 'neutral'} />
-            <AnalysisRow label="MACD" value={suggestion.signals.price_action.macd.trend} positive={suggestion.signals.price_action.macd.trend === 'bullish'} negative={suggestion.signals.price_action.macd.trend === 'bearish'} />
-            <AnalysisRow label="Sentiment" value={`${suggestion.signals.news_sentiment.sentiment_score_7d > 0 ? '+' : ''}${suggestion.signals.news_sentiment.sentiment_score_7d.toFixed(2)}`} positive={suggestion.signals.news_sentiment.sentiment_score_7d > 0.1} negative={suggestion.signals.news_sentiment.sentiment_score_7d < -0.1} />
-            <AnalysisRow label="Insider" value={`${suggestion.signals.insider_activity.net_buys_sells_90d > 0 ? '+' : ''}${(suggestion.signals.insider_activity.net_buys_sells_90d / 1000).toFixed(0)}K`} positive={suggestion.signals.insider_activity.net_buys_sells_90d > 0} negative={suggestion.signals.insider_activity.net_buys_sells_90d < 0} />
-            <AnalysisRow label="Sector" value={suggestion.signals.macro_context.sector} />
-            <AnalysisRow label="Macro" value={suggestion.signals.macro_context.upcoming_events.map(e => e.event).join(', ')} />
+            <AnalysisRow label="30d Change" value={`${(priceAction.price_change_30d || 0) >= 0 ? '+' : ''}${(priceAction.price_change_30d || 0).toFixed(1)}%`} positive={(priceAction.price_change_30d || 0) >= 0} />
+            <AnalysisRow label="RSI" value={`${(priceAction.rsi || 0).toFixed(1)} (${priceAction.rsi_interpretation || 'neutral'})`} warn={priceAction.rsi_interpretation !== 'neutral'} />
+            <AnalysisRow label="MACD" value={macdTrend} positive={macdTrend === 'bullish'} negative={macdTrend === 'bearish'} />
+            <AnalysisRow label="Sentiment" value={`${(newsSentiment.sentiment_score_7d || 0) > 0 ? '+' : ''}${(newsSentiment.sentiment_score_7d || 0).toFixed(2)}`} positive={(newsSentiment.sentiment_score_7d || 0) > 0.1} negative={(newsSentiment.sentiment_score_7d || 0) < -0.1} />
+            <AnalysisRow label="Insider" value={`${(insiderActivity.net_buys_sells_90d || 0) > 0 ? '+' : ''}${((insiderActivity.net_buys_sells_90d || 0) / 1000).toFixed(0)}K`} positive={(insiderActivity.net_buys_sells_90d || 0) > 0} negative={(insiderActivity.net_buys_sells_90d || 0) < 0} />
+            <AnalysisRow label="Sector" value={macroContext.sector || '—'} />
+            <AnalysisRow label="Macro" value={(macroContext.upcoming_events || []).map((e: any) => e?.event || '').join(', ') || '—'} />
           </div>
 
           {/* Risk factors */}
-          {suggestion.risk_factors.length > 0 && (
+          {(suggestion.risk_factors || []).length > 0 && (
             <div className="flex flex-wrap gap-1">
-              {suggestion.risk_factors.map((f, i) => (
+              {(suggestion.risk_factors || []).map((f: any, i: number) => (
                 <span key={i} className="px-2 py-0.5 bg-red-500/10 text-red-400 text-[10px] rounded">{f}</span>
               ))}
             </div>
