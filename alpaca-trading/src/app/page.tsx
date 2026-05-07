@@ -37,6 +37,7 @@ import { AlertRule } from '@/lib/notifications';
 import OrderFilterBar, { applyOrderFilters, type OrderFilters } from '@/components/OrderFilters';
 import { initTheme } from '@/lib/theme';
 import AIStrategiesTab from '@/components/AIStrategiesTab';
+import AIAdvisorPage from '@/app/advisor/page';
 
 /* ─────────── Types ─────────── */
 interface Position {
@@ -1143,15 +1144,7 @@ export default function Dashboard() {
 
           {activeTab === 'settings' && <SettingsPanel account={account} />}
 
-          {activeTab === 'ai-advisor' && (
-            <div className="flex-1 bg-[var(--app-bg)] overflow-hidden">
-              <iframe 
-                src="/advisor" 
-                className="w-full h-full border-0"
-                title="AI Advisor"
-              />
-            </div>
-          )}
+          {activeTab === 'ai-advisor' && <AIAdvisorPage />}
           {activeTab === 'ai-strategies' && <AIStrategiesTab positions={positions} />}
         </main>
       </div>
