@@ -37,6 +37,7 @@ import { AlertRule } from '@/lib/notifications';
 import OrderFilterBar, { applyOrderFilters, type OrderFilters } from '@/components/OrderFilters';
 import { initTheme } from '@/lib/theme';
 import AIStrategiesTab from '@/components/AIStrategiesTab';
+import { startFillPoller } from '@/lib/orderFillNotifier';
 
 
 /* ─────────── Types ─────────── */
@@ -981,6 +982,12 @@ export default function Dashboard() {
   // Initialize theme on mount
   useEffect(() => { initTheme(); }, []);
 
+  // Poll for order fills and send Telegram notifications
+  useEffect(() => {
+    const stop = startFillPoller(20000); // every 20 seconds
+    return stop;
+  }, []);
+
   const fetchAccount = useCallback(async () => {
     try {
       const res = await fetch('/api/account');
@@ -1136,31 +1143,33 @@ export default function Dashboard() {
           {/* Market Indices Bar — CNBC style */}
           <MarketIndicesBar />
 
-          {/* Watchlist */}
-          <WatchlistWidget />
-
-          {/* Risk Threshold */}
-          <RiskThresholdSelector />
-
           {/* Grid */}
           {activeTab === 'dashboard' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-              {/* Performance Chart */}
-              <PerformanceCard 
-                portfolioValue={account?.account.portfolioValue || 0}
-                cash={account?.account.cash || 0}
-                positions={positions}
-              />
-              
-              {/* Allocation Chart */}
-              <AllocationCard 
-                portfolioValue={account?.account.portfolioValue || 0}
-                cash={account?.account.cash || 0}
-                positions={positions}
-              />
-              
-              {/* Trade Widget */}
-              <TradeWidget onRefresh={refreshAll} />
+            <div className="space-y-3">
+              {/* Watchlist */}
+              <WatchlistWidget />
+
+              {/* Risk Threshold */}
+              <RiskThresholdSelector />
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                {/* Performance Chart */}
+                <PerformanceCard 
+                  portfolioValue={account?.account.portfolioValue || 0}
+                  cash={account?.account.cash || 0}
+                  positions={positions}
+                />
+                
+                {/* Allocation Chart */}
+                <AllocationCard 
+                  portfolioValue={account?.account.portfolioValue || 0}
+                  cash={account?.account.cash || 0}
+                  positions={positions}
+                />
+                
+                {/* Trade Widget */}
+                <TradeWidget onRefresh={refreshAll} />
+              </div>
             </div>
           )}
 

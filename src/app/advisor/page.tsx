@@ -52,18 +52,23 @@ interface AccountInfo {
 ───────────────────────────────────────────────────────────*/
 function loadHistory(): HistoryEntry[] {
   try {
+    if (typeof window === 'undefined') return [];
     const raw = localStorage.getItem(HISTORY_KEY);
     return raw ? JSON.parse(raw) : [];
   } catch { return []; }
 }
 
 function saveHistory(entry: HistoryEntry) {
-  const all = [entry, ...loadHistory()].slice(0, 100);
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(all));
+  try {
+    if (typeof window === 'undefined') return;
+    const all = [entry, ...loadHistory()].slice(0, 100);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(all));
+  } catch { /*ignore*/ }
 }
 
 function getStoredRisk(): 'conservative' | 'moderate' | 'aggressive' {
   try {
+    if (typeof window === 'undefined') return 'moderate';
     const r = localStorage.getItem(RISK_KEY);
     if (r === 'conservative' || r === 'moderate' || r === 'aggressive') return r;
   } catch { /*ignore*/ }
@@ -288,7 +293,7 @@ export default function AIAdvisorPage() {
         <div className="text-center py-16 text-[var(--text-muted)]">
           <Brain className="w-14 h-14 mx-auto mb-4 opacity-40" />
           <p className="text-sm">Search symbols above, then click Generate Insights</p>
-          <p className="text-xs mt-1 opacity-60">Your risk profile: <strong className="text-amber-400">{getStoredRisk()}</strong></p>
+          <p className="text-xs mt-1 opacity-60">Your risk profile updates in Risk Badge above</p>
         </div>
       )}
 
@@ -332,7 +337,8 @@ export default function AIAdvisorPage() {
   Risk Badge
 ───────────────────────────────────────────────────────────*/
 function RiskBadge() {
-  const [risk, setRisk] = useState<'conservative' | 'moderate' | 'aggressive'>(getStoredRisk());
+  const [risk, setRisk] = useState<'conservative' | 'moderate' | 'aggressive'>('moderate');
+  useEffect(() => { setRisk(getStoredRisk()); }, []);
   const update = (r: 'conservative' | 'moderate' | 'aggressive') => {
     localStorage.setItem(RISK_KEY, r);
     setRisk(r);
