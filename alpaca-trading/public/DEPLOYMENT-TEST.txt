@@ -1,3 +1,0 @@
-If you can see this file, the deployment is working!
-Latest changes: AI Advisor integration
-Commit: 7494400

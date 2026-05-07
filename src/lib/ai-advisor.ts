@@ -2,10 +2,11 @@
 // Orchestrates multiple signals into AI-generated trading suggestions
 
 import { getBars } from './alpaca';
-import { getNewsSentiment } from './news';
-import { getInsiderActivity } from './insider';
-import { getUpcomingMacroEvents } from './macro';
-
+// Note: getNewsSentiment, getInsiderActivity, getUpcomingMacroEvents don't exist
+// in the respective modules. The collect* functions below use mock implementations.
+// import { getNewsSentiment } from './news';
+// import { getInsiderActivity } from './insider';
+// import { getUpcomingMacroEvents } from './macro';
 // ── Types ───────────────────────────────────────────────────────
 export interface PriceAction {
   symbol: string;
@@ -218,7 +219,13 @@ export async function collectInsiderActivity(symbol: string): Promise<InsiderAct
   try {
     // Mock implementation - would integrate with insider module
     const netBuysSells = Math.floor(Math.random() * 100000) - 50000;
-    const transactions = [
+    const transactions: Array<{
+      type: 'buy' | 'sell';
+      shares: number;
+      value: number;
+      insider: string;
+      date: string;
+    }> = [
       {
         type: netBuysSells > 0 ? 'buy' : 'sell',
         shares: Math.floor(Math.random() * 10000),

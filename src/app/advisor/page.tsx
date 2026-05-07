@@ -21,14 +21,63 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react';
-import { 
-  generateSuggestions, 
-  storeSuggestions, 
-  getSuggestions, 
-  updateSuggestionOutcome,
-  type AISuggestion,
-  type AdvisorConfig 
-} from '@/lib/ai-advisor';
+import type { AISuggestion, AdvisorConfig } from '@/lib/ai-advisor';
+
+// ── Client-side storage helpers (no server code here) ──────────
+const SUGGESTIONS_KEY = 'alpaca-trading-ai-suggestions';
+
+async function storeSuggestionsClient(suggestions: AISuggestion[]): Promise<void> {
+  try {
+    const stored = JSON.parse(localStorage.getItem(SUGGESTIONS_KEY) || '[]');
+    const updated = [...suggestions, ...stored].slice(0, 100);
+    localStorage.setItem(SUGGESTIONS_KEY, JSON.stringify(updated));
+  } catch (error) {
+    console.error('[AI Advisor] Failed to store suggestions:', error);
+  }
+}
+
+async function getSuggestionsClient(): Promise<AISuggestion[]> {
+  try {
+    const stored = localStorage.getItem(SUGGESTIONS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error('[AI Advisor] Failed to get suggestions:', error);
+    return [];
+  }
+}
+
+async function updateSuggestionOutcomeClient(symbol: string, outcome: 'profitable' | 'unprofitable' | 'neutral'): Promise<void> {
+  try {
+    const suggestions = await getSuggestionsClient();
+    const suggestion = suggestions.find(s => s.symbol === symbol);
+    if (suggestion) {
+      (suggestion as any).outcome = outcome;
+      (suggestion as any).outcome_updated_at = new Date().toISOString();
+      await storeSuggestionsClient(suggestions);
+    }
+  } catch (error) {
+    console.error('[AI Advisor] Failed to update suggestion outcome:', error);
+  }
+}
+
+async function fetchSuggestionsFromAPI(
+  watchlist: string[],
+  config: Partial<AdvisorConfig> = {}
+): Promise<AISuggestion[]> {
+  const res = await fetch('/api/advisor/suggest', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ watchlist, config }),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(data.error || `HTTP ${res.status}`);
+  }
+
+  const { suggestions } = await res.json();
+  return suggestions;
+}
 
 // ── Components ─────────────────────────────────────────────────────
 function SuggestionCard({ 
@@ -49,15 +98,19 @@ function SuggestionCard({
       case 'buy': return 'text-green-500 bg-green-500/10 border-green-500/20';
       case 'sell': return 'text-red-500 bg-red-500/10 border-red-500/20';
       case 'hold': return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20';
-      case 'watch': return 'text-blue-500 bg-blue-500/10 border-blue-500/20';
-      default: return 'text-gray-500 bg-gray-500/10 border-gray-500/20';
+      case 'watch': return 'text-blue-400 bg-blue-400/10 border-blue-400/20';
+      default: return 'text-[var(--text-muted)]';
     }
   };
 
-  const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 80) return 'text-green-500';
-    if (confidence >= 60) return 'text-yellow-500';
-    return 'text-red-500';
+  const getActionIcon = (action: string) => {
+    switch (action) {
+      case 'buy': return <TrendingUp className="w-4 h-4" />;
+      case 'sell': return <TrendingDown className="w-4 h-4" />;
+      case 'hold': return <Activity className="w-4 h-4" />;
+      case 'watch': return <Eye className="w-4 h-4" />;
+      default: return null;
+    }
   };
 
   const handleExecute = () => {
@@ -69,103 +122,108 @@ function SuggestionCard({
   };
 
   return (
-    <>
-      <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-4 hover:border-amber-500/20 transition-all">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <div className={`px-2 py-1 rounded-lg text-xs font-bold border ${getActionColor(suggestion.action)}`}>
-              {suggestion.action.toUpperCase()}
+    <div className={`p-4 rounded-xl border ${getActionColor(suggestion.action)}`}>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          {getActionIcon(suggestion.action)}
+          <span className="text-lg font-bold">{suggestion.symbol}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium">{suggestion.confidence}% confidence</span>
+          {suggestion.action === 'buy' && <TrendingUp className="w-4 h-4 text-green-500" />}
+          {suggestion.action === 'sell' && <TrendingDown className="w-4 h-4 text-red-500" />}
+        </div>
+      </div>
+
+      <p className="text-sm text-[var(--text-secondary)] mb-3">{suggestion.reasoning}</p>
+
+      <div className="flex items-center gap-4 mb-3 text-xs">
+        <div className="flex items-center gap-1">
+          <Target className="w-3 h-3" />
+          <span>{suggestion.suggested_position_size_pct}% position</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <Clock className="w-3 h-3" />
+          <span>{suggestion.time_horizon} term</span>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3 text-xs text-[var(--text-muted)]">
+        <span>SL: {suggestion.stop_loss_pct}%</span>
+        <span>TP: {suggestion.take_profit_pct}%</span>
+      </div>
+
+      {suggestion.risk_factors.length > 0 && (
+        <div className="mb-3">
+          <div className="flex items-center gap-2 mb-1">
+            <AlertTriangle className="w-3 h-3 text-yellow-500" />
+            <span className="text-xs font-medium text-[var(--text-secondary)]">Risk Factors</span>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {suggestion.risk_factors.map((factor, i) => (
+              <span key={i} className="px-2 py-0.5 bg-yellow-500/10 text-yellow-500 text-[10px] rounded">
+                {factor}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => setShowDetails(!showDetails)}
+          className="flex-1 px-3 py-1.5 text-xs bg-[var(--app-bg)] text-[var(--text-primary)] rounded-lg hover:bg-[var(--hover-bg)] transition-colors"
+        >
+          {showDetails ? <EyeOff className="w-3 h-3 inline mr-1" /> : <Eye className="w-3 h-3 inline mr-1" />}
+          {showDetails ? 'Hide' : 'Show'} Details
+        </button>
+        <button
+          onClick={() => setShowConfirmModal(true)}
+          className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+            suggestion.action === 'buy' 
+              ? 'bg-green-500 text-white hover:bg-green-600' 
+              : suggestion.action === 'sell'
+              ? 'bg-red-500 text-white hover:bg-red-600'
+              : 'bg-[var(--app-bg)] text-[var(--text-primary)] hover:bg-[var(--hover-bg)]'
+          }`}
+          disabled={suggestion.action === 'hold' || suggestion.action === 'watch'}
+        >
+          {suggestion.action === 'hold' || suggestion.action === 'watch' ? 'No Action' : 'Execute'}
+        </button>
+      </div>
+
+      {showDetails && (
+        <div className="mt-4 pt-4 border-t border-[var(--border)] space-y-3">
+          <div className="grid grid-cols-2 gap-4 text-xs">
+            <div>
+              <span className="text-[var(--text-muted)]">Current Price:</span>
+              <span className="ml-2 text-[var(--text-primary)]">${suggestion.signals.price_action.current_price.toFixed(2)}</span>
             </div>
             <div>
-              <h3 className="text-sm font-bold text-[var(--text-primary)]">{suggestion.symbol}</h3>
-              <p className="text-xs text-[var(--text-muted)]">{suggestion.generated_at.split('T')[0]}</p>
+              <span className="text-[var(--text-muted)]">30d Change:</span>
+              <span className={`ml-2 ${suggestion.signals.price_action.price_change_30d >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {suggestion.signals.price_action.price_change_30d.toFixed(2)}%
+              </span>
             </div>
-          </div>
-          <div className="text-right">
-            <p className={`text-xs font-bold ${getConfidenceColor(suggestion.confidence)}`}>
-              {suggestion.confidence}% confidence
-            </p>
-            <p className="text-[10px] text-[var(--text-muted)]">{suggestion.time_horizon} term</p>
+            <div>
+              <span className="text-[var(--text-muted)]">RSI:</span>
+              <span className="ml-2 text-[var(--text-primary)]">{suggestion.signals.price_action.rsi.toFixed(1)}</span>
+            </div>
+            <div>
+              <span className="text-[var(--text-muted)]">MACD Trend:</span>
+              <span className="ml-2 text-[var(--text-primary)]">{suggestion.signals.price_action.macd.trend}</span>
+            </div>
+            <div>
+              <span className="text-[var(--text-muted)]">News Sentiment:</span>
+              <span className="ml-2 text-[var(--text-primary)]">{suggestion.signals.news_sentiment.sentiment_score_7d.toFixed(3)}</span>
+            </div>
+            <div>
+              <span className="text-[var(--text-muted)]">Sector Exposure:</span>
+              <span className="ml-2 text-[var(--text-primary)]">{suggestion.signals.portfolio_exposure.sector_exposure_pct.toFixed(1)}%</span>
+            </div>
           </div>
         </div>
-
-        <p className="text-xs text-[var(--text-primary)] mb-3">{suggestion.reasoning}</p>
-
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Target className="w-3 h-3 text-[var(--text-muted)]" />
-            <span className="text-xs text-[var(--text-muted)]">
-              {suggestion.suggested_position_size_pct}% position
-            </span>
-          </div>
-          <div className="flex items-center gap-3 text-xs text-[var(--text-muted)]">
-            <span>SL: {suggestion.stop_loss_pct}%</span>
-            <span>TP: {suggestion.take_profit_pct}%</span>
-          </div>
-        </div>
-
-        {suggestion.risk_factors.length > 0 && (
-          <div className="mb-3">
-            <div className="flex items-center gap-2 mb-1">
-              <AlertTriangle className="w-3 h-3 text-yellow-500" />
-              <span className="text-xs font-medium text-[var(--text-secondary)]">Risk Factors</span>
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {suggestion.risk_factors.map((factor, i) => (
-                <span key={i} className="px-2 py-0.5 bg-yellow-500/10 text-yellow-500 text-[10px] rounded">
-                  {factor}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowDetails(!showDetails)}
-            className="flex-1 px-3 py-1.5 text-xs bg-[var(--app-bg)] text-[var(--text-primary)] rounded-lg hover:bg-[var(--hover-bg)] transition-colors"
-          >
-            {showDetails ? <EyeOff className="w-3 h-3 inline mr-1" /> : <Eye className="w-3 h-3 inline mr-1" />}
-            {showDetails ? 'Hide' : 'Show'} Details
-          </button>
-          <button
-            onClick={() => setShowConfirmModal(true)}
-            className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-              suggestion.action === 'buy' 
-                ? 'bg-green-500 text-white hover:bg-green-600' 
-                : suggestion.action === 'sell'
-                ? 'bg-red-500 text-white hover:bg-red-600'
-                : 'bg-[var(--app-bg)] text-[var(--text-primary)] hover:bg-[var(--hover-bg)]'
-            }`}
-            disabled={suggestion.action === 'hold' || suggestion.action === 'watch'}
-          >
-            {suggestion.action === 'hold' || suggestion.action === 'watch' ? 'No Action' : 'Execute'}
-          </button>
-        </div>
-
-        {showDetails && (
-          <div className="mt-4 pt-4 border-t border-[var(--border)] space-y-3">
-            <div className="grid grid-cols-2 gap-4 text-xs">
-              <div>
-                <span className="text-[var(--text-muted)]">Current Price:</span>
-                <span className="ml-2 text-[var(--text-primary)]">${suggestion.signals.price_action.current_price.toFixed(2)}</span>
-              </div>
-              <div>
-                <span className="text-[var(--text-muted)]">RSI:</span>
-                <span className="ml-2 text-[var(--text-primary)]">{suggestion.signals.price_action.rsi.toFixed(1)}</span>
-              </div>
-              <div>
-                <span className="text-[var(--text-muted)]">News Sentiment:</span>
-                <span className="ml-2 text-[var(--text-primary)]">{suggestion.signals.news_sentiment.sentiment_score_7d.toFixed(3)}</span>
-              </div>
-              <div>
-                <span className="text-[var(--text-muted)]">Sector Exposure:</span>
-                <span className="ml-2 text-[var(--text-primary)]">{suggestion.signals.portfolio_exposure.sector_exposure_pct.toFixed(1)}%</span>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Confirmation Modal */}
       {showConfirmModal && (
@@ -228,267 +286,176 @@ function SuggestionCard({
                     : 'bg-[var(--app-bg)] text-[var(--text-muted)] cursor-not-allowed'
                 }`}
               >
-                Execute Trade
+                Execute
               </button>
             </div>
           </div>
-        </div>
-      )}
-    </>
-  );
-}
-
-function SuggestionHistory({ suggestions, onUpdateOutcome }: {
-  suggestions: AISuggestion[];
-  onUpdateOutcome: (symbol: string, outcome: 'profitable' | 'unprofitable' | 'neutral') => void;
-}) {
-  const [showHistory, setShowHistory] = useState(false);
-
-  return (
-    <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
-          <History className="w-4 h-4 text-amber-400" />
-          Suggestion History
-        </h3>
-        <button
-          onClick={() => setShowHistory(!showHistory)}
-          className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-        >
-          {showHistory ? 'Hide' : 'Show'} ({suggestions.length})
-        </button>
-      </div>
-
-      {showHistory && (
-        <div className="space-y-2 max-h-64 overflow-y-auto">
-          {suggestions.length === 0 ? (
-            <p className="text-xs text-[var(--text-muted)] text-center py-4">No suggestions yet</p>
-          ) : (
-            suggestions.map((suggestion, i) => (
-              <div key={i} className="flex items-center justify-between p-2 bg-[var(--app-bg)] rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className={`w-2 h-2 rounded-full ${
-                    suggestion.action === 'buy' ? 'bg-green-500' :
-                    suggestion.action === 'sell' ? 'bg-red-500' :
-                    suggestion.action === 'hold' ? 'bg-yellow-500' : 'bg-blue-500'
-                  }`} />
-                  <div>
-                    <p className="text-xs font-medium text-[var(--text-primary)]">
-                      {suggestion.action.toUpperCase()} {suggestion.symbol}
-                    </p>
-                    <p className="text-[10px] text-[var(--text-muted)]">
-                      {suggestion.generated_at.split('T')[0]} • {suggestion.confidence}% confidence
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => onUpdateOutcome(suggestion.symbol, 'profitable')}
-                    className="px-2 py-1 text-[10px] bg-green-500/10 text-green-500 rounded hover:bg-green-500/20"
-                  >
-                    ✓
-                  </button>
-                  <button
-                    onClick={() => onUpdateOutcome(suggestion.symbol, 'unprofitable')}
-                    className="px-2 py-1 text-[10px] bg-red-500/10 text-red-500 rounded hover:bg-red-500/20"
-                  >
-                    ✗
-                  </button>
-                  <button
-                    onClick={() => onUpdateOutcome(suggestion.symbol, 'neutral')}
-                    className="px-2 py-1 text-[10px] bg-gray-500/10 text-gray-500 rounded hover:bg-gray-500/20"
-                  >
-                    ~
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
         </div>
       )}
     </div>
   );
 }
 
-// ── Main Advisor Page ─────────────────────────────────────────────
+// ── Main Page ──────────────────────────────────────────────────────
 export default function AIAdvisorPage() {
-  const [watchlist, setWatchlist] = useState<string[]>(['AAPL', 'MSFT', 'GOOGL', 'TSLA']);
+  const [watchlist, setWatchlist] = useState<string[]>(['AAPL', 'MSFT', 'NVDA']);
   const [newSymbol, setNewSymbol] = useState('');
   const [suggestions, setSuggestions] = useState<AISuggestion[]>([]);
-  const [historicalSuggestions, setHistoricalSuggestions] = useState<AISuggestion[]>([]);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analyzingSymbols, setAnalyzingSymbols] = useState<Set<string>>(new Set());
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
+  // Initial load from localStorage
   useEffect(() => {
-    loadHistoricalSuggestions();
+    getSuggestionsClient().then(setSuggestions);
   }, []);
 
-  const loadHistoricalSuggestions = async () => {
-    try {
-      const history = await getSuggestions();
-      setHistoricalSuggestions(history);
-    } catch (error) {
-      console.error('Failed to load historical suggestions:', error);
-    }
-  };
-
-  const addToWatchlist = () => {
+  const handleAddSymbol = () => {
     if (newSymbol && !watchlist.includes(newSymbol.toUpperCase())) {
       setWatchlist([...watchlist, newSymbol.toUpperCase()]);
       setNewSymbol('');
     }
   };
 
-  const removeFromWatchlist = (symbol: string) => {
+  const handleRemoveSymbol = (symbol: string) => {
     setWatchlist(watchlist.filter(s => s !== symbol));
   };
 
-  const analyzeWatchlist = async () => {
-    setIsAnalyzing(true);
-    setAnalyzingSymbols(new Set(watchlist));
-    
+  const handleGenerateSuggestions = async () => {
+    setIsGenerating(true);
+    setError(null);
     try {
-      const newSuggestions = await generateSuggestions(watchlist);
+      const newSuggestions = await fetchSuggestionsFromAPI(watchlist);
       setSuggestions(newSuggestions);
-      
-      // Store suggestions
-      await storeSuggestions(newSuggestions);
-      await loadHistoricalSuggestions();
-    } catch (error) {
-      console.error('Analysis failed:', error);
+      await storeSuggestionsClient(newSuggestions);
+    } catch (err: any) {
+      console.error('[AI Advisor] Failed to generate:', err);
+      setError(err.message || 'Failed to generate suggestions');
     } finally {
-      setIsAnalyzing(false);
-      setAnalyzingSymbols(new Set());
+      setIsGenerating(false);
     }
   };
 
-  const executeSuggestion = async (suggestion: AISuggestion) => {
+  const handleExecuteSuggestion = async (suggestion: AISuggestion) => {
     try {
-      // Mock execution - would integrate with actual order placement
-      console.log('Executing suggestion:', suggestion);
-      
-      // For now, just mark as executed
-      const updatedSuggestions = suggestions.map(s => 
-        s.symbol === suggestion.symbol 
-          ? { ...s, executed_at: new Date().toISOString() }
-          : s
-      );
-      setSuggestions(updatedSuggestions);
-    } catch (error) {
-      console.error('Execution failed:', error);
-    }
-  };
+      // Place order via API
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          symbol: suggestion.symbol,
+          side: suggestion.action,
+          qty: Math.floor(suggestion.suggested_position_size_pct * 10), // Simplified sizing
+          type: 'market',
+          time_in_force: 'day',
+        }),
+      });
 
-  const updateOutcome = async (symbol: string, outcome: 'profitable' | 'unprofitable' | 'neutral') => {
-    try {
-      await updateSuggestionOutcome(symbol, outcome);
-      await loadHistoricalSuggestions();
-    } catch (error) {
-      console.error('Failed to update outcome:', error);
+      if (res.ok) {
+        alert(`Order placed: ${suggestion.action.toUpperCase()} ${suggestion.symbol}`);
+      } else {
+        const data = await res.json();
+        alert(`Order failed: ${data.error || 'Unknown error'}`);
+      }
+    } catch (err: any) {
+      alert(`Order failed: ${err.message}`);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[var(--app-bg)] p-4">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-3">
-            <Brain className="w-6 h-6 text-amber-400" />
-            AI Trading Advisor
-          </h1>
-          <p className="text-sm text-[var(--text-muted)] mt-2">
-            AI-powered trading suggestions based on technical analysis, news sentiment, insider activity, and macro context
-          </p>
-        </div>
-
-        {/* Watchlist Management */}
-        <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-4 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-[var(--text-primary)]">Watchlist</h3>
-            <button
-              onClick={analyzeWatchlist}
-              disabled={isAnalyzing || watchlist.length === 0}
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
-                isAnalyzing || watchlist.length === 0
-                  ? 'bg-[var(--app-bg)] text-[var(--text-muted)] cursor-not-allowed'
-                  : 'bg-amber-500 text-black hover:bg-amber-600'
-              }`}
-            >
-              {isAnalyzing ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                  Analyzing...
-                </>
-              ) : (
-                <>
-                  <Zap className="w-4 h-4" />
-                  Analyze
-                </>
-              )}
-            </button>
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Brain className="w-8 h-8 text-violet-400" />
+          <div>
+            <h1 className="text-2xl font-bold text-[var(--text-primary)]">AI Trading Advisor</h1>
+            <p className="text-sm text-[var(--text-muted)]">Multi-signal trading suggestions</p>
           </div>
+        </div>
+        <button
+          onClick={handleGenerateSuggestions}
+          disabled={isGenerating || watchlist.length === 0}
+          className="flex items-center gap-2 px-4 py-2 bg-violet-500 text-white rounded-lg hover:bg-violet-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {isGenerating ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              Generating...
+            </>
+          ) : (
+            <>
+              <Zap className="w-4 h-4" />
+              Generate Suggestions
+            </>
+          )}
+        </button>
+      </div>
 
-          <div className="flex flex-wrap gap-2 mb-3">
-            {watchlist.map(symbol => (
-              <div key={symbol} className="flex items-center gap-1 px-3 py-1 bg-[var(--app-bg)] rounded-lg">
-                <span className="text-sm text-[var(--text-primary)]">{symbol}</span>
-                {analyzingSymbols.has(symbol) && (
-                  <div className="w-3 h-3 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
-                )}
-                <button
-                  onClick={() => removeFromWatchlist(symbol)}
-                  className="text-[var(--text-muted)] hover:text-red-500"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
+      {/* Error */}
+      {error && (
+        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+          <p className="text-red-400 text-sm">{error}</p>
+        </div>
+      )}
+
+      {/* Watchlist */}
+      <div className="bg-[var(--card-bg)] rounded-xl p-4 border border-[var(--border)]">
+        <h3 className="text-lg font-semibold mb-3">Watchlist</h3>
+        <div className="flex gap-2 mb-4">
+          <input
+            type="text"
+            value={newSymbol}
+            onChange={(e) => setNewSymbol(e.target.value.toUpperCase())}
+            onKeyDown={(e) => e.key === 'Enter' && handleAddSymbol()}
+            placeholder="Add symbol (e.g., AAPL)"
+            className="flex-1 px-3 py-2 bg-[var(--app-bg)] border border-[var(--border)] rounded-lg text-[var(--text-primary)]"
+          />
+          <button
+            onClick={handleAddSymbol}
+            className="px-4 py-2 bg-violet-500 text-white rounded-lg hover:bg-violet-600 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {watchlist.map(symbol => (
+            <span key={symbol} className="inline-flex items-center gap-1 px-3 py-1 bg-[var(--app-bg)] rounded-lg text-sm">
+              {symbol}
+              <button onClick={() => handleRemoveSymbol(symbol)} className="text-[var(--text-muted)] hover:text-red-400">
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Suggestions */}
+      {suggestions.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-violet-400" />
+            <h3 className="text-lg font-semibold">AI Suggestions</h3>
+            <span className="text-sm text-[var(--text-muted)]">({suggestions.length} found)</span>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {suggestions.map((suggestion) => (
+              <SuggestionCard
+                key={`${suggestion.symbol}-${suggestion.generated_at}`}
+                suggestion={suggestion}
+                onExecute={handleExecuteSuggestion}
+                onUpdateOutcome={updateSuggestionOutcomeClient}
+              />
             ))}
           </div>
-
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={newSymbol}
-              onChange={(e) => setNewSymbol(e.target.value.toUpperCase())}
-              onKeyPress={(e) => e.key === 'Enter' && addToWatchlist()}
-              placeholder="Add symbol (e.g., AAPL)"
-              className="flex-1 px-3 py-2 text-sm bg-[var(--app-bg)] border border-[var(--border)] rounded text-[var(--text-primary)]"
-            />
-            <button
-              onClick={addToWatchlist}
-              className="px-3 py-2 text-sm bg-[var(--hover-bg)] text-[var(--text-primary)] rounded-lg hover:bg-[var(--border)] transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
-          </div>
         </div>
+      )}
 
-        {/* Current Suggestions */}
-        {suggestions.length > 0 && (
-          <div className="mb-6">
-            <h3 className="text-sm font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
-              <Activity className="w-4 h-4 text-amber-400" />
-              Current Suggestions
-            </h3>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {suggestions.map((suggestion, i) => (
-                <SuggestionCard
-                  key={i}
-                  suggestion={suggestion}
-                  onExecute={executeSuggestion}
-                  onUpdateOutcome={updateOutcome}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Historical Suggestions */}
-        <SuggestionHistory 
-          suggestions={historicalSuggestions} 
-          onUpdateOutcome={updateOutcome} 
-        />
-      </div>
+      {suggestions.length === 0 && !isGenerating && !error && (
+        <div className="text-center py-12 text-[var(--text-muted)]">
+          <Brain className="w-12 h-12 mx-auto mb-4 opacity-50" />
+          <p>Click "Generate Suggestions" to get AI-powered trading insights</p>
+        </div>
+      )}
     </div>
   );
 }

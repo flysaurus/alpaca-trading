@@ -5,8 +5,24 @@ import { Activity, PieChart } from 'lucide-react';
 import { buildAllocationData, buildPerformanceData, aggregatePnLData } from '@/lib/portfolioAnalytics';
 
 // ── Performance Chart Component with Portfolio Breakdown ──────────────────────
-function PerformanceChart({ data, metric, timeframe }: { data: { date: string; value: number; pnl: number; stocks?: number; etfs?: number; cash?: number }[]; metric: 'value' | 'pnl'; timeframe: string }) {
-  const [hoveredPoint, setHoveredPoint] = useState<{ x: number; y: number; data: typeof data[0] } | null>(null);
+// Data shape for portfolio value chart
+interface ValueDataPoint {
+  date: string;
+  value: number;
+  pnl: number;
+  stocks?: number;
+  etfs?: number;
+  cash?: number;
+}
+
+// Data shape for aggregated P&L chart
+interface PnLDataPoint {
+  date: string;
+  pnl: number;
+}
+
+function PerformanceChart({ data, metric, timeframe }: { data: ValueDataPoint[]; metric: 'value' | 'pnl'; timeframe: string }) {
+  const [hoveredPoint, setHoveredPoint] = useState<{ x: number; y: number; data: ValueDataPoint | PnLDataPoint } | null>(null);
   
   if (data.length === 0) {
     return (
@@ -97,16 +113,16 @@ function PerformanceChart({ data, metric, timeframe }: { data: { date: string; v
               {hoveredPoint.data.date}
             </p>
             <p className="text-[10px] text-[var(--text-muted)]">
-              Total: ${Math.round(hoveredPoint.data.value).toLocaleString()}
+              Total: ${Math.round((hoveredPoint.data as ValueDataPoint).value).toLocaleString()}
             </p>
             <p className="text-[10px] text-[var(--text-muted)]">
-              Stocks: ${Math.round(hoveredPoint.data.stocks!).toLocaleString()}
+              Stocks: ${Math.round((hoveredPoint.data as ValueDataPoint).stocks!).toLocaleString()}
             </p>
             <p className="text-[10px] text-[var(--text-muted)]">
-              ETFs: ${Math.round(hoveredPoint.data.etfs!).toLocaleString()}
+              ETFs: ${Math.round((hoveredPoint.data as ValueDataPoint).etfs!).toLocaleString()}
             </p>
             <p className="text-[10px] text-[var(--text-muted)]">
-              Cash: ${Math.round(hoveredPoint.data.cash!).toLocaleString()}
+              Cash: ${Math.round((hoveredPoint.data as ValueDataPoint).cash!).toLocaleString()}
             </p>
           </div>
         )}

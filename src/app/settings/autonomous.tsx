@@ -277,7 +277,11 @@ export default function AutonomousSettingsPage() {
 
       // Reset emergency flag after 5 seconds
       setTimeout(() => {
-        saveConfig(prev => ({ ...prev, emergency_stop: false }));
+        setConfig((prev: AutonomousConfig) => {
+          const updated = { ...prev, emergency_stop: false };
+          localStorage.setItem('alpaca-trading-autonomous-config', JSON.stringify(updated));
+          return updated;
+        });
       }, 5000);
     } catch (error) {
       console.error('Emergency stop failed:', error);
