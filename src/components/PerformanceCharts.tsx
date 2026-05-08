@@ -254,7 +254,7 @@ export function PerformanceCard({
       {!loading && data.length > 0 && stats && (
         <>
           {/* Stats Row */}
-          <div className="grid grid-cols-4 gap-2 mb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
             <StatCard label="Portfolio Value" value={fmt$(stats.currentValue)} subtext={`As of ${fmtDate(data[data.length - 1].date)}`} />
             <StatCard
               label="Period Return"

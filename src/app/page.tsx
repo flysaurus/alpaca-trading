@@ -130,7 +130,7 @@ function RiskThresholdSelector() {
             <button
               key={r}
               onClick={() => update(r)}
-              className={`px-4 py-1.5 text-sm font-bold rounded-lg border transition ${
+              className={`px-2 sm:px-4 py-1.5 text-xs sm:text-sm font-bold rounded-lg border transition ${
                 risk === r ? styles[r] : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)]'
               }`}
             >
@@ -1009,11 +1009,11 @@ export default function Dashboard() {
     <div className="min-h-screen bg-[var(--app-bg)] flex pb-16 sm:pb-0">
       <Sidebar active={activeTab} onChange={setActiveTab} />
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 max-w-full">
         <TopBar account={account} marketOpen={marketOpen} />
         <NotificationsDropdown show={showNotifications} onClose={() => setShowNotifications(false)} />
 
-        <main className="flex-1 p-3 sm:p-4 space-y-3 overflow-y-auto">
+        <main className="flex-1 p-3 sm:p-4 space-y-3 overflow-y-auto overflow-x-hidden">
           {/* Market Indices Bar — CNBC style */}
           <MarketIndicesBar />
 
