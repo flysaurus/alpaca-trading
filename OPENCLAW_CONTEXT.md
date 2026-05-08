@@ -26,3 +26,8 @@ UI goals:
 - Dark mode first
 - Advanced trading options collapsed by default
 - AI should explain signals clearly.
+
+Vercel:
+- Production branch: master
+- Preview branch: revamp-v2
+- Use Vercel preview URL for testing V2 before merging.
