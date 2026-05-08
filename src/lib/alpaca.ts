@@ -194,5 +194,15 @@ export async function getCalendar({ start, end }: { start?: string; end?: string
   }
 }
 
+export async function getPortfolioHistory({ period, timeframe }: { period?: string; timeframe?: string } = {}) {
+  try {
+    const client = getClient();
+    // @ts-ignore — alpaca-trade-api typings may not include this
+    return await client.getPortfolioHistory({ period: period || '1M', timeframe: timeframe || '1D' });
+  } catch (err: any) {
+    throw new AlpacaError(err.message || 'Failed to fetch portfolio history', 502);
+  }
+}
+
 // ── Exports ─────────────────────────────────────────────────────
 export { TRADING_MODE, IS_PAPER };
