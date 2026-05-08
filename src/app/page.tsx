@@ -697,7 +697,7 @@ function TradeWidget({ onRefresh }: { onRefresh: () => void }) {
         <h3 className="text-sm font-semibold text-[var(--text-primary)]">Quick Trade</h3>
       </div>
 
-      <div className="flex gap-2 mb-3">
+      <div className="flex flex-wrap gap-2 mb-3">
         <button
           onClick={() => setSide('buy')}
           className={`flex-1 py-1.5 rounded-lg text-xs font-bold tracking-wider transition ${
@@ -739,7 +739,7 @@ function TradeWidget({ onRefresh }: { onRefresh: () => void }) {
         </div>
 
         {/* Qty + Type + TIF */}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <input
             type="number"
             placeholder="QTY"
@@ -750,7 +750,7 @@ function TradeWidget({ onRefresh }: { onRefresh: () => void }) {
           <select
             value={orderType}
             onChange={(e) => setOrderType(e.target.value as any)}
-            className="bg-[var(--app-bg)] border border-[#1e232b] rounded-lg px-2 py-2 text-xs text-[var(--text-secondary)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)]"
+            className="bg-[var(--app-bg)] border border-[#1e232b] rounded-lg px-2 py-2 text-xs text-[var(--text-secondary)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)] flex-1 min-w-[80px]"
           >
             <option value="market">MKT</option>
             <option value="limit">LMT</option>
@@ -761,7 +761,7 @@ function TradeWidget({ onRefresh }: { onRefresh: () => void }) {
           <select
             value={timeInForce}
             onChange={(e) => setTimeInForce(e.target.value as any)}
-            className="bg-[var(--app-bg)] border border-[#1e232b] rounded-lg px-2 py-2 text-xs text-[var(--text-secondary)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)]"
+            className="bg-[var(--app-bg)] border border-[#1e232b] rounded-lg px-2 py-2 text-xs text-[var(--text-secondary)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)] flex-1 min-w-[80px]"
             title="Time in Force"
           >
             <option value="day">DAY</option>
