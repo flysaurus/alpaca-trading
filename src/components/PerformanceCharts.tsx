@@ -1,11 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Activity, PieChart } from 'lucide-react';
-import { buildAllocationData, buildPerformanceData, aggregatePnLData } from '@/lib/portfolioAnalytics';
+import { buildAllocationData, buildPerformanceData, aggregateValueByWeek, aggregatePnLByWeek } from '@/lib/portfolioAnalytics';
 
-// ── Performance Chart Component with Portfolio Breakdown ──────────────────────
-// Data shape for portfolio value chart
+// ── Types ─────────────────────────────────────────────────────────
 interface ValueDataPoint {
   date: string;
   value: number;
@@ -15,16 +14,56 @@ interface ValueDataPoint {
   cash?: number;
 }
 
-// Data shape for aggregated P&L chart
-interface PnLDataPoint {
-  date: string;
-  pnl: number;
+interface TooltipState {
+  x: number;
+  y: number;
+  data: ValueDataPoint;
 }
 
-function PerformanceChart({ data, metric, timeframe }: { data: ValueDataPoint[]; metric: 'value' | 'pnl'; timeframe: string }) {
-  const [hoveredPoint, setHoveredPoint] = useState<{ x: number; y: number; data: ValueDataPoint | PnLDataPoint } | null>(null);
-  
-  if (data.length === 0) {
+// ── Helper: format currency ───────────────────────────────────────
+function fmtCurrency(n: number): string {
+  return '$' + Math.round(n).toLocaleString();
+}
+
+// ── Helper: format date label ─────────────────────────────────────
+function fmtDateLabel(dateStr: string, isWeekly: boolean): string {
+  const d = new Date(dateStr + 'T00:00:00-05:00');
+  if (isWeekly) {
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+// ── Performance Chart Component ───────────────────────────────────
+function PerformanceChart({
+  data,
+  metric,
+  days,
+}: {
+  data: ValueDataPoint[];
+  metric: 'value' | 'pnl';
+  days: number;
+}) {
+  const [hovered, setHovered] = useState<TooltipState | null>(null);
+
+  const isLongRange = days > 30;
+
+  // Aggregate data when needed
+  const chartData = useMemo(() => {
+    if (metric === 'value') {
+      if (isLongRange) {
+        return aggregateValueByWeek(data);
+      }
+      return data;
+    }
+    // P&L: skip non-trading days (already filtered in buildPerformanceData)
+    if (isLongRange) {
+      return aggregatePnLByWeek(data);
+    }
+    return data;
+  }, [data, metric, isLongRange]);
+
+  if (chartData.length === 0) {
     return (
       <div className="flex items-center justify-center h-64 text-slate-400 text-sm">
         No {metric === 'value' ? 'portfolio value' : 'P&L'} data available for this timeframe.
@@ -34,176 +73,285 @@ function PerformanceChart({ data, metric, timeframe }: { data: ValueDataPoint[];
 
   const chartWidth = 400;
   const chartHeight = 200;
-  const padding = 20;
-  
-  // For portfolio value, show stacked bar chart
+  const paddingX = 30;
+  const paddingY = 20;
+  const plotWidth = chartWidth - 2 * paddingX;
+  const plotHeight = chartHeight - 2 * paddingY;
+
+  const barCount = chartData.length;
+  const barWidth = Math.max(4, Math.min(28, plotWidth / barCount - 3));
+
+  // ── Portfolio Value chart: show daily/weekly CHANGE as bars from zero ──
   if (metric === 'value') {
-    const maxValue = Math.max(...data.map(d => d.value));
-    const minBarWidth = 8;
-    const maxBarWidth = 30;
-    const availableWidth = chartWidth - 2 * padding;
-    const calculatedBarWidth = availableWidth / data.length - 2;
-    const barWidth = Math.max(minBarWidth, Math.min(maxBarWidth, calculatedBarWidth));
-    
+    const changes = chartData.map((d, i) =>
+      i === 0 ? 0 : d.value - chartData[i - 1].value
+    );
+    const minChange = Math.min(...changes);
+    const maxChange = Math.max(...changes);
+    const maxAbs = Math.max(Math.abs(minChange), Math.abs(maxChange), 1);
+
+    // Zero line Y position (centered if we have both + and -, else at bottom/top)
+    const hasPositive = maxChange > 0;
+    const hasNegative = minChange < 0;
+    let zeroY: number;
+    let scale: number;
+
+    if (hasPositive && hasNegative) {
+      zeroY = paddingY + (maxChange / (maxChange - minChange)) * plotHeight;
+      scale = plotHeight / (maxChange - minChange);
+    } else if (hasNegative) {
+      zeroY = paddingY;
+      scale = plotHeight / maxAbs;
+    } else {
+      zeroY = chartHeight - paddingY;
+      scale = plotHeight / maxAbs;
+    }
+
     return (
       <div className="relative w-full h-64">
-        <svg width={chartWidth} height={chartHeight} className="w-full h-full" viewBox={`0 0 ${chartWidth} ${chartHeight}`}>
-          {/* Stacked bars */}
-          {data.map((d, i) => {
-            const x = padding + (i / (data.length - 1)) * (chartWidth - 2 * padding);
-            const cashHeight = (d.cash! / maxValue) * (chartHeight - 2 * padding);
-            const etfHeight = (d.etfs! / maxValue) * (chartHeight - 2 * padding);
-            const stockHeight = (d.stocks! / maxValue) * (chartHeight - 2 * padding);
-            
-            const cashY = chartHeight - padding - cashHeight;
-            const etfY = cashY - etfHeight;
-            const stockY = etfY - stockHeight;
-            
+        <svg
+          width={chartWidth}
+          height={chartHeight}
+          className="w-full h-full"
+          viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+        >
+          {/* Zero line */}
+          <line
+            x1={paddingX}
+            y1={zeroY}
+            x2={chartWidth - paddingX}
+            y2={zeroY}
+            stroke="#94a3b8"
+            strokeWidth="1"
+            strokeDasharray="3,3"
+          />
+
+          {/* Change bars */}
+          {chartData.map((d, i) => {
+            const change = changes[i];
+            if (i === 0) return null; // Skip first point (no previous to compare)
+
+            const x = paddingX + ((i + 0.5) / barCount) * plotWidth;
+            const barH = Math.abs(change) * scale;
+            const y = change >= 0 ? zeroY - barH : zeroY;
+            const color = change >= 0 ? '#10b981' : '#ef4444';
+
             return (
-              <g key={i}>
-                {/* Cash bar */}
-                <rect
-                  x={x - barWidth / 2}
-                  y={cashY}
-                  width={barWidth}
-                  height={cashHeight}
-                  fill="#6b7280"
-                  className="opacity-80 hover:opacity-100 cursor-pointer transition-opacity"
-                  onMouseEnter={() => setHoveredPoint({ x, y: cashY + cashHeight / 2, data: d })}
-                  onMouseLeave={() => setHoveredPoint(null)}
-                />
-                {/* ETF bar */}
-                <rect
-                  x={x - barWidth / 2}
-                  y={etfY}
-                  width={barWidth}
-                  height={etfHeight}
-                  fill="#f59e0b"
-                  className="opacity-80 hover:opacity-100 cursor-pointer transition-opacity"
-                  onMouseEnter={() => setHoveredPoint({ x, y: etfY + etfHeight / 2, data: d })}
-                  onMouseLeave={() => setHoveredPoint(null)}
-                />
-                {/* Stock bar */}
-                <rect
-                  x={x - barWidth / 2}
-                  y={stockY}
-                  width={barWidth}
-                  height={stockHeight}
-                  fill="#10b981"
-                  className="opacity-80 hover:opacity-100 cursor-pointer transition-opacity"
-                  onMouseEnter={() => setHoveredPoint({ x, y: stockY + stockHeight / 2, data: d })}
-                  onMouseLeave={() => setHoveredPoint(null)}
-                />
-              </g>
+              <rect
+                key={i}
+                x={x - barWidth / 2}
+                y={y}
+                width={barWidth}
+                height={barH}
+                fill={color}
+                className="opacity-85 hover:opacity-100 cursor-pointer transition-opacity"
+                rx={2}
+                onMouseEnter={() =>
+                  setHovered({
+                    x,
+                    y: change >= 0 ? y : y + barH,
+                    data: d,
+                  })
+                }
+                onMouseLeave={() => setHovered(null)}
+              />
+            );
+          })}
+
+          {/* Date labels (sparse if many bars) */}
+          {chartData.map((d, i) => {
+            if (i === 0) return null;
+            const showLabel =
+              barCount <= 10 ||
+              i === 1 ||
+              i === chartData.length - 1 ||
+              i % Math.ceil(barCount / 6) === 0;
+            if (!showLabel) return null;
+
+            const x = paddingX + ((i + 0.5) / barCount) * plotWidth;
+            return (
+              <text
+                key={`label-${i}`}
+                x={x}
+                y={chartHeight - 4}
+                textAnchor="middle"
+                className="fill-slate-300"
+                style={{ fontSize: '9px', fontWeight: 500 }}
+              >
+                {fmtDateLabel(d.date, isLongRange)}
+              </text>
             );
           })}
         </svg>
-        
+
         {/* Tooltip */}
-        {hoveredPoint && (
-          <div 
-            className="absolute bg-[var(--card-bg)] border border-[var(--border)] rounded-lg p-2 shadow-xl pointer-events-none z-10"
-            style={{ 
-              left: `${(hoveredPoint.x / chartWidth) * 100}%`, 
-              top: `${(hoveredPoint.y / chartHeight) * 100}%`,
-              transform: 'translate(-50%, -100%) translateY(-10px)'
+        {hovered && (
+          <div
+            className="absolute bg-[var(--card-bg)] border border-[var(--border)] rounded-lg p-2.5 shadow-xl pointer-events-none z-10 min-w-[140px]"
+            style={{
+              left: `${(hovered.x / chartWidth) * 100}%`,
+              top: `${(hovered.y / chartHeight) * 100}%`,
+              transform: 'translate(-50%, -100%) translateY(-10px)',
             }}
           >
-            <p className="text-xs font-bold text-[var(--text-primary)]">
-              {hoveredPoint.data.date}
+            <p className="text-xs font-bold text-[var(--text-primary)] mb-1">
+              {hovered.data.date}
             </p>
-            <p className="text-[10px] text-[var(--text-muted)]">
-              Total: ${Math.round((hoveredPoint.data as ValueDataPoint).value).toLocaleString()}
+            <p className="text-[11px] text-slate-300">
+              Value: <span className="font-mono font-semibold text-white">{fmtCurrency(hovered.data.value)}</span>
             </p>
-            <p className="text-[10px] text-[var(--text-muted)]">
-              Stocks: ${Math.round((hoveredPoint.data as ValueDataPoint).stocks!).toLocaleString()}
+            <p className="text-[11px] text-slate-300">
+              Change:{' '}
+              <span
+                className={`font-mono font-semibold ${
+                  hovered.data.pnl >= 0 ? 'text-emerald-400' : 'text-red-400'
+                }`}
+              >
+                {hovered.data.pnl >= 0 ? '+' : ''}
+                {fmtCurrency(hovered.data.pnl)}
+              </span>
             </p>
-            <p className="text-[10px] text-[var(--text-muted)]">
-              ETFs: ${Math.round((hoveredPoint.data as ValueDataPoint).etfs!).toLocaleString()}
-            </p>
-            <p className="text-[10px] text-[var(--text-muted)]">
-              Cash: ${Math.round((hoveredPoint.data as ValueDataPoint).cash!).toLocaleString()}
-            </p>
+            {hovered.data.stocks !== undefined && (
+              <>
+                <div className="border-t border-[var(--border)] my-1.5" />
+                <p className="text-[10px] text-slate-400">
+                  Stocks:{' '}
+                  <span className="font-mono text-slate-200">{fmtCurrency(hovered.data.stocks)}</span>
+                </p>
+                <p className="text-[10px] text-slate-400">
+                  ETFs:{' '}
+                  <span className="font-mono text-slate-200">{fmtCurrency(hovered.data.etfs!)}</span>
+                </p>
+                <p className="text-[10px] text-slate-400">
+                  Cash:{' '}
+                  <span className="font-mono text-slate-200">{fmtCurrency(hovered.data.cash!)}</span>
+                </p>
+              </>
+            )}
           </div>
         )}
       </div>
     );
   }
-  
-  // For P&L, show bar chart with aggregated data
-  const aggregatedData = aggregatePnLData(data, timeframe);
-  const pnlValues = aggregatedData.map(d => d.pnl);
+
+  // ── P&L chart: bars from zero line, skip weekends/holidays ──
+  const pnlValues = chartData.map((d) => d.pnl);
   const minPnl = Math.min(...pnlValues);
   const maxPnl = Math.max(...pnlValues);
-  const range = maxPnl - minPnl || 1;
-  
-  // Determine bar width for P&L chart
-  const minBarWidth = 8;
-  const maxBarWidth = 40;
-  const availableWidth = chartWidth - 2 * padding;
-  const calculatedBarWidth = availableWidth / aggregatedData.length - 2;
-  const barWidth = Math.max(minBarWidth, Math.min(maxBarWidth, calculatedBarWidth));
-  
-  // Determine color based on overall profitability
-  const totalPnL = pnlValues.reduce((sum, val) => sum + val, 0);
-  const isProfitable = totalPnL > 0;
-  const color = isProfitable ? '#10b981' : '#ef4444';
-  
+  const maxAbsPnl = Math.max(Math.abs(minPnl), Math.abs(maxPnl), 1);
+
+  const hasPos = maxPnl > 0;
+  const hasNeg = minPnl < 0;
+  let zeroYPnl: number;
+  let scalePnl: number;
+
+  if (hasPos && hasNeg) {
+    zeroYPnl = paddingY + (maxPnl / (maxPnl - minPnl)) * plotHeight;
+    scalePnl = plotHeight / (maxPnl - minPnl);
+  } else if (hasNeg) {
+    zeroYPnl = paddingY;
+    scalePnl = plotHeight / maxAbsPnl;
+  } else {
+    zeroYPnl = chartHeight - paddingY;
+    scalePnl = plotHeight / maxAbsPnl;
+  }
+
   return (
     <div className="relative w-full h-64">
-      <svg width={chartWidth} height={chartHeight} className="w-full h-full" viewBox={`0 0 ${chartWidth} ${chartHeight}`}>
-        {/* Zero line if needed */}
-        {minPnl < 0 && maxPnl > 0 && (
-          <line 
-            x1={padding} 
-            y1={padding + (1 - ((0 - minPnl) / range)) * (chartHeight - 2 * padding)} 
-            x2={chartWidth - padding} 
-            y2={padding + (1 - ((0 - minPnl) / range)) * (chartHeight - 2 * padding)} 
-            stroke="#6b7280" 
-            strokeWidth="1" 
-            strokeDasharray="2,2"
-          />
-        )}
-        
+      <svg
+        width={chartWidth}
+        height={chartHeight}
+        className="w-full h-full"
+        viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+      >
+        {/* Zero line */}
+        <line
+          x1={paddingX}
+          y1={zeroYPnl}
+          x2={chartWidth - paddingX}
+          y2={zeroYPnl}
+          stroke="#94a3b8"
+          strokeWidth="1"
+          strokeDasharray="3,3"
+        />
+
         {/* P&L Bars */}
-        {aggregatedData.map((d, i) => {
-          const x = padding + (i / (aggregatedData.length - 1 || 1)) * (chartWidth - 2 * padding);
-          const barHeight = Math.abs((d.pnl - minPnl) / range) * (chartHeight - 2 * padding);
-          const y = d.pnl >= 0 
-            ? padding + (1 - ((d.pnl - minPnl) / range)) * (chartHeight - 2 * padding)
-            : padding + (1 - ((0 - minPnl) / range)) * (chartHeight - 2 * padding);
-          
+        {chartData.map((d, i) => {
+          const x = paddingX + ((i + 0.5) / barCount) * plotWidth;
+          const barH = Math.abs(d.pnl) * scalePnl;
+          const y = d.pnl >= 0 ? zeroYPnl - barH : zeroYPnl;
+          const color = d.pnl >= 0 ? '#10b981' : '#ef4444';
+
           return (
             <rect
               key={i}
               x={x - barWidth / 2}
               y={y}
               width={barWidth}
-              height={barHeight}
-              fill={d.pnl >= 0 ? '#10b981' : '#ef4444'}
-              className="opacity-80 hover:opacity-100 cursor-pointer transition-opacity"
-              onMouseEnter={() => setHoveredPoint({ x, y: y + (d.pnl >= 0 ? 0 : barHeight), data: d })}
-              onMouseLeave={() => setHoveredPoint(null)}
+              height={barH}
+              fill={color}
+              className="opacity-85 hover:opacity-100 cursor-pointer transition-opacity"
+              rx={2}
+              onMouseEnter={() =>
+                setHovered({
+                  x,
+                  y: d.pnl >= 0 ? y : y + barH,
+                  data: d,
+                })
+              }
+              onMouseLeave={() => setHovered(null)}
             />
           );
         })}
+
+        {/* Date labels */}
+        {chartData.map((d, i) => {
+          const showLabel =
+            barCount <= 10 ||
+            i === 0 ||
+            i === chartData.length - 1 ||
+            i % Math.ceil(barCount / 6) === 0;
+          if (!showLabel) return null;
+
+          const x = paddingX + ((i + 0.5) / barCount) * plotWidth;
+          return (
+            <text
+              key={`label-${i}`}
+              x={x}
+              y={chartHeight - 4}
+              textAnchor="middle"
+              className="fill-slate-300"
+              style={{ fontSize: '9px', fontWeight: 500 }}
+            >
+              {fmtDateLabel(d.date, isLongRange)}
+            </text>
+          );
+        })}
       </svg>
-      
+
       {/* Tooltip */}
-      {hoveredPoint && (
-        <div 
-          className="absolute bg-[var(--card-bg)] border border-[var(--border)] rounded-lg p-2 shadow-xl pointer-events-none z-10"
-          style={{ 
-            left: `${(hoveredPoint.x / chartWidth) * 100}%`, 
-            top: `${(hoveredPoint.y / chartHeight) * 100}%`,
-            transform: 'translate(-50%, -100%) translateY(-10px)'
+      {hovered && (
+        <div
+          className="absolute bg-[var(--card-bg)] border border-[var(--border)] rounded-lg p-2.5 shadow-xl pointer-events-none z-10 min-w-[120px]"
+          style={{
+            left: `${(hovered.x / chartWidth) * 100}%`,
+            top: `${(hovered.y / chartHeight) * 100}%`,
+            transform: 'translate(-50%, -100%) translateY(-10px)',
           }}
         >
-          <p className="text-xs font-bold text-[var(--text-primary)]">
-            {hoveredPoint.data.date}
+          <p className="text-xs font-bold text-[var(--text-primary)] mb-1">
+            {hovered.data.date}
           </p>
-          <p className={`text-[10px] font-bold ${hoveredPoint.data.pnl > 0 ? 'text-green-500' : 'text-red-500'}`}>
-            {hoveredPoint.data.pnl > 0 ? '+' : ''}${Math.round(hoveredPoint.data.pnl).toLocaleString()}
+          <p
+            className={`text-[11px] font-bold ${
+              hovered.data.pnl > 0 ? 'text-emerald-400' : 'text-red-400'
+            }`}
+          >
+            {hovered.data.pnl > 0 ? '+' : ''}
+            {fmtCurrency(hovered.data.pnl)}
+          </p>
+          <p className="text-[10px] text-slate-400 mt-0.5">
+            Value: <span className="font-mono text-slate-200">{fmtCurrency(hovered.data.value)}</span>
           </p>
         </div>
       )}
@@ -211,44 +359,46 @@ function PerformanceChart({ data, metric, timeframe }: { data: ValueDataPoint[];
   );
 }
 
-// ── Donut Chart Component for Asset Types ───────────────────────────────
+// ── Donut Chart Component (50% larger) ────────────────────────────
 function DonutChart({ data }: { data: { label: string; value: number; color: string }[] }) {
   const total = data.reduce((acc, d) => acc + d.value, 0);
   if (total === 0) return null;
-  
+
+  // 50% larger: center 150, outer radius 120, inner 75
+  const centerX = 150;
+  const centerY = 150;
+  const radius = 120;
+  const innerRadius = 75;
+
   let cumulativePercent = 0;
-  const centerX = 100;
-  const centerY = 100;
-  const radius = 80;
-  const innerRadius = 50;
 
   const createPath = (startAngle: number, endAngle: number) => {
-    const startAngleRad = (startAngle * Math.PI) / 180;
-    const endAngleRad = (endAngle * Math.PI) / 180;
-    
-    const x1 = centerX + radius * Math.cos(startAngleRad);
-    const y1 = centerY + radius * Math.sin(startAngleRad);
-    const x2 = centerX + radius * Math.cos(endAngleRad);
-    const y2 = centerY + radius * Math.sin(endAngleRad);
-    const x3 = centerX + innerRadius * Math.cos(endAngleRad);
-    const y3 = centerY + innerRadius * Math.sin(endAngleRad);
-    const x4 = centerX + innerRadius * Math.cos(startAngleRad);
-    const y4 = centerY + innerRadius * Math.sin(startAngleRad);
-    
+    const startRad = (startAngle * Math.PI) / 180;
+    const endRad = (endAngle * Math.PI) / 180;
+
+    const x1 = centerX + radius * Math.cos(startRad);
+    const y1 = centerY + radius * Math.sin(startRad);
+    const x2 = centerX + radius * Math.cos(endRad);
+    const y2 = centerY + radius * Math.sin(endRad);
+    const x3 = centerX + innerRadius * Math.cos(endRad);
+    const y3 = centerY + innerRadius * Math.sin(endRad);
+    const x4 = centerX + innerRadius * Math.cos(startRad);
+    const y4 = centerY + innerRadius * Math.sin(startRad);
+
     const largeArcFlag = endAngle - startAngle > 180 ? 1 : 0;
-    
+
     return `M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2} L ${x3} ${y3} A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${x4} ${y4} Z`;
   };
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="relative w-48 h-48">
-        <svg width="200" height="200" viewBox="0 0 200 200" className="w-full h-full">
+    <div className="flex flex-col items-center gap-5">
+      <div className="relative w-72 h-72">
+        <svg width="300" height="300" viewBox="0 0 300 300" className="w-full h-full">
           {data.map((item, i) => {
             const startAngle = cumulativePercent * 360;
             const endAngle = startAngle + (item.value / total) * 360;
             cumulativePercent += item.value / total;
-            
+
             return (
               <path
                 key={i}
@@ -261,17 +411,22 @@ function DonutChart({ data }: { data: { label: string; value: number; color: str
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-center">
-            <span className="text-lg font-bold text-[var(--text-primary)]">100%</span>
+            <span className="text-xl font-bold text-[var(--text-primary)]">100%</span>
           </div>
         </div>
       </div>
-      
-      <div className="space-y-1.5 w-full">
+
+      <div className="space-y-2 w-full">
         {data.map((item, i) => (
-          <div key={i} className="flex items-center gap-2 text-xs">
-            <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
-            <span className="text-[var(--text-primary)] flex-1">{item.label}</span>
-            <span className="text-[var(--text-secondary)] font-mono">{((item.value / total) * 100).toFixed(1)}%</span>
+          <div key={i} className="flex items-center gap-2.5 text-sm">
+            <div
+              className="w-3.5 h-3.5 rounded-full flex-shrink-0"
+              style={{ backgroundColor: item.color }}
+            />
+            <span className="text-[var(--text-primary)] font-medium flex-1">{item.label}</span>
+            <span className="text-slate-300 font-mono font-semibold">
+              {((item.value / total) * 100).toFixed(1)}%
+            </span>
           </div>
         ))}
       </div>
@@ -279,29 +434,33 @@ function DonutChart({ data }: { data: { label: string; value: number; color: str
   );
 }
 
-// ── Bar Chart Component for Sectors (Vertical) ───────────────────────────────
+// ── Bar Chart Component for Sectors ───────────────────────────────
 function BarChart({ data }: { data: { label: string; value: number; color: string }[] }) {
   const total = data.reduce((acc, d) => acc + d.value, 0);
   if (total === 0) return null;
-  
-  const maxValue = Math.max(...data.map(d => d.value));
-  const chartHeight = 150;
-  const barWidth = 30;
-  const chartWidth = 300;
-  const barSpacing = 10;
+
+  const maxValue = Math.max(...data.map((d) => d.value));
+  const chartHeight = 180;
+  const barWidth = 32;
+  const chartWidth = 340;
+  const barSpacing = 12;
 
   return (
     <div className="w-full">
-      <svg width={chartWidth} height={chartHeight + 40} className="w-full" viewBox={`0 0 ${chartWidth} ${chartHeight + 40}`}>
+      <svg
+        width={chartWidth}
+        height={chartHeight + 50}
+        className="w-full"
+        viewBox={`0 0 ${chartWidth} ${chartHeight + 50}`}
+      >
         {data.map((item, i) => {
           const barHeight = (item.value / maxValue) * chartHeight;
-          const x = 20 + i * (barWidth + barSpacing);
+          const x = 24 + i * (barWidth + barSpacing);
           const y = chartHeight - barHeight;
           const percentage = ((item.value / total) * 100).toFixed(1);
-          
+
           return (
             <g key={i}>
-              {/* Bar */}
               <rect
                 x={x}
                 y={y}
@@ -309,26 +468,25 @@ function BarChart({ data }: { data: { label: string; value: number; color: strin
                 height={barHeight}
                 fill={item.color}
                 className="hover:opacity-80 cursor-pointer transition-opacity"
+                rx={3}
               />
-              
-              {/* Percentage label */}
               <text
                 x={x + barWidth / 2}
-                y={y - 5}
+                y={y - 6}
                 textAnchor="middle"
-                className="text-[10px] fill-[var(--text-secondary)] font-mono"
+                className="fill-slate-300 font-mono"
+                style={{ fontSize: '11px', fontWeight: 600 }}
               >
                 {percentage}%
               </text>
-              
-              {/* Label */}
               <text
                 x={x + barWidth / 2}
-                y={chartHeight + 15}
+                y={chartHeight + 18}
                 textAnchor="middle"
-                className="text-[9px] fill-[var(--text-primary)]"
+                className="fill-[var(--text-primary)]"
+                style={{ fontSize: '11px', fontWeight: 500 }}
               >
-                {item.label.length > 8 ? item.label.substring(0, 8) + '.' : item.label}
+                {item.label.length > 8 ? item.label.substring(0, 8) + '…' : item.label}
               </text>
             </g>
           );
@@ -339,15 +497,23 @@ function BarChart({ data }: { data: { label: string; value: number; color: strin
 }
 
 // ── Performance Card Component ────────────────────────────────────
-function PerformanceCard({ portfolioValue, cash, positions }: { portfolioValue: number; cash: number; positions: any[] }) {
+function PerformanceCard({
+  portfolioValue,
+  cash,
+  positions,
+}: {
+  portfolioValue: number;
+  cash: number;
+  positions: any[];
+}) {
   const [timeframe, setTimeframe] = useState<'1M' | '3M' | '6M' | 'YTD' | '1Y' | 'ALL'>('3M');
   const [chartType, setChartType] = useState<'value' | 'pnl'>('value');
 
   const portfolioData = {
-    equity: portfolioValue - cash, // Equity is positions value only
+    equity: portfolioValue - cash,
     cash,
-    portfolioValue, // Total portfolio value including cash
-    positions: positions.map(p => ({
+    portfolioValue,
+    positions: positions.map((p) => ({
       symbol: p.symbol,
       marketValue: p.marketValue,
       qty: p.qty,
@@ -355,7 +521,19 @@ function PerformanceCard({ portfolioValue, cash, positions }: { portfolioValue: 
     })),
   };
 
-  const days = timeframe === '1M' ? 30 : timeframe === '3M' ? 90 : timeframe === '6M' ? 180 : timeframe === '1Y' ? 365 : 730;
+  const days =
+    timeframe === '1M'
+      ? 22 // ~22 trading days in a month
+      : timeframe === '3M'
+      ? 65
+      : timeframe === '6M'
+      ? 130
+      : timeframe === '1Y'
+      ? 252
+      : timeframe === 'YTD'
+      ? 100 // approximate
+      : 500;
+
   const performanceData = buildPerformanceData(portfolioData, days);
 
   return (
@@ -370,7 +548,7 @@ function PerformanceCard({ portfolioValue, cash, positions }: { portfolioValue: 
             <button
               key={tf}
               onClick={() => setTimeframe(tf as any)}
-              className={`px-2 py-1 text-[9px] font-bold rounded transition ${
+              className={`px-2 py-1 text-[10px] font-bold rounded transition ${
                 timeframe === tf
                   ? 'bg-amber-500 text-black'
                   : 'bg-[var(--app-bg)] text-[var(--text-muted)] hover:bg-[var(--hover-bg)]'
@@ -401,9 +579,9 @@ function PerformanceCard({ portfolioValue, cash, positions }: { portfolioValue: 
         ))}
       </div>
 
-      <PerformanceChart data={performanceData} metric={chartType} timeframe={timeframe} />
-      
-      <div className="mt-4 flex justify-between text-[10px] text-[var(--text-muted)]">
+      <PerformanceChart data={performanceData} metric={chartType} days={days} />
+
+      <div className="mt-4 flex justify-between text-[11px] text-slate-400 font-medium">
         <span>{performanceData[0]?.date}</span>
         <span>{performanceData[performanceData.length - 1]?.date}</span>
       </div>
@@ -412,14 +590,22 @@ function PerformanceCard({ portfolioValue, cash, positions }: { portfolioValue: 
 }
 
 // ── Allocation Card Component ─────────────────────────────────────
-function AllocationCard({ portfolioValue, cash, positions }: { portfolioValue: number; cash: number; positions: any[] }) {
+function AllocationCard({
+  portfolioValue,
+  cash,
+  positions,
+}: {
+  portfolioValue: number;
+  cash: number;
+  positions: any[];
+}) {
   const [allocationTab, setAllocationTab] = useState<'assetType' | 'sector'>('assetType');
 
   const portfolioData = {
-    equity: portfolioValue - cash, // Equity is positions value only
+    equity: portfolioValue - cash,
     cash,
-    portfolioValue, // Total portfolio value including cash
-    positions: positions.map(p => ({
+    portfolioValue,
+    positions: positions.map((p) => ({
       symbol: p.symbol,
       marketValue: p.marketValue,
       qty: p.qty,
@@ -441,7 +627,7 @@ function AllocationCard({ portfolioValue, cash, positions }: { portfolioValue: n
             <button
               key={t}
               onClick={() => setAllocationTab(t)}
-              className={`px-2 py-1 text-[9px] font-bold rounded ${
+              className={`px-2 py-1 text-[10px] font-bold rounded transition ${
                 allocationTab === t
                   ? 'bg-amber-500 text-black'
                   : 'bg-[var(--app-bg)] text-[var(--text-muted)]'

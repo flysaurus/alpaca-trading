@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { BarChart3, ChevronUp, ChevronDown, Trash2, X } from 'lucide-react';
+import { BarChart3, ChevronUp, ChevronDown, Trash2, X, Download } from 'lucide-react';
 
 interface Position {
   symbol: string;
@@ -44,7 +44,7 @@ interface YearRangeProps { low: number; high: number; current: number }
 function YearRangeBar({ low, high, current }: YearRangeProps) {
   // Show placeholder if no valid range data
   if (!low || !high || low <= 0 || high <= 0 || low >= high) {
-    return <span className="text-[10px] text-[var(--text-muted)]">—</span>;
+    return <span className="text-xs text-[var(--text-muted)]">—</span>;
   }
   
   // Calculate position as percentage of range
@@ -54,9 +54,9 @@ function YearRangeBar({ low, high, current }: YearRangeProps) {
     <div className="w-32 sm:w-40">
       <div className="relative h-2 bg-[var(--app-bg)] rounded-full overflow-visible">
         <div className="absolute inset-0 rounded-full" style={{ background: `linear-gradient(to right, #ef4444 0%, #22c55e 100%)` }} />
-        {/* Triangle indicator below the bar */}
+        {/* Triangle indicator above the bar */}
         <div 
-          className="absolute -bottom-1 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[6px] border-t-white"
+          className="absolute -top-1 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-b-[6px] border-b-white"
           style={{ left: `${pct}%`, transform: 'translateX(-50%)' }}
         />
       </div>
@@ -166,6 +166,32 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
     }));
   };
 
+  const handleDownloadCSV = () => {
+    const headers = ['Symbol','Qty','Avg Entry Price','Current Price','Market Value','Unrealized P&L','Unrealized P&L %','Change Today','Side'];
+    const lines = [headers.join(',')];
+    for (const p of positions) {
+      const line = [
+        p.symbol,
+        p.qty,
+        p.avgEntryPrice,
+        p.currentPrice,
+        p.marketValue,
+        p.unrealizedPL,
+        p.unrealizedPLPercent,
+        p.changeToday,
+        p.side,
+      ].join(',');
+      lines.push(line);
+    }
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `positions-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const submitBulkSell = async () => {
     setBulkSubmitting(true);
     setBulkResults([]);
@@ -221,7 +247,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
   const th = (key: SortKey, label: string, align?: 'left' | 'right') => (
     <th
       onClick={() => handleSort(key)}
-      className={`px-3 py-2 text-[10px] uppercase tracking-wider font-bold text-[var(--text-secondary)] cursor-pointer hover:text-[var(--text-primary)] select-none whitespace-nowrap ${align === 'left' ? 'text-left' : 'text-right'}`}
+      className={`px-3 py-2 text-xs uppercase tracking-wider font-bold text-[var(--text-secondary)] cursor-pointer hover:text-[var(--text-primary)] select-none whitespace-nowrap ${align === 'left' ? 'text-left' : 'text-right'}`}
     >
       <span className="inline-flex items-center gap-0.5">
         {label}
@@ -256,19 +282,29 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
           {selected.size > 0 && (
             <button
               onClick={() => setShowBulkPanel(true)}
-              className="text-[10px] font-bold px-2 py-1 rounded bg-[var(--red-soft)]/20 text-[var(--red)] border border-[var(--red-soft)]/30 hover:bg-[var(--red-soft)]/30 transition"
+              className="text-xs font-bold px-2 py-1 rounded bg-[var(--red-soft)]/20 text-[var(--red)] border border-[var(--red-soft)]/30 hover:bg-[var(--red-soft)]/30 transition"
             >
               Sell {selected.size} selected
             </button>
           )}
         </div>
-        <span className="text-[10px] text-[var(--text-muted)] bg-[var(--app-bg)] px-2 py-0.5 rounded border border-[var(--border)]">
-          {positions.length} positions · ${fmtUSD(totalEquity)}
-        </span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleDownloadCSV}
+            className="flex items-center gap-1 text-xs font-bold text-[var(--text-secondary)] bg-[var(--app-bg)] px-2 py-0.5 rounded border border-[var(--border)] hover:text-[var(--text-primary)] hover:border-[var(--text-muted)] transition"
+            title="Download positions as CSV"
+          >
+            <Download className="w-3 h-3" />
+            CSV
+          </button>
+          <span className="text-xs text-[var(--text-muted)] bg-[var(--app-bg)] px-2 py-0.5 rounded border border-[var(--border)]">
+            {positions.length} positions · ${fmtUSD(totalEquity)}
+          </span>
+        </div>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-xs min-w-[950px]">
+        <table className="w-full text-sm min-w-[950px]">
           <thead>
             <tr className="border-b border-[var(--border)] bg-[var(--app-bg)]/40">
               <th className="px-3 py-2 text-left">
@@ -287,7 +323,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
               {th('pctAccount', '% of account')}
               {th('qty', 'Qty')}
               {th('costBasis', 'Cost basis')}
-              <th className="px-3 py-2 text-[10px] uppercase tracking-wider font-bold text-[var(--text-secondary)] text-left whitespace-nowrap">52‑week range</th>
+              <th className="px-3 py-2 text-xs uppercase tracking-wider font-bold text-[var(--text-secondary)] text-left whitespace-nowrap">52‑week range</th>
             </tr>
           </thead>
           <tbody>
@@ -297,7 +333,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
                 <td className="px-3 py-2.5" />
                 <td className="px-3 py-2.5">
                   <p className="font-semibold text-[var(--text-secondary)]">Cash</p>
-                  <p className="text-[10px] text-[var(--text-muted)]">HELD IN MONEY MARKET</p>
+                  <p className="text-xs text-[var(--text-muted)]">HELD IN MONEY MARKET</p>
                 </td>
                 <td className="px-3 py-2.5 text-right text-[var(--text-muted)]">—</td>
                 <td className="px-3 py-2.5 text-right text-[var(--text-muted)]">—</td>
@@ -336,7 +372,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
                     <p className={`font-[family-name:var(--font-mono)] tabular-nums ${todayProfitable ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
                       {todayProfitable ? '+' : ''}{fmtUSD(p.todayPL)}
                     </p>
-                    <p className={`font-[family-name:var(--font-mono)] text-[10px] tabular-nums ${todayProfitable ? 'text-[var(--green)]/70' : 'text-[var(--red)]/70'}`}>
+                    <p className={`font-[family-name:var(--font-mono)] text-xs tabular-nums ${todayProfitable ? 'text-[var(--green)]/70' : 'text-[var(--red)]/70'}`}>
                       {fmtPct(p.todayPLPct)}
                     </p>
                   </td>
@@ -344,7 +380,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
                     <p className={`font-[family-name:var(--font-mono)] tabular-nums ${totalProfitable ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
                       {totalProfitable ? '+' : ''}{fmtUSD(p.unrealizedPL)}
                     </p>
-                    <p className={`font-[family-name:var(--font-mono)] text-[10px] tabular-nums ${totalProfitable ? 'text-[var(--green)]/70' : 'text-[var(--red)]/70'}`}>
+                    <p className={`font-[family-name:var(--font-mono)] text-xs tabular-nums ${totalProfitable ? 'text-[var(--green)]/70' : 'text-[var(--red)]/70'}`}>
                       {fmtPct(p.unrealizedPLPercent)}
                     </p>
                   </td>
@@ -361,7 +397,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
                     <p className="font-[family-name:var(--font-mono)] text-[var(--text-primary)] tabular-nums">
                       ${fmtUSD(p.costBasis)}
                     </p>
-                    <p className="font-[family-name:var(--font-mono)] text-[10px] text-[var(--text-muted)] tabular-nums">
+                    <p className="font-[family-name:var(--font-mono)] text-xs text-[var(--text-muted)] tabular-nums">
                       ${fmtUSD(p.avgEntryPrice)} / Share
                     </p>
                   </td>
@@ -369,12 +405,12 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
                     {range ? (
                       <div className="flex items-center gap-2">
                         <YearRangeBar low={range.low} high={range.high} current={p.currentPrice} />
-                        <span className="text-[10px] text-[var(--text-muted)] whitespace-nowrap hidden sm:block">
+                        <span className="text-xs text-[var(--text-muted)] whitespace-nowrap hidden sm:block">
                           ${range.low.toFixed(2)}–${range.high.toFixed(2)}
                         </span>
                       </div>
                     ) : (
-                      <span className="text-[10px] text-[var(--text-muted)]">—</span>
+                      <span className="text-xs text-[var(--text-muted)]">—</span>
                     )}
                   </td>
                 </tr>
@@ -384,26 +420,26 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
             {/* Total row */}
             <tr className="bg-[var(--surface-bg)]/60 border-t-2 border-[var(--border)]">
               <td className="px-3 py-3" />
-              <td className="px-3 py-3 text-xs font-bold text-[var(--text-primary)]">TOTAL</td>
+              <td className="px-3 py-3 text-sm font-bold text-[var(--text-primary)]">TOTAL</td>
               <td className="px-3 py-3" />
               <td className="px-3 py-3 text-right whitespace-nowrap">
-                <p className={`font-[family-name:var(--font-mono)] font-bold tabular-nums text-xs ${totalTodayPL >= 0 ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
+                <p className={`font-[family-name:var(--font-mono)] font-bold tabular-nums text-sm ${totalTodayPL >= 0 ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
                   {totalTodayPL >= 0 ? '+' : ''}{fmtUSD(totalTodayPL)}
                 </p>
               </td>
               <td className="px-3 py-3 text-right whitespace-nowrap">
-                <p className={`font-[family-name:var(--font-mono)] font-bold tabular-nums text-xs ${totalPL >= 0 ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
+                <p className={`font-[family-name:var(--font-mono)] font-bold tabular-nums text-sm ${totalPL >= 0 ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
                   {totalPL >= 0 ? '+' : ''}{fmtUSD(totalPL)}
                 </p>
               </td>
-              <td className="px-3 py-3 text-right font-[family-name:var(--font-mono)] font-bold text-[var(--text-primary)] tabular-nums text-xs whitespace-nowrap">
-                ${fmtUSD(totalValue)}
+              <td className="px-3 py-3 text-right font-[family-name:var(--font-mono)] font-bold text-[var(--text-primary)] tabular-nums text-sm whitespace-nowrap">
+                ${fmtUSD(totalValue + cash)}
               </td>
-              <td className="px-3 py-3 text-right font-[family-name:var(--font-mono)] font-bold text-[var(--text-secondary)] tabular-nums text-xs">
+              <td className="px-3 py-3 text-right font-[family-name:var(--font-mono)] font-bold text-[var(--text-secondary)] tabular-nums text-sm">
                 {totalEquity > 0 ? ((totalValue / totalEquity) * 100).toFixed(2) : '0.00'}%
               </td>
               <td className="px-3 py-3" />
-              <td className="px-3 py-3 text-right font-[family-name:var(--font-mono)] font-bold text-[var(--text-secondary)] tabular-nums text-xs whitespace-nowrap">
+              <td className="px-3 py-3 text-right font-[family-name:var(--font-mono)] font-bold text-[var(--text-secondary)] tabular-nums text-sm whitespace-nowrap">
                 ${fmtUSD(totalCost)}
               </td>
               <td className="px-3 py-3" />
@@ -416,7 +452,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
       {showBulkPanel && selected.size > 0 && (
         <div className="border-t border-[var(--border)] bg-[var(--surface-bg)]/80 p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-bold text-[var(--text-primary)]">Bulk Sell — {selected.size} position{selected.size > 1 ? 's' : ''}</h4>
+            <h4 className="text-sm font-bold text-[var(--text-primary)]">Bulk Sell — {selected.size} position{selected.size > 1 ? 's' : ''}</h4>
             <button onClick={() => { setShowBulkPanel(false); setBulkResults([]); }} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
               <X className="w-4 h-4" />
             </button>
@@ -431,22 +467,22 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
               return (
                 <div key={symbol} className="flex items-center gap-2 bg-[var(--card-bg)] rounded-lg px-3 py-2 border border-[var(--border)]">
                   <div className="w-16">
-                    <p className="text-xs font-bold text-[var(--text-primary)]">{symbol}</p>
-                    <p className="text-[10px] text-[var(--text-muted)]">@{pos?.currentPrice.toFixed(2)}</p>
+                    <p className="text-sm font-bold text-[var(--text-primary)]">{symbol}</p>
+                    <p className="text-xs text-[var(--text-muted)]">@{pos?.currentPrice.toFixed(2)}</p>
                   </div>
 
                   <input
                     type="number"
                     value={cfg.qty}
                     onChange={(e) => updateSellConfig(symbol, { qty: e.target.value })}
-                    className="w-20 bg-[var(--app-bg)] border border-[var(--border)] rounded px-2 py-1 text-xs text-[var(--text-primary)] font-[family-name:var(--font-mono)] focus:outline-none focus:border-amber-500/50"
+                    className="w-20 bg-[var(--app-bg)] border border-[var(--border)] rounded px-2 py-1 text-sm text-[var(--text-primary)] font-[family-name:var(--font-mono)] focus:outline-none focus:border-amber-500/50"
                     placeholder="Qty"
                   />
 
                   <select
                     value={cfg.type}
                     onChange={(e) => updateSellConfig(symbol, { type: e.target.value as 'market' | 'limit' })}
-                    className="bg-[var(--app-bg)] border border-[var(--border)] rounded px-2 py-1 text-xs text-[var(--text-secondary)] font-[family-name:var(--font-mono)] focus:outline-none focus:border-amber-500/50"
+                    className="bg-[var(--app-bg)] border border-[var(--border)] rounded px-2 py-1 text-sm text-[var(--text-secondary)] font-[family-name:var(--font-mono)] focus:outline-none focus:border-amber-500/50"
                   >
                     <option value="market">MKT</option>
                     <option value="limit">LMT</option>
@@ -458,13 +494,13 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
                         type="number"
                         value={cfg.limitPrice}
                         onChange={(e) => updateSellConfig(symbol, { limitPrice: e.target.value })}
-                        className="w-24 bg-[var(--app-bg)] border border-[var(--border)] rounded px-2 py-1 text-xs text-[var(--text-primary)] font-[family-name:var(--font-mono)] focus:outline-none focus:border-amber-500/50"
+                        className="w-24 bg-[var(--app-bg)] border border-[var(--border)] rounded px-2 py-1 text-sm text-[var(--text-primary)] font-[family-name:var(--font-mono)] focus:outline-none focus:border-amber-500/50"
                         placeholder="Limit $"
                       />
                       <select
                         value={cfg.timeInForce}
                         onChange={(e) => updateSellConfig(symbol, { timeInForce: e.target.value as 'day' | 'gtc' | 'opg' })}
-                        className="bg-[var(--app-bg)] border border-[var(--border)] rounded px-2 py-1 text-xs text-[var(--text-secondary)] font-[family-name:var(--font-mono)] focus:outline-none focus:border-amber-500/50"
+                        className="bg-[var(--app-bg)] border border-[var(--border)] rounded px-2 py-1 text-sm text-[var(--text-secondary)] font-[family-name:var(--font-mono)] focus:outline-none focus:border-amber-500/50"
                       >
                         <option value="day">DAY</option>
                         <option value="gtc">GTC</option>
@@ -474,7 +510,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
                   )}
 
                   {result && (
-                    <span className={`text-[10px] font-bold ml-auto ${result.ok ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
+                    <span className={`text-xs font-bold ml-auto ${result.ok ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
                       {result.ok ? '✓ Sent' : `✗ ${result.error}`}
                     </span>
                   )}
@@ -487,7 +523,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
             <button
               onClick={submitBulkSell}
               disabled={bulkSubmitting}
-              className="flex-1 py-2 rounded-lg bg-[var(--red-soft)] hover:bg-[#b91c1c] text-[var(--text-primary)] font-bold text-xs tracking-wider transition disabled:opacity-40"
+              className="flex-1 py-2 rounded-lg bg-[var(--red-soft)] hover:bg-[#b91c1c] text-[var(--text-primary)] font-bold text-sm tracking-wider transition disabled:opacity-40"
             >
               {bulkSubmitting ? 'SUBMITTING...' : `SELL ${selected.size} POSITION${selected.size > 1 ? 'S' : ''}`}
             </button>

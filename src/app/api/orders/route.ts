@@ -67,7 +67,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { symbol, qty, side, type, limitPrice, stopPrice, timeInForce } = body;
+    const { symbol, qty, side, type, limitPrice, stopPrice, timeInForce, trailPrice, trailPercent } = body;
 
     // ── Safety validation ──
     const safety = validateOrder({ symbol, qty, side, estimatedPrice: limitPrice || body.estimatedPrice });
@@ -122,6 +122,8 @@ export async function POST(request: Request) {
       time_in_force: timeInForce || 'day',
       ...(limitPrice ? { limit_price: Number(limitPrice) } : {}),
       ...(stopPrice ? { stop_price: Number(stopPrice) } : {}),
+      ...(trailPrice ? { trail_price: Number(trailPrice) } : {}),
+      ...(trailPercent ? { trail_percent: Number(trailPercent) } : {}),
     });
 
     // ── Telegram notification ──

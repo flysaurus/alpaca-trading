@@ -14,11 +14,11 @@
   --border: #1e232b;
   --border-light: #374151;
 
-  /* Text */
+  /* Text — brighter for dark backgrounds */
   --text-primary: #ffffff;
-  --text-secondary: #b0b8c4;
-  --text-muted: #6b7280;
-  --text-subtle: #4b5563;
+  --text-secondary: #c8d0dc;
+  --text-muted: #8899aa;
+  --text-subtle: #6b7d8f;
   --text-inverse: #0f172a;
 
   /* Accents */
@@ -71,3 +71,7 @@
 .text-glow-red {
   text-shadow: 0 0 12px color-mix(in oklab, var(--red) 40%, transparent);
 }
+
+/* Global font size bumps for readability on dark backgrounds */
+.text-sm { font-size: 0.95rem !important; line-height: 1.4rem !important; }
+.text-xs { font-size: 0.875rem !important; line-height: 1.25rem !important; }

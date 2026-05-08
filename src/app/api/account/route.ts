@@ -31,6 +31,8 @@ export async function GET(request: Request) {
           portfolioValue,
           buyingPower: Number(account.buying_power),
           equity: Number(account.equity),
+          lastEquity: Number(account.last_equity || account.equity),
+          lastPortfolioValue: Number(account.last_portfolio_value || portfolioValue),
           dayTradeCount: Number(account.daytrade_count || 0),
           status: account.status,
           tradingMode: IS_PAPER ? 'paper' : 'live',

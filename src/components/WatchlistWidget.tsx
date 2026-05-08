@@ -167,23 +167,16 @@ export default function WatchlistWidget() {
   return (
     <div className="bg-[var(--card-bg)] rounded-xl border border-[#1e232b]">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-[#1e232b] flex items-center justify-between">
+      <div className="px-4 py-2 border-b border-[#1e232b] flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Activity className="w-4 h-4 text-amber-400" />
-          <h3 className="text-sm font-semibold text-[var(--text-primary)]">Watchlist</h3>
+          <h3 className="text-[15px] font-semibold text-[var(--text-primary)]">Watchlist</h3>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={fetchQuotes}
-            className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] rounded-lg transition"
-            title="Refresh"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-          </button>
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setShowDropdown(!showDropdown)}
-              className="flex items-center gap-1 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--surface-bg)] px-2 py-1 rounded border border-[#1e232b] transition"
+              className="flex items-center gap-1 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--surface-bg)] px-2 py-1 rounded border border-[#1e232b] transition"
             >
               {activeList?.name || 'Select'}
               <ChevronDown className={`w-3 h-3 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
@@ -230,6 +223,19 @@ export default function WatchlistWidget() {
                 </div>
               </div>
             )}
+          <button
+            onClick={() => setShowAdd(true)}
+            className="flex items-center gap-1 text-sm text-amber-400 hover:text-amber-300 transition"
+          >
+            <Plus className="w-3.5 h-3.5" /> Add Symbol
+          </button>
+          <button
+            onClick={fetchQuotes}
+            className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] rounded-lg transition"
+            title="Refresh"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+          </button>
           </div>
         </div>
       </div>
@@ -346,14 +352,7 @@ export default function WatchlistWidget() {
       {/* Add symbol — hidden while creating a new watchlist */}
       {!showCreate && (
       <div className="px-4 py-2 border-t border-[#1e232b]">
-        {!showAdd ? (
-          <button
-            onClick={() => setShowAdd(true)}
-            className="flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 transition"
-          >
-            <Plus className="w-3 h-3" /> Add symbol
-          </button>
-        ) : (
+        {showAdd && (
           <div className="flex gap-2 items-start">
             <SymbolSearch
               value={newSymbol}

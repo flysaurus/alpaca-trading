@@ -56,36 +56,36 @@ const STRATEGIES = [
 // ── Strategy Stats with real descriptions ───────────────────────
 function StrategyStats() {
   return (
-    <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-4">
+    <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-5">
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-[var(--app-bg)] rounded-lg p-3">
-          <p className="text-xs text-[var(--text-muted)]">Active Strategies</p>
-          <p className="text-lg font-bold text-[var(--text-primary)]">{STRATEGIES.filter(s => s.status === 'Active').length}</p>
-          <p className="text-[9px] text-[var(--text-muted)]">of {STRATEGIES.length} configured</p>
+        <div className="bg-[var(--app-bg)] rounded-lg p-4">
+          <p className="text-sm text-[var(--text-muted)]">Active Strategies</p>
+          <p className="text-xl font-bold text-[var(--text-primary)]">{STRATEGIES.filter(s => s.status === 'Active').length}</p>
+          <p className="text-xs text-[var(--text-muted)]">of {STRATEGIES.length} configured</p>
         </div>
-        <div className="bg-[var(--app-bg)] rounded-lg p-3">
-          <p className="text-xs text-[var(--text-muted)]">Trades Today</p>
-          <p className="text-lg font-bold text-[var(--green)]">—</p>
-          <p className="text-[9px] text-[var(--text-muted)]">will show when strategies run</p>
+        <div className="bg-[var(--app-bg)] rounded-lg p-4">
+          <p className="text-sm text-[var(--text-muted)]">Trades Today</p>
+          <p className="text-xl font-bold text-[var(--green)]">—</p>
+          <p className="text-xs text-[var(--text-muted)]">will show when strategies run</p>
         </div>
       </div>
-      <div className="mt-3 pt-3 border-t border-[var(--border)] space-y-2">
+      <div className="mt-4 pt-4 border-t border-[var(--border)] space-y-2">
         {STRATEGIES.map(s => {
           const Icon = s.icon;
           return (
             <a
               key={s.id}
               href="/strategies"
-              className="flex items-center justify-between p-2 bg-[var(--app-bg)] rounded-lg hover:bg-[var(--hover-bg)] transition-colors group"
+              className="flex items-center justify-between p-3 bg-[var(--app-bg)] rounded-lg hover:bg-[var(--hover-bg)] transition-colors group"
             >
-              <div className="flex items-center gap-2">
-                <Icon className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-amber-400 transition-colors" />
+              <div className="flex items-center gap-3">
+                <Icon className="w-5 h-5 text-[var(--text-muted)] group-hover:text-amber-400 transition-colors" />
                 <div>
-                  <p className="text-xs font-medium text-[var(--text-primary)]">{s.name}</p>
-                  <p className="text-[9px] text-[var(--text-muted)] truncate max-w-[200px]">{s.description}</p>
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">{s.name}</p>
+                  <p className="text-xs text-[var(--text-secondary)] truncate max-w-[220px]">{s.description}</p>
                 </div>
               </div>
-              <span className="text-[9px] text-[var(--text-muted)]">{s.status}</span>
+              <span className="text-xs text-[var(--text-muted)]">{s.status}</span>
             </a>
           );
         })}
@@ -203,35 +203,30 @@ function NewsSentimentPanel() {
 function AIAdvisorCard() {
   return (
     <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-4">
-      <div className="flex items-start gap-3">
-        <div className="p-2 bg-amber-500/10 rounded-lg flex-shrink-0">
-          <Brain className="w-5 h-5 text-amber-400" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-bold text-[var(--text-primary)]">AI Trading Advisor</h3>
-          <p className="text-[10px] text-[var(--text-muted)] mt-1 leading-relaxed">
-            Multi-signal analysis engine that combines price action (RSI, MACD), news sentiment, 
-            insider activity, and macro events to generate ranked trading suggestions.
-          </p>
-          <div className="flex flex-wrap gap-1 mt-2">
-            <span className="px-1.5 py-0.5 bg-[var(--app-bg)] text-[9px] text-[var(--text-muted)] rounded">RSI</span>
-            <span className="px-1.5 py-0.5 bg-[var(--app-bg)] text-[9px] text-[var(--text-muted)] rounded">MACD</span>
-            <span className="px-1.5 py-0.5 bg-[var(--app-bg)] text-[9px] text-[var(--text-muted)] rounded">Sentiment</span>
-            <span className="px-1.5 py-0.5 bg-[var(--app-bg)] text-[9px] text-[var(--text-muted)] rounded">Insider Flow</span>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <div className="p-2 bg-amber-500/10 rounded-lg flex-shrink-0">
+            <Brain className="w-5 h-5 text-amber-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-base font-bold text-[var(--text-primary)]">AI Trading Advisor</h3>
+            <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">
+              Multi-signal analysis engine that combines price action (RSI, MACD), news sentiment,
+              insider activity, and macro events to generate ranked trading suggestions.
+            </p>
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              <span className="px-2 py-0.5 bg-[var(--app-bg)] text-[10px] text-[var(--text-secondary)] rounded">RSI</span>
+              <span className="px-2 py-0.5 bg-[var(--app-bg)] text-[10px] text-[var(--text-secondary)] rounded">MACD</span>
+              <span className="px-2 py-0.5 bg-[var(--app-bg)] text-[10px] text-[var(--text-secondary)] rounded">Sentiment</span>
+              <span className="px-2 py-0.5 bg-[var(--app-bg)] text-[10px] text-[var(--text-secondary)] rounded">Insider Flow</span>
+            </div>
           </div>
         </div>
-      </div>
-
-      <div className="mt-3 pt-3 border-t border-[var(--border)]">
-        <p className="text-[10px] text-[var(--text-muted)] mb-2">
-          <Info className="w-3 h-3 inline mr-1" />
-          Enter symbols, set your risk profile, and get buy/sell/hold/watch recommendations with confidence scores and position sizing.
-        </p>
         <a
           href="/advisor"
-          className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold bg-amber-500 text-black rounded-lg hover:bg-amber-600 transition-colors"
+          className="flex-shrink-0 inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold bg-amber-500 text-black rounded-lg hover:bg-amber-600 transition-colors shadow-lg shadow-amber-500/20"
         >
-          <Brain className="w-3.5 h-3.5" />
+          <Brain className="w-4 h-4" />
           Launch AI Advisor
         </a>
       </div>

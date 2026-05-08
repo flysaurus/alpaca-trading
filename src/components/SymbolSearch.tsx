@@ -109,11 +109,11 @@ export default function SymbolSearch({ value, onChange, onSelect, placeholder = 
           }}
           onFocus={() => setShowDropdown(true)}
           onKeyDown={handleKeyDown}
-          className="w-full bg-[var(--app-bg)] border border-[#1e232b] rounded-lg pl-9 pr-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-subtle)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)] uppercase tracking-wider"
+          className="w-full bg-[var(--app-bg)] border border-[#1e232b] rounded-lg pl-9 pr-3 py-2.5 text-[15px] text-[var(--text-primary)] placeholder-[var(--text-subtle)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)] uppercase tracking-wider"
           autoFocus={autoFocus}
         />
         {loading && (
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[var(--text-muted)] animate-pulse">...</span>
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)] animate-pulse">...</span>
         )}
       </div>
 
@@ -131,10 +131,10 @@ export default function SymbolSearch({ value, onChange, onSelect, placeholder = 
                 <TrendingUp className="w-3.5 h-3.5 text-[var(--text-muted)]" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-[var(--text-primary)] font-[family-name:var(--font-mono)]">{asset.symbol}</p>
-                <p className="text-[10px] text-[var(--text-muted)] truncate">{asset.name}</p>
+                <p className="text-sm font-bold text-[var(--text-primary)] font-[family-name:var(--font-mono)]">{asset.symbol}</p>
+                <p className="text-xs text-[var(--text-muted)] truncate">{asset.name}</p>
               </div>
-              <span className="text-[9px] text-[var(--text-subtle)] flex-shrink-0">{asset.exchange}</span>
+              <span className="text-[10px] text-[var(--text-subtle)] flex-shrink-0">{asset.exchange}</span>
             </button>
           ))}
         </div>

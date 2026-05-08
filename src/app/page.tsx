@@ -73,6 +73,8 @@ interface AccountData {
     portfolioValue: number;
     buyingPower: number;
     equity: number;
+    lastEquity: number;
+    lastPortfolioValue: number;
     dayTradeCount: number;
     status: string;
     tradingMode: string;
@@ -114,25 +116,25 @@ function RiskThresholdSelector() {
   };
 
   const styles: Record<string, string> = {
-    conservative: 'border-amber-400/60 text-amber-300 bg-amber-400/15 shadow-[0_0_8px_rgba(251,191,36,0.15)]',
-    moderate: 'border-blue-400/60 text-blue-300 bg-blue-400/15 shadow-[0_0_8px_rgba(96,165,250,0.15)]',
-    aggressive: 'border-red-400/60 text-red-300 bg-red-400/15 shadow-[0_0_8px_rgba(248,113,113,0.15)]',
+    conservative: 'border-amber-400 text-amber-300 bg-amber-400/20 shadow-[0_0_12px_rgba(251,191,36,0.25)]',
+    moderate: 'border-blue-400 text-blue-300 bg-blue-400/20 shadow-[0_0_12px_rgba(96,165,250,0.25)]',
+    aggressive: 'border-red-400 text-red-300 bg-red-400/20 shadow-[0_0_12px_rgba(248,113,113,0.25)]',
   };
 
   return (
     <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-3">
       <div className="flex items-center gap-3">
-        <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wide font-bold">Risk Threshold</span>
-        <div className="flex gap-1">
+        <span className="text-xs text-[var(--text-secondary)] uppercase tracking-wide font-extrabold">Risk Threshold</span>
+        <div className="flex gap-2">
           {(['conservative', 'moderate', 'aggressive'] as const).map(r => (
             <button
               key={r}
               onClick={() => update(r)}
-              className={`px-3 py-1 text-xs font-bold rounded-lg border transition ${
-                risk === r ? styles[r] : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+              className={`px-4 py-1.5 text-sm font-bold rounded-lg border transition ${
+                risk === r ? styles[r] : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)]'
               }`}
             >
-              {r}
+              {r.charAt(0).toUpperCase() + r.slice(1)}
             </button>
           ))}
         </div>
@@ -147,7 +149,6 @@ function Sidebar({ active, onChange }: { active: string; onChange: (s: string) =
     { id: 'positions', icon: CandlestickChart, label: 'Positions' },
     { id: 'ai-strategies', icon: Brain, label: 'AI & Strategies' },
     { id: 'orders', icon: List, label: 'Orders' },
-    { id: 'scanner', icon: Zap, label: 'Scanner' },
     { id: 'news', icon: Newspaper, label: 'News' },
     { id: 'settings', icon: Settings, label: 'Settings' },
   ];
@@ -334,9 +335,12 @@ function TopBar({ account, marketOpen }: { account: AccountData | null; marketOp
   const portfolioValue = account?.account.portfolioValue || 0;
   const unrealizedPL = account?.risk?.unrealizedPnL || 0;
   const pnlPercent = account?.risk?.pnlPercent || 0;
+  const dayPnL = (account?.account.equity || 0) - (account?.account.lastEquity || 0);
+  const dayPnLPercent = account?.account.lastEquity ? (dayPnL / account.account.lastEquity) * 100 : 0;
   const cash = account?.account.cash || 0;
   const bp = account?.account.buyingPower || 0;
   const isProfitable = unrealizedPL >= 0;
+  const isDayProfitable = dayPnL >= 0;
   
   // Notification badge (hardcoded for now, would integrate with real store)
   const [showNotifications, setShowNotifications] = useState(false);
@@ -366,9 +370,9 @@ function TopBar({ account, marketOpen }: { account: AccountData | null; marketOp
           </p>
         </div>
 
-        {/* P&L */}
+        {/* Total P&L */}
         <div className="flex-shrink-0 min-w-[100px]">
-          <p className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] font-medium">Day P&L</p>
+          <p className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] font-medium">Total P&L</p>
           <div className="flex items-center gap-1.5">
             {isProfitable ? (
               <TrendingUp className="w-3.5 h-3.5 text-[var(--green)]" />
@@ -381,6 +385,24 @@ function TopBar({ account, marketOpen }: { account: AccountData | null; marketOp
           </div>
           <p className={`text-[10px] font-[family-name:var(--font-mono)] tabular-nums ${isProfitable ? 'text-[#166534]' : 'text-[#991b1b]'}`}>
             {fmtPct(pnlPercent)}
+          </p>
+        </div>
+
+        {/* Day P&L */}
+        <div className="flex-shrink-0 min-w-[100px]">
+          <p className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] font-medium">Day P&L</p>
+          <div className="flex items-center gap-1.5">
+            {isDayProfitable ? (
+              <TrendingUp className="w-3.5 h-3.5 text-[var(--green)]" />
+            ) : (
+              <TrendingDown className="w-3.5 h-3.5 text-[var(--red)]" />
+            )}
+            <p className={`text-sm font-bold font-[family-name:var(--font-mono)] tabular-nums ${isDayProfitable ? 'text-[var(--green)] text-green-glow' : 'text-[var(--red)] text-red-glow'}`}>
+              {isDayProfitable ? '+' : ''}{fmtUSD(dayPnL)}
+            </p>
+          </div>
+          <p className={`text-[10px] font-[family-name:var(--font-mono)] tabular-nums ${isDayProfitable ? 'text-[#166534]' : 'text-[#991b1b]'}`}>
+            {fmtPct(dayPnLPercent)}
           </p>
         </div>
 
@@ -587,9 +609,12 @@ function TradeWidget({ onRefresh }: { onRefresh: () => void }) {
   const [symbol, setSymbol] = useState('');
   const [qty, setQty] = useState('');
   const [side, setSide] = useState<'buy' | 'sell'>('buy');
-  const [orderType, setOrderType] = useState<'market' | 'limit'>('market');
-  const [timeInForce, setTimeInForce] = useState<'day' | 'gtc' | 'opg'>('day');
+  const [orderType, setOrderType] = useState<'market' | 'limit' | 'stop' | 'stop_limit' | 'trailing_stop'>('market');
+  const [timeInForce, setTimeInForce] = useState<'day' | 'gtc' | 'opg' | 'cls' | 'ioc' | 'fok'>('day');
   const [limitPrice, setLimitPrice] = useState('');
+  const [stopPrice, setStopPrice] = useState('');
+  const [trailPrice, setTrailPrice] = useState('');
+  const [trailPercent, setTrailPercent] = useState('');
   const [livePrice, setLivePrice] = useState<number | null>(null);
   const [priceLoading, setPriceLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -622,17 +647,27 @@ function TradeWidget({ onRefresh }: { onRefresh: () => void }) {
     setSubmitting(true);
     setResult(null);
     try {
+      const body: any = {
+        symbol: symbol.toUpperCase(),
+        qty: Number(qty),
+        side,
+        type: orderType,
+        timeInForce,
+      };
+      if (limitPrice && (orderType === 'limit' || orderType === 'stop_limit')) {
+        body.limitPrice = Number(limitPrice);
+      }
+      if (stopPrice && (orderType === 'stop' || orderType === 'stop_limit')) {
+        body.stopPrice = Number(stopPrice);
+      }
+      if (orderType === 'trailing_stop') {
+        if (trailPrice) body.trailPrice = Number(trailPrice);
+        else if (trailPercent) body.trailPercent = Number(trailPercent);
+      }
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          symbol: symbol.toUpperCase(),
-          qty: Number(qty),
-          side,
-          type: orderType,
-          timeInForce,
-          ...(limitPrice && orderType === 'limit' ? { limitPrice: Number(limitPrice) } : {}),
-        }),
+        body: JSON.stringify(body),
       });
       const json = await res.json();
       setResult(json);
@@ -640,6 +675,9 @@ function TradeWidget({ onRefresh }: { onRefresh: () => void }) {
         setSymbol('');
         setQty('');
         setLimitPrice('');
+        setStopPrice('');
+        setTrailPrice('');
+        setTrailPercent('');
         setLivePrice(null);
         onRefresh();
       }
@@ -711,25 +749,31 @@ function TradeWidget({ onRefresh }: { onRefresh: () => void }) {
           />
           <select
             value={orderType}
-            onChange={(e) => setOrderType(e.target.value as 'market' | 'limit')}
+            onChange={(e) => setOrderType(e.target.value as any)}
             className="bg-[var(--app-bg)] border border-[#1e232b] rounded-lg px-2 py-2 text-xs text-[var(--text-secondary)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)]"
           >
             <option value="market">MKT</option>
             <option value="limit">LMT</option>
+            <option value="stop">STOP</option>
+            <option value="stop_limit">STP LMT</option>
+            <option value="trailing_stop">TRAIL</option>
           </select>
           <select
             value={timeInForce}
-            onChange={(e) => setTimeInForce(e.target.value as 'day' | 'gtc' | 'opg')}
+            onChange={(e) => setTimeInForce(e.target.value as any)}
             className="bg-[var(--app-bg)] border border-[#1e232b] rounded-lg px-2 py-2 text-xs text-[var(--text-secondary)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)]"
             title="Time in Force"
           >
             <option value="day">DAY</option>
             <option value="gtc">GTC</option>
             <option value="opg">OPG</option>
+            <option value="cls">CLS</option>
+            <option value="ioc">IOC</option>
+            <option value="fok">FOK</option>
           </select>
         </div>
 
-        {orderType === 'limit' && (
+        {(orderType === 'limit' || orderType === 'stop_limit') && (
           <input
             type="number"
             placeholder="LIMIT PRICE"
@@ -737,6 +781,35 @@ function TradeWidget({ onRefresh }: { onRefresh: () => void }) {
             onChange={(e) => setLimitPrice(e.target.value)}
             className="w-full bg-[var(--app-bg)] border border-[#1e232b] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-subtle)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)]"
           />
+        )}
+
+        {(orderType === 'stop' || orderType === 'stop_limit') && (
+          <input
+            type="number"
+            placeholder="STOP PRICE"
+            value={stopPrice}
+            onChange={(e) => setStopPrice(e.target.value)}
+            className="w-full bg-[var(--app-bg)] border border-[#1e232b] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-subtle)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)]"
+          />
+        )}
+
+        {orderType === 'trailing_stop' && (
+          <div className="flex gap-2">
+            <input
+              type="number"
+              placeholder="TRAIL $"
+              value={trailPrice}
+              onChange={(e) => { setTrailPrice(e.target.value); setTrailPercent(''); }}
+              className="flex-1 bg-[var(--app-bg)] border border-[#1e232b] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-subtle)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)]"
+            />
+            <input
+              type="number"
+              placeholder="TRAIL %"
+              value={trailPercent}
+              onChange={(e) => { setTrailPercent(e.target.value); setTrailPrice(''); }}
+              className="flex-1 bg-[var(--app-bg)] border border-[#1e232b] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-subtle)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)]"
+            />
+          </div>
         )}
 
         {/* Notional preview */}
@@ -1183,13 +1256,6 @@ export default function Dashboard() {
               <OrderFilterBar filters={orderFilters} onChange={setOrderFilters} />
               <OrdersWidget orders={filteredOrders} onCancel={cancelOrder} />
             </>
-          )}
-
-          {activeTab === 'scanner' && (
-            <div className="bg-[var(--card-bg)] rounded-xl border border-[#1e232b] p-8 text-center">
-              <Zap className="w-8 h-8 text-[#1e232b] mx-auto mb-2" />
-              <p className="text-sm text-[var(--text-muted)]">Scanner coming in Phase 2</p>
-            </div>
           )}
 
           {activeTab === 'news' && <NewsIntelligence embedded />}
