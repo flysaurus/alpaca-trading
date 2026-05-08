@@ -1026,14 +1026,14 @@ export default function Dashboard() {
               {/* Risk Threshold */}
               <RiskThresholdSelector />
 
+              {/* Performance — full width */}
+              <PerformanceCard 
+                portfolioValue={account?.account.portfolioValue || 0}
+                cash={account?.account.cash || 0}
+                positions={positions}
+              />
+              
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                {/* Performance Chart */}
-                <PerformanceCard 
-                  portfolioValue={account?.account.portfolioValue || 0}
-                  cash={account?.account.cash || 0}
-                  positions={positions}
-                />
-                
                 {/* Allocation Chart */}
                 <AllocationCard 
                   portfolioValue={account?.account.portfolioValue || 0}
