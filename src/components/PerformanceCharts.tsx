@@ -4,16 +4,11 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   AreaChart,
   Area,
-  ComposedChart,
-  Bar,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  ReferenceLine,
-  Cell,
 } from 'recharts';
 import { Activity, Loader2, TrendingUp, PieChart } from 'lucide-react';
 
@@ -221,21 +216,7 @@ export function PerformanceCard({
     return [min * 0.998, max * 1.002];
   }, [data]);
 
-  const pnlDomain = useMemo(() => {
-    if (data.length === 0) return ['auto', 'auto'];
-    const pnls = data.map(d => d.pnl);
-    const min = Math.min(...pnls);
-    const max = Math.max(...pnls);
-    return [min * 1.05, max * 1.05];
-  }, [data]);
 
-  const cumDomain = useMemo(() => {
-    if (data.length === 0) return ['auto', 'auto'];
-    const cums = data.map(d => d.cumulativePnl);
-    const min = Math.min(...cums);
-    const max = Math.max(...cums);
-    return [min * 1.05, max * 1.05];
-  }, [data]);
 
   return (
     <div className="bg-[#0d1117] rounded-2xl border border-[#1f2937] p-4">
@@ -286,9 +267,9 @@ export function PerformanceCard({
           </div>
 
           {/* Portfolio Value Area Chart */}
-          <div className="h-[200px] mb-1">
+          <div className="h-[240px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data} margin={{ top: 5, right: 40, left: 0, bottom: 0 }}>
+              <AreaChart data={data} margin={{ top: 5, right: 40, left: 0, bottom: 20 }}>
                 <defs>
                   <linearGradient id="valueGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.25} />
@@ -296,7 +277,15 @@ export function PerformanceCard({
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#1f293766" vertical={false} />
-                <XAxis dataKey="date" hide />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fill: '#6b7280', fontSize: 9 }}
+                  tickFormatter={fmtDate}
+                  axisLine={false}
+                  tickLine={false}
+                  interval="preserveStartEnd"
+                  minTickGap={30}
+                />
                 <YAxis
                   domain={valueDomain as any}
                   orientation="right"
@@ -320,69 +309,7 @@ export function PerformanceCard({
             </ResponsiveContainer>
           </div>
 
-          {/* Shared X-Axis */}
-          <div className="h-[20px] mb-1">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data} margin={{ top: 0, right: 40, left: 0, bottom: 0 }}>
-                <XAxis
-                  dataKey="date"
-                  tick={{ fill: '#6b7280', fontSize: 9 }}
-                  tickFormatter={fmtDate}
-                  axisLine={false}
-                  tickLine={false}
-                  interval="preserveStartEnd"
-                  minTickGap={30}
-                />
-                <YAxis hide />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
 
-          {/* P&L Composed Chart */}
-          <div className="h-[160px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={data} margin={{ top: 5, right: 40, left: 40, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1f293766" vertical={false} />
-                <XAxis dataKey="date" hide />
-                <YAxis
-                  yAxisId="left"
-                  domain={pnlDomain as any}
-                  orientation="left"
-                  tick={{ fill: '#6b7280', fontSize: 9, fontFamily: 'DM Mono' }}
-                  tickFormatter={fmt$K}
-                  axisLine={false}
-                  tickLine={false}
-                  width={45}
-                />
-                <YAxis
-                  yAxisId="right"
-                  domain={cumDomain as any}
-                  orientation="right"
-                  tick={{ fill: '#6b7280', fontSize: 9, fontFamily: 'DM Mono' }}
-                  tickFormatter={fmt$K}
-                  axisLine={false}
-                  tickLine={false}
-                  width={45}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <ReferenceLine yAxisId="left" y={0} stroke="#374151" strokeWidth={1.5} />
-                <Bar yAxisId="left" dataKey="pnl" barSize={6} radius={[2, 2, 0, 0]}>
-                  {data.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.pnl >= 0 ? '#34d399' : '#f43f5e'} />
-                  ))}
-                </Bar>
-                <Line
-                  yAxisId="right"
-                  type="monotone"
-                  dataKey="cumulativePnl"
-                  stroke="#f59e0b"
-                  strokeWidth={2}
-                  dot={false}
-                  activeDot={{ r: 4, fill: '#f59e0b', stroke: '#0d1117', strokeWidth: 2 }}
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
         </>
       )}
     </div>
