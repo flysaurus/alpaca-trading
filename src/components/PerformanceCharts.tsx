@@ -34,31 +34,6 @@ const fmtDate = (dateStr: string) => {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
-// ── Mock data generator ───────────────────────────────────────────
-function generateMockData(days: number): DataPoint[] {
-  const data: DataPoint[] = [];
-  let value = 100_000;
-  let cumulativePnl = 0;
-  const today = new Date();
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
-    if (d.getDay() === 0 || d.getDay() === 6) continue;
-    const change = (Math.random() - 0.48) * 800;
-    value += change;
-    value = Math.max(value, 50_000);
-    cumulativePnl += change;
-    data.push({
-      date: d.toISOString().split('T')[0],
-      value,
-      pnl: change,
-      pnlPct: (change / (value - change)) * 100,
-      cumulativePnl,
-    });
-  }
-  return data;
-}
-
 // ── Fetch portfolio history ───────────────────────────────────────
 async function fetchPortfolioHistory(period: string): Promise<DataPoint[]> {
   try {
@@ -180,9 +155,7 @@ export function PerformanceCard({
           const mean = processed.reduce((s, d) => s + d.value, 0) / processed.length;
           processed = processed.filter(d => Math.abs(d.value) <= mean * 10);
         }
-        if (processed.length === 0) {
-          processed = generateMockData(daysMap[timeframe]);
-        }
+        // No mock fallback — if no real data, show empty state
         setData(processed);
       })
       .finally(() => { if (!cancelled) setLoading(false); });
