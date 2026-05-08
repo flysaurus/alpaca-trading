@@ -72,6 +72,5 @@
   text-shadow: 0 0 12px color-mix(in oklab, var(--red) 40%, transparent);
 }
 
-/* Global font size bumps for readability on dark backgrounds */
-.text-sm { font-size: 0.95rem !important; line-height: 1.4rem !important; }
-.text-xs { font-size: 0.875rem !important; line-height: 1.25rem !important; }
+/* Reduce overall font size by 15% */
+html { font-size: 85%; }
