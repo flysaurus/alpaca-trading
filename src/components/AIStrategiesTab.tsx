@@ -203,32 +203,30 @@ function NewsSentimentPanel() {
 function AIAdvisorCard() {
   return (
     <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3">
-          <div className="p-2 bg-amber-500/10 rounded-lg flex-shrink-0">
-            <Brain className="w-5 h-5 text-amber-400" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="text-base font-bold text-[var(--text-primary)]">AI Trading Advisor</h3>
-            <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">
-              Multi-signal analysis engine that combines price action (RSI, MACD), news sentiment,
-              insider activity, and macro events to generate ranked trading suggestions.
-            </p>
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              <span className="px-2 py-0.5 bg-[var(--app-bg)] text-[10px] text-[var(--text-secondary)] rounded">RSI</span>
-              <span className="px-2 py-0.5 bg-[var(--app-bg)] text-[10px] text-[var(--text-secondary)] rounded">MACD</span>
-              <span className="px-2 py-0.5 bg-[var(--app-bg)] text-[10px] text-[var(--text-secondary)] rounded">Sentiment</span>
-              <span className="px-2 py-0.5 bg-[var(--app-bg)] text-[10px] text-[var(--text-secondary)] rounded">Insider Flow</span>
-            </div>
-          </div>
+      <div className="flex items-start gap-3">
+        <div className="p-2 bg-amber-500/10 rounded-lg flex-shrink-0">
+          <Brain className="w-5 h-5 text-amber-400" />
         </div>
-        <a
-          href="/advisor"
-          className="flex-shrink-0 inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold bg-amber-500 text-black rounded-lg hover:bg-amber-600 transition-colors shadow-lg shadow-amber-500/20"
-        >
-          <Brain className="w-4 h-4" />
-          Launch AI Advisor
-        </a>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-base font-bold text-[var(--text-primary)]">AI Trading Advisor</h3>
+          <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">
+            Multi-signal analysis engine that combines price action (RSI, MACD), news sentiment,
+            insider activity, and macro events to generate ranked trading suggestions.
+          </p>
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            <span className="px-2 py-0.5 bg-[var(--app-bg)] text-[10px] text-[var(--text-secondary)] rounded">RSI</span>
+            <span className="px-2 py-0.5 bg-[var(--app-bg)] text-[10px] text-[var(--text-secondary)] rounded">MACD</span>
+            <span className="px-2 py-0.5 bg-[var(--app-bg)] text-[10px] text-[var(--text-secondary)] rounded">Sentiment</span>
+            <span className="px-2 py-0.5 bg-[var(--app-bg)] text-[10px] text-[var(--text-secondary)] rounded">Insider Flow</span>
+          </div>
+          <a
+            href="/advisor"
+            className="inline-flex items-center gap-2 px-5 py-2.5 mt-3 text-sm font-bold bg-amber-500 text-black rounded-lg hover:bg-amber-600 transition-colors shadow-lg shadow-amber-500/20"
+          >
+            <Brain className="w-4 h-4" />
+            Launch AI Advisor
+          </a>
+        </div>
       </div>
     </div>
   );
