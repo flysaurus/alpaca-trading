@@ -123,9 +123,9 @@ function RiskThresholdSelector() {
 
   return (
     <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-3">
-      <div className="flex items-center gap-3">
-        <span className="text-xs text-[var(--text-secondary)] uppercase tracking-wide font-extrabold">Risk Threshold</span>
-        <div className="flex gap-2">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        <span className="text-xs text-[var(--text-secondary)] uppercase tracking-wide font-extrabold whitespace-nowrap">Risk Threshold</span>
+        <div className="flex gap-1.5 sm:gap-2">
           {(['conservative', 'moderate', 'aggressive'] as const).map(r => (
             <button
               key={r}

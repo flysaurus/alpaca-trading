@@ -150,12 +150,8 @@ export function PerformanceCard({
     fetchPortfolioHistory(periodMap[timeframe])
       .then((rawData) => {
         if (cancelled) return;
-        let processed = rawData.filter(d => d.value > 0 && !isNaN(d.value));
-        if (processed.length > 0) {
-          const mean = processed.reduce((s, d) => s + d.value, 0) / processed.length;
-          processed = processed.filter(d => Math.abs(d.value) <= mean * 10);
-        }
-        // No mock fallback — if no real data, show empty state
+        // Keep all valid data points, only remove obvious bad values
+        const processed = rawData.filter(d => d.value >= 0 && !isNaN(d.value) && d.date);
         setData(processed);
       })
       .finally(() => { if (!cancelled) setLoading(false); });
