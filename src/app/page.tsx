@@ -24,6 +24,7 @@ import {
   Brain,
   Bot,
   PieChart,
+  Landmark,
 } from 'lucide-react';
 import WatchlistWidget from '@/components/WatchlistWidget';
 import MarketIndicesBar from '@/components/MarketIndicesBar';
@@ -208,7 +209,7 @@ function MobileNav({ active, onChange, showNotifications, setShowNotifications }
   ];
 
   return (
-    <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-[var(--surface-bg)] border-t border-[#1e232b] z-30 flex justify-around py-2">
+    <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-[var(--surface-bg)]/95 backdrop-blur-xl border-t border-[var(--border)] z-50 flex justify-around items-center h-16 pb-safe">
       {items.map((item) => {
         const Icon = item.icon;
         const isActive = active === item.id;
@@ -216,23 +217,24 @@ function MobileNav({ active, onChange, showNotifications, setShowNotifications }
           <button
             key={item.id}
             onClick={() => onChange(item.id)}
-            className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition ${
-              isActive ? 'text-amber-400' : 'text-[var(--text-muted)]'
+            className={`flex flex-col items-center justify-center gap-1 w-14 h-full transition ${
+              isActive ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'
             }`}
           >
-            <Icon className="w-6 h-6 sm:w-5 sm:h-5" />
-            <span className="text-[10px]">{item.label}</span>
+            <Icon className="w-5 h-5" strokeWidth={isActive ? 2.5 : 1.5} />
+            <span className="text-[9px] font-semibold">{item.label}</span>
           </button>
         );
       })}
       {/* Notification bell on mobile */}
       <button
         onClick={() => setShowNotifications(true)}
-        className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition text-[var(--text-muted)] relative"
+        className="flex flex-col items-center justify-center gap-1 w-14 h-full transition text-[var(--text-muted)] relative"
       >
-        <Bell className="w-6 h-6 sm:w-5 sm:h-5" />
+        <Bell className="w-5 h-5" strokeWidth={1.5} />
+        <span className="text-[9px] font-semibold">Alerts</span>
         {notificationCount > 0 && (
-          <span className="absolute top-1 right-1 w-3 h-3 bg-amber-500 text-black text-[8px] font-bold flex items-center justify-center rounded-full">
+          <span className="absolute top-1 right-2 w-4 h-4 bg-[var(--accent)] text-black text-[8px] font-bold flex items-center justify-center rounded-full">
             {notificationCount}
           </span>
         )}
@@ -330,6 +332,30 @@ function NotificationsDropdown({
   );
 }
 
+/* ─────────── Branded Top Banner ─────────── */
+function TopBanner() {
+  return (
+    <div className="sticky top-0 z-30 bg-[var(--surface-bg)] border-b border-[var(--border)]">
+      <div className="flex items-center justify-between px-3 sm:px-4 py-2.5">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-[var(--accent)] flex items-center justify-center flex-shrink-0">
+            <Landmark className="w-4 h-4 text-black" />
+          </div>
+          <div className="flex flex-col leading-none">
+            <span className="text-sm font-bold text-[var(--text-primary)] tracking-tight">Alpaca Trading</span>
+            <span className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider font-medium">Terminal</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="hidden sm:inline text-[10px] text-[var(--text-muted)] bg-[var(--app-bg)] px-2 py-1 rounded-full border border-[var(--border)]">
+            Paper Trading
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─────────── Top Bar ─────────── */
 function TopBar({ account, marketOpen }: { account: AccountData | null; marketOpen: boolean }) {
   const portfolioValue = account?.account.portfolioValue || 0;
@@ -341,11 +367,11 @@ function TopBar({ account, marketOpen }: { account: AccountData | null; marketOp
   const bp = account?.account.buyingPower || 0;
   const isProfitable = unrealizedPL >= 0;
   const isDayProfitable = dayPnL >= 0;
-  
+
   // Notification badge (hardcoded for now, would integrate with real store)
   const [showNotifications, setShowNotifications] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
-  
+
   // Load notifications from localStorage on mount
   useEffect(() => {
     try {
@@ -360,78 +386,88 @@ function TopBar({ account, marketOpen }: { account: AccountData | null; marketOp
   }, []);
 
   return (
-    <header className="sticky top-0 z-10 bg-[var(--app-bg)]/90 backdrop-blur-xl border-b border-[#1e232b]">
-      <div className="flex items-center gap-4 px-4 py-3 overflow-x-auto">
+    <header className="sticky top-[45px] z-20 bg-[var(--app-bg)]/90 backdrop-blur-xl border-b border-[var(--border)]">
+      <div className="flex items-center gap-3 px-3 sm:px-4 py-2.5 overflow-x-auto no-scrollbar">
         {/* Portfolio */}
         <div className="flex-shrink-0">
-          <p className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] font-medium">Portfolio</p>
-          <p className="text-lg font-bold font-[family-name:var(--font-mono)] text-[var(--text-primary)] tabular-nums">
+          <p className="text-[9px] uppercase tracking-widest text-[var(--text-muted)] font-medium">Portfolio</p>
+          <p className="text-base sm:text-lg font-bold font-[family-name:var(--font-mono)] text-[var(--text-primary)] tabular-nums">
             ${fmtUSD(portfolioValue)}
           </p>
         </div>
 
         {/* Total P&L */}
-        <div className="flex-shrink-0 min-w-[100px]">
-          <p className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] font-medium">Total P&L</p>
-          <div className="flex items-center gap-1.5">
+        <div className="flex-shrink-0 min-w-[80px] sm:min-w-[100px]">
+          <p className="text-[9px] uppercase tracking-widest text-[var(--text-muted)] font-medium">Total P&L</p>
+          <div className="flex items-center gap-1">
             {isProfitable ? (
-              <TrendingUp className="w-3.5 h-3.5 text-[var(--green)]" />
+              <TrendingUp className="w-3 h-3 text-[var(--green)]" />
             ) : (
-              <TrendingDown className="w-3.5 h-3.5 text-[var(--red)]" />
+              <TrendingDown className="w-3 h-3 text-[var(--red)]" />
             )}
-            <p className={`text-sm font-bold font-[family-name:var(--font-mono)] tabular-nums ${isProfitable ? 'text-[var(--green)] text-green-glow' : 'text-[var(--red)] text-red-glow'}`}>
+            <p className={`text-xs sm:text-sm font-bold font-[family-name:var(--font-mono)] tabular-nums ${isProfitable ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
               {isProfitable ? '+' : ''}{fmtUSD(unrealizedPL)}
             </p>
           </div>
-          <p className={`text-[10px] font-[family-name:var(--font-mono)] tabular-nums ${isProfitable ? 'text-[#166534]' : 'text-[#991b1b]'}`}>
+          <p className={`text-[9px] font-[family-name:var(--font-mono)] tabular-nums ${isProfitable ? 'text-[var(--green-soft)]' : 'text-[var(--red-soft)]'}`}>
             {fmtPct(pnlPercent)}
           </p>
         </div>
 
         {/* Day P&L */}
-        <div className="flex-shrink-0 min-w-[100px]">
-          <p className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] font-medium">Day P&L</p>
-          <div className="flex items-center gap-1.5">
+        <div className="flex-shrink-0 min-w-[80px] sm:min-w-[100px]">
+          <p className="text-[9px] uppercase tracking-widest text-[var(--text-muted)] font-medium">Day P&L</p>
+          <div className="flex items-center gap-1">
             {isDayProfitable ? (
-              <TrendingUp className="w-3.5 h-3.5 text-[var(--green)]" />
+              <TrendingUp className="w-3 h-3 text-[var(--green)]" />
             ) : (
-              <TrendingDown className="w-3.5 h-3.5 text-[var(--red)]" />
+              <TrendingDown className="w-3 h-3 text-[var(--red)]" />
             )}
-            <p className={`text-sm font-bold font-[family-name:var(--font-mono)] tabular-nums ${isDayProfitable ? 'text-[var(--green)] text-green-glow' : 'text-[var(--red)] text-red-glow'}`}>
+            <p className={`text-xs sm:text-sm font-bold font-[family-name:var(--font-mono)] tabular-nums ${isDayProfitable ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
               {isDayProfitable ? '+' : ''}{fmtUSD(dayPnL)}
             </p>
           </div>
-          <p className={`text-[10px] font-[family-name:var(--font-mono)] tabular-nums ${isDayProfitable ? 'text-[#166534]' : 'text-[#991b1b]'}`}>
+          <p className={`text-[9px] font-[family-name:var(--font-mono)] tabular-nums ${isDayProfitable ? 'text-[var(--green-soft)]' : 'text-[var(--red-soft)]'}`}>
             {fmtPct(dayPnLPercent)}
           </p>
         </div>
 
-        {/* Buying Power */}
-        <div className="flex-shrink-0 min-w-[100px]">
-          <p className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] font-medium">Buying Power</p>
-          <p className="text-sm font-bold font-[family-name:var(--font-mono)] text-[var(--text-primary)] tabular-nums">
-            ${fmtInt(bp)}
-          </p>
+        {/* Buying Power — hidden on very small screens */}
+        <div className="hidden xs:flex flex-shrink-0 min-w-[80px]">
+          <div>
+            <p className="text-[9px] uppercase tracking-widest text-[var(--text-muted)] font-medium">BP</p>
+            <p className="text-xs sm:text-sm font-bold font-[family-name:var(--font-mono)] text-[var(--text-primary)] tabular-nums">
+              ${fmtInt(bp)}
+            </p>
+          </div>
         </div>
 
-        {/* Cash */}
-        <div className="flex-shrink-0 min-w-[80px]">
-          <p className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] font-medium">Cash</p>
-          <p className="text-sm font-bold font-[family-name:var(--font-mono)] text-[var(--text-secondary)] tabular-nums">
-            ${fmtInt(cash)}
-          </p>
+        {/* Cash — hidden on very small screens */}
+        <div className="hidden xs:flex flex-shrink-0 min-w-[60px]">
+          <div>
+            <p className="text-[9px] uppercase tracking-widest text-[var(--text-muted)] font-medium">Cash</p>
+            <p className="text-xs sm:text-sm font-bold font-[family-name:var(--font-mono)] text-[var(--text-secondary)] tabular-nums">
+              ${fmtInt(cash)}
+            </p>
+          </div>
         </div>
 
         {/* Market Status */}
         <div className="flex-shrink-0 ml-auto flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${marketOpen ? 'bg-[var(--green)] animate-pulse' : 'bg-[var(--red)]'}`} />
-          <span className="text-[10px] uppercase tracking-widest text-[#6b7280] font-medium">
-            {marketOpen ? 'Market Open' : 'Market Closed'}
-          </span>
-          <span className="text-[10px] text-[var(--text-muted)] bg-[var(--card-bg)] px-2 py-0.5 rounded border border-[#1e232b]">
+          <div className="flex items-center gap-1.5 bg-[var(--card-bg)] px-2 py-1 rounded-full border border-[var(--border)]">
+            <div className={`w-1.5 h-1.5 rounded-full ${marketOpen ? 'bg-[var(--green)] animate-pulse' : 'bg-[var(--red)]'}`} />
+            <span className="text-[9px] uppercase tracking-wider text-[var(--text-muted)] font-medium hidden sm:inline">
+              {marketOpen ? 'Open' : 'Closed'}
+            </span>
+          </div>
+          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${
+            account?.account.tradingMode === 'live'
+              ? 'bg-[var(--red)]/10 text-[var(--red)] border-[var(--red)]/20'
+              : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+          }`}>
             {account?.account.tradingMode === 'live' ? 'LIVE' : 'PAPER'}
           </span>
-          
+
           {/* Notification Badge */}
           <button
             onClick={() => setShowNotifications(!showNotifications)}
@@ -439,7 +475,7 @@ function TopBar({ account, marketOpen }: { account: AccountData | null; marketOp
           >
             <Bell className="w-4 h-4" />
             {notificationCount > 0 && (
-              <span className="absolute top-0 right-0 w-4 h-4 bg-amber-500 text-black text-[9px] font-bold flex items-center justify-center rounded-full">
+              <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-[var(--accent)] text-black text-[8px] font-bold flex items-center justify-center rounded-full">
                 {notificationCount}
               </span>
             )}
@@ -1006,10 +1042,11 @@ export default function Dashboard() {
   const filteredOrders = applyOrderFilters(orders, orderFilters);
 
   return (
-    <div className="min-h-screen bg-[var(--app-bg)] flex pb-16 sm:pb-0">
+    <div className="min-h-screen bg-[var(--app-bg)] flex sm:pb-0">
       <Sidebar active={activeTab} onChange={setActiveTab} />
 
-      <div className="flex-1 flex flex-col min-w-0 max-w-full">
+      <div className="flex-1 flex flex-col min-w-0 max-w-full pb-16 sm:pb-0">
+        <TopBanner />
         <TopBar account={account} marketOpen={marketOpen} />
         <NotificationsDropdown show={showNotifications} onClose={() => setShowNotifications(false)} />
 

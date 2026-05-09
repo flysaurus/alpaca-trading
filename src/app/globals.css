@@ -74,3 +74,24 @@
 
 /* Reduce overall font size by 15% */
 html { font-size: 85%; }
+
+/* Hide scrollbar but keep functionality */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Safe area padding for mobile notch/home indicator */
+.pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* Extra small breakpoint */
+@media (min-width: 380px) {
+  .xs\:flex { display: flex; }
+  .xs\:inline { display: inline; }
+}
+
+/* Touch-friendly tap highlights */
+button, a, [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Smooth scrolling */
+html { scroll-behavior: smooth; }
