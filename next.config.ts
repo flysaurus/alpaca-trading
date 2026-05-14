@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // output: 'standalone', // Removed for Vercel compatibility
+  turbopack: {},
   webpack: (config, { isServer }) => {
     if (!isServer) {
       // Exclude Node.js modules from client bundle
