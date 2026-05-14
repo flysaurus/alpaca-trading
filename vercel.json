@@ -1,15 +1,15 @@
 {
   "crons": [
     {
-      "path": "/api/cron?action=snapshot",
+      "path": "/api/cron/snapshot",
       "schedule": "5 21 * * 1-5"
     },
     {
-      "path": "/api/cron?action=morning_brief",
+      "path": "/api/cron/morning-brief",
       "schedule": "25 13 * * 1-5"
     },
     {
-      "path": "/api/cron?action=update_recommendation_prices",
+      "path": "/api/cron/update-prices",
       "schedule": "0 21 * * 1-5"
     }
   ]
