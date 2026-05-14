@@ -88,11 +88,16 @@ export async function scanForQualityDips(
   }
 
   // Step 1 — Merge and deduplicate universe
-  const universe = Array.from(new Set([...SP500_SYMBOLS, ...watchlistSymbols]));
+  // Temporarily use test symbols to confirm snapshots fetch works
+  const testSymbols = ['BIIB','QCOM','CBRE','JKHY','ALB','AAPL','MSFT','NVDA','AMZN'];
+  const universe = Array.from(new Set([...testSymbols, ...watchlistSymbols]));
   console.log(`[dipScanner] Scanning ${universe.length} symbols`);
+  console.log('Scanning symbols count:', universe.length);
+  console.log('First 5 symbols:', universe.slice(0, 5));
 
   // Step 2 — Fetch snapshots in batches of 100
   const allSnapshots: Record<string, any> = {};
+  console.log('Fetching snapshots for batch...');
   for (let i = 0; i < universe.length; i += 100) {
     const batch = universe.slice(i, i + 100);
     try {
@@ -117,21 +122,28 @@ export async function scanForQualityDips(
     inWatchlist: boolean;
   }> = [];
 
+  let logCount = 0;
   for (const symbol of Object.keys(allSnapshots)) {
     const snap = allSnapshots[symbol];
-    const dailyBar = snap.DailyBar || snap.dailyBar || {};
-    const prevDailyBar = snap.PrevDailyBar || snap.prevDailyBar || {};
+    const dailyBar = snap.dailyBar || snap.DailyBar || {};
+    const prevDailyBar = snap.prevDailyBar || snap.PrevDailyBar || {};
 
     const close = dailyBar.c || dailyBar.C || 0;
-    const open = dailyBar.o || dailyBar.O || 0;
-    const prevClose = prevDailyBar.c || prevDailyBar.C || open || close;
+    const prevClose = prevDailyBar.c || prevDailyBar.C || 0;
     const todayVolume = dailyBar.v || dailyBar.V || 0;
-    const avgVolume = dailyBar.vw || dailyBar.VW || close || 1; // Use VWAP proxy if no avg
+    const avgVolume = dailyBar.vw || dailyBar.VW || close || 1;
 
     if (!close || !prevClose) continue;
 
-    const changePct = (close - prevClose) / prevClose;
-    if (changePct > -0.05) continue; // Only down 5%+
+    // Calculate change% using previous day close
+    const changePercent = (close - prevClose) / prevClose;
+
+    if (logCount < 3) {
+      console.log(symbol, 'change%:', (changePercent * 100).toFixed(2) + '%');
+      logCount++;
+    }
+
+    if (changePercent > -0.05) continue; // Only down 5%+
 
     // Estimate average volume from VWAP if needed, or use a rough proxy
     // Alpaca snapshots don't have 20-day avg, so we use a heuristic
@@ -140,7 +152,7 @@ export async function scanForQualityDips(
     movers.push({
       symbol,
       snap,
-      changePct,
+      changePct: changePercent,
       currentPrice: close,
       todayVolume,
       avgVolume,
