@@ -393,42 +393,61 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
     }
   }
 
-  useEffect(() => {
-    async function load() {
-      try {
-        setLoading(true);
-        // Get watchlist from localStorage
-        const watchlistRaw =
-          (typeof window !== 'undefined' && localStorage.getItem('alpaca-watchlist')) ||
-          'AAPL,TSLA,NVDA,MSFT,GOOGL,AMZN,META';
-        const watchlist = watchlistRaw
-          .split(',')
-          .map((s) => s.trim().toUpperCase())
-          .filter(Boolean)
-          .join(',');
+  // ── Dip scanner fetch ───────────────────────────────────────
+  const fetchDipScanner = useCallback(async () => {
+    try {
+      setLoading(true);
+      // Get watchlist from localStorage
+      const watchlistRaw =
+        (typeof window !== 'undefined' && localStorage.getItem('alpaca-watchlist')) ||
+        'AAPL,TSLA,NVDA,MSFT,GOOGL,AMZN,META';
+      const watchlist = watchlistRaw
+        .split(',')
+        .map((s) => s.trim().toUpperCase())
+        .filter(Boolean)
+        .join(',');
 
-        const [scannerRes, marketRes] = await Promise.all([
-          fetch(`/api/dip-scanner?watchlist=${encodeURIComponent(watchlist)}`),
-          fetch('/api/market').then((r) => r.json()).catch(() => ({})),
-        ]);
+      const url = `/api/dip-scanner?watchlist=${encodeURIComponent(watchlist)}`;
+      console.log('DipScanner fetch URL:', url);
 
-        setMarketLabel(marketRes?.marketState?.label || 'Unknown');
+      const [scannerRes, marketRes] = await Promise.all([
+        fetch(url),
+        fetch('/api/market').then((r) => r.json()).catch(() => ({})),
+      ]);
 
-        if (scannerRes.ok) {
-          const data = await scannerRes.json();
-          setCandidates(data.candidates || []);
-        } else {
-          setCandidates([]);
-        }
-      } catch (err) {
-        console.error('[MarketScanner] Load error:', err);
+      setMarketLabel(marketRes?.marketState?.label || 'Unknown');
+
+      if (scannerRes.ok) {
+        const data = await scannerRes.json();
+        console.log('DipScanner response:', JSON.stringify(data, null, 2));
+        setCandidates(data.candidates || []);
+      } else {
         setCandidates([]);
-      } finally {
-        setLoading(false);
       }
+    } catch (err) {
+      console.error('[MarketScanner] Load error:', err);
+      setCandidates([]);
+    } finally {
+      setLoading(false);
     }
-    load();
   }, []);
+
+  useEffect(() => {
+    // Initial load
+    fetchDipScanner();
+
+    // Refresh every 10 minutes during market hours (9 AM - 4 PM ET)
+    const intervalId = setInterval(() => {
+      const now = new Date();
+      const et = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+      const hour = et.getHours();
+      if (hour >= 9 && hour < 16) {
+        fetchDipScanner();
+      }
+    }, 10 * 60 * 1000); // 10 minutes
+
+    return () => clearInterval(intervalId);
+  }, [fetchDipScanner]);
 
   const handleExecute = async (candidate: EnrichedDipCandidate) => {
     setExecuting(candidate.symbol);
