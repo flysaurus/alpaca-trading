@@ -86,6 +86,20 @@ export interface DbTradeHistory {
   strategy_id: string | null;
 }
 
+export interface DbStrategyExecution {
+  id: string;
+  strategy_id: string;
+  user_id: string;
+  action: string;
+  symbol?: string;
+  qty?: number;
+  side?: string;
+  order_id?: string;
+  status: 'success' | 'failed' | 'skipped';
+  details?: Record<string, any>;
+  executed_at: string;
+}
+
 /* ── User auto-create helper ─────────────────────────────────── */
 
 async function ensureUser(userId: string) {
