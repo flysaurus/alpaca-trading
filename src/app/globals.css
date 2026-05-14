@@ -72,8 +72,32 @@
   text-shadow: 0 0 12px color-mix(in oklab, var(--red) 40%, transparent);
 }
 
-/* Reduce overall font size by 15% */
-html { font-size: 85%; }
+/* ── Font System: SF Pro / Apple System Fonts ──────────────────── */
+html {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", sans-serif;
+  font-size: 85%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Font Size Tokens ──────────────────────────────────────────── */
+.text-xs   { font-size: 11px; line-height: 1.4; }
+.text-sm   { font-size: 13px; line-height: 1.5; }
+.text-base { font-size: 15px; line-height: 1.5; }
+.text-lg   { font-size: 17px; line-height: 1.3; }
+.text-xl   { font-size: 20px; line-height: 1.2; }
+.text-2xl  { font-size: 24px; line-height: 1.1; }
+.text-3xl  { font-size: 28px; line-height: 1.0; }
+
+/* ── Font Weight Tokens ────────────────────────────────────────── */
+.font-normal   { font-weight: 400; }
+.font-medium   { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold     { font-weight: 700; }
 
 /* Hide scrollbar but keep functionality */
 .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -95,3 +119,74 @@ button, a, [role="button"] {
 
 /* Smooth scrolling */
 html { scroll-behavior: smooth; }
+
+/* iOS date input fixes */
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+}
+input[type="date"]::-webkit-date-and-time-value {
+  text-align: left;
+}
+input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+/* ── Shared Card Component ─────────────────────────────────────── */
+.card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+}
+
+/* ── AI Bubble Text Colors (override prose in light mode) ──────── */
+.ai-bubble {
+  color: #111827 !important;
+}
+.ai-bubble h1, .ai-bubble h2, .ai-bubble h3, .ai-bubble h4, .ai-bubble h5, .ai-bubble h6 {
+  color: #00d4aa !important;
+  font-size: 1rem !important;
+  line-height: 1.2 !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.25rem !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+}
+.ai-bubble p, .ai-bubble li, .ai-bubble ul, .ai-bubble span {
+  color: #0d9488 !important;
+}
+.ai-bubble strong {
+  color: #000000 !important;
+}
+.ai-bubble em {
+  color: #374151 !important;
+}
+[data-theme="dark"] .ai-bubble {
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .ai-bubble p,
+[data-theme="dark"] .ai-bubble li,
+[data-theme="dark"] .ai-bubble ul,
+[data-theme="dark"] .ai-bubble span {
+  color: #2dd4bf !important;
+}
+[data-theme="dark"] .ai-bubble strong {
+  color: #ffffff !important;
+}
+[data-theme="dark"] .ai-bubble em {
+  color: #a0b4c8 !important;
+}
+
+/* iOS standalone PWA fixes */
+@supports (-webkit-touch-callout: none) {
+  /* iPhone-specific fixes */
+  .min-h-screen {
+    min-height: -webkit-fill-available;
+  }
+}

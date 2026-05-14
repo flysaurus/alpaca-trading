@@ -5,70 +5,23 @@ import { useState, useEffect } from 'react';
 interface IndexData {
   symbol: string;
   shortName: string;
+  etfSymbol: string;
   value: number;
   change: number;
   changePercent: number;
+  prevClose: number;
+  direction: string;
+  source: string;
 }
 
-const INDICES = [
-  { symbol: '^DJI', short: 'DJIA', scale: 100 },
-  { symbol: '^GSPC', short: 'S&P 500', scale: 10 },
-  { symbol: '^IXIC', short: 'NASDAQ', scale: 1 },
-  { symbol: '^RUT', short: 'RUSSELL', scale: 1 },
-];
-
-// Alpaca ETF proxies
-const PROXIES: Record<string, string> = {
-  '^DJI': 'DIA',
-  '^GSPC': 'SPY',
-  '^IXIC': 'QQQ',
-  '^RUT': 'IWM',
+const SYMBOLS = ['^DJI', '^GSPC', '^IXIC', '^RUT', '^VIX'];
+const LABELS: Record<string, string> = {
+  '^DJI': 'DJIA',
+  '^GSPC': 'S&P 500',
+  '^IXIC': 'NASDAQ',
+  '^RUT': 'Russell 2000',
+  '^VIX': 'VIX',
 };
-
-async function fetchYahooClient(symbols: string[]): Promise<Record<string, { price: number; change: number; changePercent: number; prevClose: number }>> {
-  try {
-    const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols.join(',')}`;
-    const res = await fetch(url, { headers: { Accept: 'application/json' } });
-    if (!res.ok) return {};
-
-    const json = await res.json();
-    const results = json?.quoteResponse?.result || [];
-    const map: Record<string, any> = {};
-
-    for (const r of results) {
-      const price = Number(r.regularMarketPrice ?? 0);
-      const prevClose = Number(r.regularMarketPreviousClose ?? r.previousClose ?? 0);
-      const change = Number(r.regularMarketChange ?? (prevClose ? price - prevClose : 0));
-      const changePercent = Number(r.regularMarketChangePercent ?? (prevClose ? (change / prevClose) * 100 : 0));
-
-      if (price > 0) {
-        map[r.symbol] = { price, change, changePercent, prevClose };
-      }
-    }
-
-    return map;
-  } catch {
-    return {};
-  }
-}
-
-async function fetchAlpacaProxies(symbols: string[]): Promise<Record<string, { price: number; prevClose: number }>> {
-  try {
-    const res = await fetch(`/api/quotes?symbols=${symbols.join(',')}`);
-    const json = await res.json();
-    if (!json.data) return {};
-
-    const map: Record<string, any> = {};
-    for (const q of json.data) {
-      if (q.price > 0) {
-        map[q.symbol] = { price: q.price, prevClose: q.prevClose || q.price };
-      }
-    }
-    return map;
-  } catch {
-    return {};
-  }
-}
 
 export default function MarketIndicesBar() {
   const [data, setData] = useState<IndexData[]>([]);
@@ -76,61 +29,22 @@ export default function MarketIndicesBar() {
 
   const fetchAll = async () => {
     setLoading(true);
-
-    // Strategy: Try Yahoo first (client-side, may work), then Alpaca proxies
-    const yahooSymbols = INDICES.map((i) => i.symbol);
-    const yahooData = await fetchYahooClient(yahooSymbols);
-
-    const results: IndexData[] = [];
-    const missingProxies: string[] = [];
-    const missingMap: Record<string, any> = {};
-
-    for (const idx of INDICES) {
-      const q = yahooData[idx.symbol];
-      if (q && q.price > 0) {
-        results.push({
-          symbol: idx.symbol,
-          shortName: idx.short,
-          value: q.price,
-          change: q.change,
-          changePercent: q.changePercent,
-        });
-      } else {
-        missingProxies.push(PROXIES[idx.symbol]);
-        missingMap[PROXIES[idx.symbol]] = idx;
-      }
+    try {
+      const res = await fetch(`/api/indices?t=${Date.now()}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      setData(json.data || []);
+    } catch (err: any) {
+      console.warn('[MarketIndicesBar] API error:', err.message);
+    } finally {
+      setLoading(false);
     }
-
-    // Fallback: Alpaca ETF proxies
-    if (missingProxies.length > 0) {
-      const alpacaData = await fetchAlpacaProxies(missingProxies);
-
-      for (const proxy of missingProxies) {
-        const q = alpacaData[proxy];
-        const idx = missingMap[proxy];
-        if (!q || !q.price) continue;
-
-        const change = q.prevClose ? q.price - q.prevClose : 0;
-        const changePercent = q.prevClose ? (change / q.prevClose) * 100 : 0;
-
-        results.push({
-          symbol: idx.symbol,
-          shortName: idx.short,
-          value: q.price * idx.scale,
-          change: change * idx.scale,
-          changePercent,
-        });
-      }
-    }
-
-    setData(results);
-    setLoading(false);
   };
 
   useEffect(() => {
     fetchAll();
-    const i = setInterval(fetchAll, 15000);
-    return () => clearInterval(i);
+    const id = setInterval(fetchAll, 15000);
+    return () => clearInterval(id);
   }, []);
 
   const fmtBig = (n: number) =>
@@ -140,13 +54,15 @@ export default function MarketIndicesBar() {
 
   return (
     <div className="flex gap-2 overflow-x-auto pb-1">
-      {INDICES.map((idx) => {
-        const d = data.find((x) => x.symbol === idx.symbol);
+      {SYMBOLS.map((sym) => {
+        const d = data.find((x) => x.symbol === sym);
         if (!d) {
-          // Skeleton
           return (
-            <div key={idx.symbol} className="flex-shrink-0 rounded-xl px-3 py-2.5 min-w-[150px] bg-[var(--card-bg)] border border-[var(--border)]">
-              <span className="text-[10px] font-bold text-[var(--text-secondary)] tracking-wide">{idx.short}</span>
+            <div key={sym} className="flex-shrink-0 rounded-xl px-3 py-2.5 min-w-[150px] bg-[var(--card-bg)] border border-[var(--border)]">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-bold text-[var(--text-secondary)] tracking-wide">{LABELS[sym]}</span>
+                <span className="text-[10px] font-bold text-[var(--text-muted)] tracking-wide">—</span>
+              </div>
               <div className="h-5 w-24 bg-[var(--app-bg)] rounded animate-pulse mt-1" />
               <div className="h-3.5 w-16 bg-[var(--app-bg)] rounded animate-pulse mt-1.5" />
             </div>
@@ -156,12 +72,15 @@ export default function MarketIndicesBar() {
         const up = d.changePercent >= 0;
         return (
           <div
-            key={idx.symbol}
+            key={sym}
             className={`flex-shrink-0 rounded-xl px-3 py-2.5 min-w-[150px] ${
               up ? 'bg-[var(--green)]/10 border border-[var(--green)]/25' : 'bg-[var(--red)]/10 border border-[var(--red)]/25'
             }`}
           >
-            <span className="text-[10px] font-bold text-[var(--text-secondary)] tracking-wide">{idx.short}</span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-bold text-[var(--text-secondary)] tracking-wide">{d.shortName}</span>
+              <span className="text-[10px] font-bold text-[var(--text-muted)] tracking-wide">{d.etfSymbol}</span>
+            </div>
             <p className="text-lg font-bold font-[family-name:var(--font-mono)] text-[var(--text-primary)] tabular-nums leading-none">
               {fmtBig(d.value)}
             </p>

@@ -324,6 +324,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
               {th('qty', 'Qty')}
               {th('costBasis', 'Cost basis')}
               <th className="px-3 py-2 text-xs uppercase tracking-wider font-bold text-[var(--text-secondary)] text-left whitespace-nowrap">52‑week range</th>
+              <th className="px-3 py-2 text-xs uppercase tracking-wider font-bold text-[var(--text-secondary)] text-left whitespace-nowrap">AI</th>
             </tr>
           </thead>
           <tbody>
@@ -363,13 +364,13 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
                     />
                   </td>
                   <td className="px-3 py-2.5">
-                    <p className="font-semibold text-[var(--text-primary)]">{p.symbol}</p>
+                    <p className="text-base font-semibold text-[var(--text-primary)]">{p.symbol}</p>
                   </td>
-                  <td className="px-3 py-2.5 text-right font-[family-name:var(--font-mono)] text-[var(--text-primary)] tabular-nums whitespace-nowrap">
+                  <td className="px-3 py-2.5 text-right font-[family-name:var(--font-mono)] text-base font-semibold text-[var(--text-primary)] tabular-nums whitespace-nowrap">
                     ${fmtUSD(p.currentPrice)}
                   </td>
                   <td className="px-3 py-2.5 text-right whitespace-nowrap">
-                    <p className={`font-[family-name:var(--font-mono)] tabular-nums ${todayProfitable ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
+                    <p className={`font-[family-name:var(--font-mono)] text-sm font-medium tabular-nums ${todayProfitable ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
                       {todayProfitable ? '+' : ''}{fmtUSD(p.todayPL)}
                     </p>
                     <p className={`font-[family-name:var(--font-mono)] text-xs tabular-nums ${todayProfitable ? 'text-[var(--green)]/70' : 'text-[var(--red)]/70'}`}>
@@ -377,7 +378,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
                     </p>
                   </td>
                   <td className="px-3 py-2.5 text-right whitespace-nowrap">
-                    <p className={`font-[family-name:var(--font-mono)] tabular-nums ${totalProfitable ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
+                    <p className={`font-[family-name:var(--font-mono)] text-sm font-medium tabular-nums ${totalProfitable ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
                       {totalProfitable ? '+' : ''}{fmtUSD(p.unrealizedPL)}
                     </p>
                     <p className={`font-[family-name:var(--font-mono)] text-xs tabular-nums ${totalProfitable ? 'text-[var(--green)]/70' : 'text-[var(--red)]/70'}`}>
@@ -412,6 +413,17 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
                     ) : (
                       <span className="text-xs text-[var(--text-muted)]">—</span>
                     )}
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <button
+                      onClick={() => {
+                        const prompt = `Analyze my ${p.symbol} position. I hold ${p.qty} shares at avg cost $${p.avgEntryPrice.toFixed(2)}. Current price is $${p.currentPrice.toFixed(2)}.`;
+                        window.dispatchEvent(new CustomEvent('ai-analyze-position', { detail: { prompt } }));
+                      }}
+                      className="text-[10px] font-bold px-2 py-1 rounded bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/20 hover:bg-[var(--accent)]/20 transition whitespace-nowrap"
+                    >
+                      Analyze
+                    </button>
                   </td>
                 </tr>
               );

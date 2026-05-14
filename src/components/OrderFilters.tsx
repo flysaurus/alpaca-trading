@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Filter, X, Calendar } from 'lucide-react';
+import SymbolSearch from '@/components/SymbolSearch';
 
 export interface OrderFilters {
   dateRange: 'today' | '7d' | '30d' | '60d' | '90d' | 'ytd' | 'custom' | 'all';
@@ -107,19 +108,25 @@ export default function OrderFilterBar({ filters, onChange }: Props) {
             {/* Custom date inputs */}
             {filters.dateRange === 'custom' && (
               <div className="flex gap-2 mt-2">
-                <input
-                  type="date"
-                  value={filters.startDate || ''}
-                  onChange={(e) => update({ startDate: e.target.value })}
-                  className="flex-1 bg-[var(--app-bg)] border border-[#1e232b] rounded-lg px-3 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)]"
-                />
+                <div className="relative flex-1">
+                  <input
+                    type="date"
+                    value={filters.startDate || ''}
+                    onChange={(e) => update({ startDate: e.target.value })}
+                    className="w-full bg-[var(--app-bg)] border border-[#1e232b] rounded-lg px-3 py-1.5 pr-8 text-xs text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)] appearance-none"
+                  />
+                  <Calendar className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted)] pointer-events-none" />
+                </div>
                 <span className="text-[var(--text-muted)] self-center">to</span>
-                <input
-                  type="date"
-                  value={filters.endDate || ''}
-                  onChange={(e) => update({ endDate: e.target.value })}
-                  className="flex-1 bg-[var(--app-bg)] border border-[#1e232b] rounded-lg px-3 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)]"
-                />
+                <div className="relative flex-1">
+                  <input
+                    type="date"
+                    value={filters.endDate || ''}
+                    onChange={(e) => update({ endDate: e.target.value })}
+                    className="w-full bg-[var(--app-bg)] border border-[#1e232b] rounded-lg px-3 py-1.5 pr-8 text-xs text-[var(--text-primary)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)] appearance-none"
+                  />
+                  <Calendar className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted)] pointer-events-none" />
+                </div>
               </div>
             )}
           </div>
@@ -128,12 +135,11 @@ export default function OrderFilterBar({ filters, onChange }: Props) {
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1.5 block">Symbol</label>
-              <input
-                type="text"
-                placeholder="ALL"
+              <SymbolSearch
                 value={filters.symbol || ''}
-                onChange={(e) => update({ symbol: e.target.value.toUpperCase() || undefined })}
-                className="w-full bg-[var(--app-bg)] border border-[#1e232b] rounded-lg px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-subtle)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)] uppercase"
+                onChange={(s) => update({ symbol: s || undefined })}
+                onSelect={(s) => update({ symbol: s || undefined })}
+                placeholder="ALL"
               />
             </div>
             <div>

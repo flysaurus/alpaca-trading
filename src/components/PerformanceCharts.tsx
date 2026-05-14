@@ -37,7 +37,17 @@ const fmtDate = (dateStr: string) => {
 // ── Fetch portfolio history ───────────────────────────────────────
 async function fetchPortfolioHistory(period: string): Promise<DataPoint[]> {
   try {
-    const res = await fetch(`/api/portfolio/history?period=${period}&timeframe=1D`);
+    // Alpaca doesn't support 'YTD' — calculate equivalent
+    let apiPeriod = period;
+    if (period === 'YTD') {
+      const now = new Date();
+      const jan1 = new Date(now.getFullYear(), 0, 1);
+      const daysSinceJan1 = Math.floor((now.getTime() - jan1.getTime()) / (1000 * 60 * 60 * 24));
+      // Use 1A (1 year) and we'll filter after
+      apiPeriod = '1A';
+    }
+
+    const res = await fetch(`/api/portfolio/history?period=${apiPeriod}&timeframe=1D`);
     if (!res.ok) throw new Error('Failed to fetch');
     const { history } = await res.json();
 
@@ -47,14 +57,21 @@ async function fetchPortfolioHistory(period: string): Promise<DataPoint[]> {
 
     const data: DataPoint[] = [];
     let cumulativePnl = 0;
+    const jan1Str = new Date().getFullYear() + '-01-01';
+
     for (let i = 0; i < history.timestamp.length; i++) {
       const equity = parseFloat(history.equity?.[i] || '0');
       if (equity <= 0) continue;
       const pnl = parseFloat(history.profit_loss?.[i] || '0');
       const pnlPct = parseFloat(history.profit_loss_pct?.[i] || '0');
       cumulativePnl += pnl;
+      const dateStr = new Date(history.timestamp[i] * 1000).toISOString().split('T')[0];
+
+      // For YTD, skip data before Jan 1
+      if (period === 'YTD' && dateStr < jan1Str) continue;
+
       data.push({
-        date: new Date(history.timestamp[i] * 1000).toISOString().split('T')[0],
+        date: dateStr,
         value: equity,
         pnl,
         pnlPct,
@@ -76,22 +93,22 @@ function CustomTooltip({ active, payload, label }: any) {
   const isPos = d.pnl >= 0;
 
   return (
-    <div className="bg-[#0d1117] border border-[#1f2937] rounded-lg px-3 py-2 shadow-2xl">
-      <p className="text-[10px] text-[#6b7280] mb-1">{fmtDate(d.date)}</p>
+    <div className="card rounded-lg px-3 py-2 shadow-2xl">
+      <p className="text-[10px] text-[var(--text-muted)] mb-1">{fmtDate(d.date)}</p>
       <div className="space-y-0.5">
         <div className="flex justify-between gap-4 text-xs">
-          <span className="text-[#6b7280]">Portfolio Value</span>
-          <span className="text-[#f9fafb] font-bold font-mono">{fmt$(d.value)}</span>
+          <span className="text-[var(--text-muted)]">Portfolio Value</span>
+          <span className="text-[var(--text-primary)] font-bold font-mono">{fmt$(d.value)}</span>
         </div>
         <div className="flex justify-between gap-4 text-xs">
-          <span className="text-[#6b7280]">Day P&L</span>
-          <span className={`font-bold font-mono ${isPos ? 'text-[#34d399]' : 'text-[#f43f5e]'}`}>
+          <span className="text-[var(--text-muted)]">Day P&L</span>
+          <span className={`font-bold font-mono ${isPos ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
             {isPos ? '+' : ''}{fmt$(d.pnl)} ({fmtPct(d.pnlPct)})
           </span>
         </div>
         <div className="flex justify-between gap-4 text-xs">
-          <span className="text-[#6b7280]">Cumulative P&L</span>
-          <span className={`font-bold font-mono ${d.cumulativePnl >= 0 ? 'text-[#34d399]' : 'text-[#f43f5e]'}`}>
+          <span className="text-[var(--text-muted)]">Cumulative P&L</span>
+          <span className={`font-bold font-mono ${d.cumulativePnl >= 0 ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
             {d.cumulativePnl >= 0 ? '+' : ''}{fmt$(d.cumulativePnl)}
           </span>
         </div>
@@ -101,12 +118,13 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 // ── Stat Card ─────────────────────────────────────────────────────
-function StatCard({ label, value, subtext, color }: { label: string; value: string; subtext?: string; color?: string }) {
+function StatCard({ label, value, subtext, hint, color }: { label: string; value: string; subtext?: string; hint?: string; color?: string }) {
   return (
-    <div className="bg-[#0d1117] rounded-xl border border-[#1f2937] p-3 flex flex-col">
-      <span className="text-[10px] text-[#6b7280] uppercase tracking-wide font-semibold">{label}</span>
-      <span className={`text-lg font-bold mt-1 font-mono ${color || 'text-[#f9fafb]'}`}>{value}</span>
-      {subtext && <span className="text-[10px] text-[#6b7280] mt-0.5">{subtext}</span>}
+    <div className="card rounded-xl p-3 flex flex-col">
+      <span className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">{label}</span>
+      <span className={`text-2xl font-bold mt-1 font-mono ${color || 'text-[var(--text-primary)]'}`}>{value}</span>
+      {subtext && <span className="text-[10px] text-[var(--text-muted)] mt-0.5">{subtext}</span>}
+      {hint && <span className="text-[11px] text-gray-400 mt-1">{hint}</span>}
     </div>
   );
 }
@@ -114,7 +132,7 @@ function StatCard({ label, value, subtext, color }: { label: string; value: stri
 // ── Empty State ───────────────────────────────────────────────────
 function EmptyState() {
   return (
-    <div className="h-[400px] flex flex-col items-center justify-center text-[#6b7280]">
+    <div className="h-[400px] flex flex-col items-center justify-center text-[var(--text-muted)]">
       <TrendingUp className="w-8 h-8 mb-3 opacity-30" />
       <p className="text-sm font-medium">No data yet.</p>
       <p className="text-xs mt-1 opacity-60">Make your first trade to see results here.</p>
@@ -188,11 +206,11 @@ export function PerformanceCard({
 
 
   return (
-    <div className="bg-[#0d1117] rounded-2xl border border-[#1f2937] p-4">
+    <div className="card p-4">
       {/* Header + Time Range */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-bold text-[#f9fafb] flex items-center gap-2">
-          <Activity className="w-4 h-4 text-[#f59e0b]" />
+        <h3 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
+          <Activity className="w-4 h-4 text-[var(--accent)]" />
           Performance
         </h3>
         <div className="flex gap-1">
@@ -202,8 +220,8 @@ export function PerformanceCard({
               onClick={() => setTimeframe(tf)}
               className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition ${
                 timeframe === tf
-                  ? 'bg-[#f59e0b] text-black'
-                  : 'bg-[#1f2937] text-[#6b7280] hover:bg-[#374151]'
+                  ? 'bg-[var(--accent)] text-black'
+                  : 'bg-[var(--app-bg)] text-[var(--text-muted)] hover:bg-[var(--hover-bg)]'
               }`}
             >
               {tf}
@@ -224,15 +242,15 @@ export function PerformanceCard({
         <>
           {/* Stats Row */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
-            <StatCard label="Portfolio Value" value={fmt$(stats.currentValue)} subtext={`As of ${fmtDate(data[data.length - 1].date)}`} />
+            <StatCard label="PREV CLOSE VALUE" value={fmt$(stats.currentValue)} subtext="As of yesterday's close" hint="Updates daily at market close" />
             <StatCard
               label="Period Return"
               value={`${stats.periodReturn >= 0 ? '+' : ''}${fmt$(stats.periodReturn)}`}
               subtext={fmtPct(stats.periodReturnPct)}
-              color={stats.periodReturn >= 0 ? 'text-[#34d399]' : 'text-[#f43f5e]'}
+              color={stats.periodReturn >= 0 ? 'text-[var(--green)]' : 'text-[var(--red)]'}
             />
             <StatCard label="Win Rate" value={`${stats.winRate.toFixed(1)}%`} subtext={`${data.filter(d => d.pnl > 0).length} of ${data.length} days`} />
-            <StatCard label="Max Drawdown" value={`-${stats.maxDrawdown.toFixed(2)}%`} subtext="Peak to trough" color="text-[#f97316]" />
+            <StatCard label="Max Drawdown" value={`-${stats.maxDrawdown.toFixed(2)}%`} subtext="Peak to trough" color="text-[var(--accent)]" />
           </div>
 
           {/* Portfolio Value Area Chart */}
@@ -315,9 +333,9 @@ export function AllocationCard({
   const allocationData = buildAllocationData(portfolioData);
 
   return (
-    <div className="bg-[#0d1117] rounded-2xl border border-[#1f2937] p-4">
+    <div className="card p-4">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-bold text-[#f9fafb] flex items-center gap-2">
+        <h3 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
           <PieChart className="w-4 h-4 text-violet-400" />
           Allocation
         </h3>
@@ -332,7 +350,7 @@ export function AllocationCard({
               className={`px-2 py-1 text-[10px] font-bold rounded-lg transition ${
                 allocationTab === t.id
                   ? 'bg-violet-500 text-white'
-                  : 'bg-[#1f2937] text-[#6b7280] hover:bg-[#374151]'
+                  : 'bg-[var(--app-bg)] text-[var(--text-muted)] hover:bg-[var(--hover-bg)]'
               }`}
             >
               {t.label}
@@ -350,7 +368,7 @@ export function AllocationCard({
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
               <span className="text-xs text-[#9ca3af]">{item.label}</span>
             </div>
-            <span className="text-xs font-bold text-[#f9fafb] font-mono">{item.value.toFixed(1)}%</span>
+            <span className="text-xs font-bold text-[var(--text-primary)] font-mono">{item.value.toFixed(1)}%</span>
           </div>
         ))}
       </div>
@@ -363,7 +381,7 @@ function DonutChart({ data }: { data: any[] }) {
   const total = data.reduce((sum: number, d: any) => sum + d.value, 0);
   if (total === 0) {
     return (
-      <div className="h-64 flex items-center justify-center text-[#6b7280] text-sm">
+      <div className="h-64 flex items-center justify-center text-[var(--text-muted)] text-sm">
         No allocation data
       </div>
     );

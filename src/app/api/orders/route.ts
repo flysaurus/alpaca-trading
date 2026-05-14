@@ -5,6 +5,26 @@ import { checkRateLimit, getClientIP, rateLimitHeaders } from '@/lib/ratelimit';
 import { checkRiskLimits, DEFAULT_RISK } from '@/lib/risk';
 import { sendTelegramMessage } from '@/lib/telegram';
 
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('en-US', {
+    weekday: 'short',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'America/New_York'
+  });
+}
+
+function formatTime(dateStr: string): string {
+  return new Date(dateStr).toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    timeZone: 'America/New_York',
+    timeZoneName: 'short'
+  });
+}
+
 // ── GET /api/orders ─────────────────────────────────────────────
 export async function GET(request: Request) {
   const ip = getClientIP(request);
@@ -89,16 +109,6 @@ export async function POST(request: Request) {
     const estimatedPrice = limitPrice || body.estimatedPrice || 100;
     const notional = qty * estimatedPrice;
 
-    // ── Check for existing open order for same symbol ──
-    const existingOrders = await getOrders({ status: 'open', limit: 50 });
-    const existingForSymbol = existingOrders.find((o: any) => o.symbol === symbol.toUpperCase());
-    if (existingForSymbol) {
-      return NextResponse.json(
-        { error: `There is already an active ${existingForSymbol.side.toUpperCase()} order for ${symbol.toUpperCase()} (${existingForSymbol.status})` },
-        { status: 409, headers: rateLimitHeaders(limit) }
-      );
-    }
-
     const riskCheck = checkRiskLimits(
       portfolioValue,
       positions,
@@ -131,31 +141,88 @@ export async function POST(request: Request) {
     const chatId = process.env.TELEGRAM_CHAT_ID;
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
 
+    console.log('[API /orders] Telegram config:', { hasToken: !!botToken, hasChatId: !!chatId, tokenPrefix: botToken?.slice(0, 10) });
+
     if (chatId && botToken) {
       const filledPrice = order.filled_avg_price
         ? Number(order.filled_avg_price)
         : (limitPrice || body.estimatedPrice || 0);
 
-      const text = order.status === 'filled'
-        ? `🎯 <b>ORDER FILLED</b>
+      let text: string;
 
-${order.side === 'buy' ? '🟢' : '🔴'} <code>${order.symbol}</code> ${order.side.toUpperCase()}
-Qty: ${order.qty}
-Fill Price: $${Number(filledPrice).toFixed(2)}
-Total: $${(Number(order.qty) * Number(filledPrice)).toFixed(2)}
-Time: ${new Date().toLocaleTimeString('en-US', { timeZone: 'America/New_York' })} ET`
-        : `⏳ <b>ORDER ${order.status.toUpperCase()}</b>
+      if (order.status === 'filled') {
+        text = `
+✅ <b>ORDER FILLED</b>
+──────────────────
+📅 <b>Date:</b> ${formatDate(order.filled_at || order.created_at)}
+⏰ <b>Time:</b> ${formatTime(order.filled_at || order.created_at)}
 
-${order.side === 'buy' ? '🟢' : '🔴'} <code>${order.symbol}</code> ${order.side.toUpperCase()}
-Qty: ${order.qty}
-Status: ${order.status}
-You'll get another alert when filled.`;
+📊 <b>Symbol:</b> ${order.symbol}
+${order.side === 'buy' ? '🟢' : '🔴'} <b>Side:</b> ${order.side.toUpperCase()}
+📋 <b>Type:</b> ${(order.type || 'market').toUpperCase()}
+🔢 <b>Qty:</b> ${order.filled_qty || order.qty} shares
+💵 <b>Filled Price:</b> $${Number(filledPrice).toFixed(2)}
+${order.side === 'buy' ? '💸 <b>Debited:</b>' : '💰 <b>Credited:</b>'} $${(Number(order.filled_qty || order.qty) * Number(filledPrice)).toFixed(2)}
+──────────────────
+✅ <b>Status:</b> FILLED
+`;
+      } else if (order.status === 'canceled' || order.status === 'pending_cancel') {
+        text = `
+❌ <b>ORDER CANCELLED</b>
+──────────────────
+📅 <b>Date:</b> ${formatDate(order.canceled_at || order.updated_at || order.created_at)}
+⏰ <b>Time:</b> ${formatTime(order.canceled_at || order.updated_at || order.created_at)}
+
+📊 <b>Symbol:</b> ${order.symbol}
+${order.side === 'buy' ? '🟢' : '🔴'} <b>Side:</b> ${order.side.toUpperCase()}
+📋 <b>Type:</b> ${(order.type || 'market').toUpperCase()}
+🔢 <b>Qty:</b> ${order.qty} shares
+──────────────────
+❌ <b>Status:</b> CANCELLED
+`;
+      } else if (order.status === 'accepted' || order.status === 'accepted_for_bidding') {
+        text = `
+📨 <b>ORDER ACCEPTED</b>
+──────────────────
+📅 <b>Date:</b> ${formatDate(order.updated_at || order.created_at)}
+⏰ <b>Time:</b> ${formatTime(order.updated_at || order.created_at)}
+
+📊 <b>Symbol:</b> ${order.symbol}
+${order.side === 'buy' ? '🟢' : '🔴'} <b>Side:</b> ${order.side.toUpperCase()}
+📋 <b>Type:</b> ${(order.type || 'market').toUpperCase()}
+🔢 <b>Qty:</b> ${order.qty} shares
+💰 <b>Limit Price:</b> ${order.limit_price ? '$' + order.limit_price : 'Market'}
+──────────────────
+📨 <b>Status:</b> ACCEPTED
+`;
+      } else {
+        text = `
+🔔 <b>ORDER PLACED</b>
+──────────────────
+📅 <b>Date:</b> ${formatDate(order.created_at)}
+⏰ <b>Time:</b> ${formatTime(order.created_at)}
+
+📊 <b>Symbol:</b> ${order.symbol}
+${order.side === 'buy' ? '🟢' : '🔴'} <b>Side:</b> ${order.side.toUpperCase()}
+📋 <b>Type:</b> ${(order.type || 'market').toUpperCase()}
+🔢 <b>Qty:</b> ${order.qty} shares
+💰 <b>Limit Price:</b> ${order.limit_price ? '$' + order.limit_price : 'Market'}
+──────────────────
+⏳ <b>Status:</b> PENDING
+`;
+      }
+
+      console.log('[API /orders] Sending Telegram notification:', { chatId, status: order.status, symbol: order.symbol });
 
       telegramResult = await sendTelegramMessage({
         chatId,
-        text,
+        text: text.trim(),
         parseMode: 'HTML',
       });
+
+      console.log('[API /orders] Telegram result:', JSON.stringify(telegramResult));
+    } else {
+      console.warn('[API /orders] Telegram not configured — skipping notification');
     }
 
     return NextResponse.json(

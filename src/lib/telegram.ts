@@ -94,8 +94,12 @@ export function formatOrderAlert(params: {
 }): string {
   const emoji = params.side === 'buy' ? '🟢' : '🔴';
   const fillPct = params.filledQty ? Math.round((params.filledQty / params.qty) * 100) : 0;
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' });
+  const timeStr = now.toLocaleTimeString('en-US', { timeZone: 'America/New_York' });
 
   return `${emoji} <b>ORDER ${params.status.toUpperCase()}</b>
+📅 ${dateStr} | 🕐 ${timeStr} ET
 
 Symbol: <code>${params.symbol}</code>
 Side: ${params.side.toUpperCase()}

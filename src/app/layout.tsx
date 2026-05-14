@@ -17,6 +17,13 @@ export const metadata: Metadata = {
     capable: true,
     title: "Alpaca Trading",
     statusBarStyle: "black-translucent",
+    startupImage: [
+      { url: '/icon.svg', media: '(device-width: 390px) and (device-height: 844px)' },
+    ],
+  },
+  icons: {
+    icon: [{ url: '/icon.svg', type: 'image/svg+xml', sizes: 'any' }],
+    apple: [{ url: '/icon.svg', type: 'image/svg+xml', sizes: '180x180' }],
   },
 };
 
@@ -24,8 +31,6 @@ export const viewport: Viewport = {
   themeColor: "#0a0a0a",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: "cover",
 };
 

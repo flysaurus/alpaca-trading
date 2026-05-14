@@ -15,6 +15,10 @@ export async function GET(request: Request) {
 
   try {
     const positions = await getPositions();
+    
+    if (positions.length > 0) {
+      console.log('[API /positions] Raw Alpaca position sample:', JSON.stringify(positions[0], null, 2));
+    }
 
     return NextResponse.json(
       {

@@ -223,6 +223,7 @@ export default function WatchlistWidget() {
                 </div>
               </div>
             )}
+          </div>
           <button
             onClick={() => setShowAdd(true)}
             className="flex items-center gap-1 text-sm text-amber-400 hover:text-amber-300 transition"
@@ -236,7 +237,6 @@ export default function WatchlistWidget() {
           >
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
-          </div>
         </div>
       </div>
 

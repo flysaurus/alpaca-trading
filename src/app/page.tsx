@@ -37,7 +37,7 @@ import EnhancedPositions from '@/components/EnhancedPositions';;
 import { AlertRule } from '@/lib/notifications';
 import OrderFilterBar, { applyOrderFilters, type OrderFilters } from '@/components/OrderFilters';
 import { initTheme } from '@/lib/theme';
-import AIStrategiesTab from '@/components/AIStrategiesTab';
+import AdvisorStrategiesTab from '@/components/AdvisorStrategiesTab';
 import { startFillPoller } from '@/lib/orderFillNotifier';
 
 
@@ -148,7 +148,7 @@ function Sidebar({ active, onChange }: { active: string; onChange: (s: string) =
   const items = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { id: 'positions', icon: CandlestickChart, label: 'Positions' },
-    { id: 'ai-strategies', icon: Brain, label: 'AI & Strategies' },
+    { id: 'advisor', icon: Brain, label: 'Advisor' },
     { id: 'orders', icon: List, label: 'Orders' },
     { id: 'news', icon: Newspaper, label: 'News' },
     { id: 'settings', icon: Settings, label: 'Settings' },
@@ -184,32 +184,18 @@ function Sidebar({ active, onChange }: { active: string; onChange: (s: string) =
 }
 
 /* ─────────── Mobile Nav ─────────── */
-function MobileNav({ active, onChange, showNotifications, setShowNotifications }: { active: string; onChange: (s: string) => void; showNotifications: boolean; setShowNotifications: (v: boolean) => void }) {
-  const [notificationCount, setNotificationCount] = useState(0);
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('alpaca-trading-notifications');
-      if (stored) {
-        const data = JSON.parse(stored);
-        setNotificationCount(data.unread || 0);
-      }
-    } catch {
-      // Ignore
-    }
-  }, []);
-
+function MobileNav({ active, onChange }: { active: string; onChange: (s: string) => void }) {
   const items = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dash' },
     { id: 'positions', icon: CandlestickChart, label: 'Pos' },
-    { id: 'ai-strategies', icon: Brain, label: 'AI' },
+    { id: 'advisor', icon: Brain, label: 'Advisor' },
     { id: 'orders', icon: List, label: 'Orders' },
     { id: 'news', icon: Newspaper, label: 'News' },
     { id: 'settings', icon: Settings, label: 'Set' },
   ];
 
   return (
-    <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-[var(--surface-bg)]/95 backdrop-blur-xl border-t border-[var(--border)] z-50 flex justify-around items-center h-16 pb-safe">
+    <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-[var(--surface-bg)]/95 backdrop-blur-xl border-t border-[var(--border)] z-50 flex justify-around items-end pb-[env(safe-area-inset-bottom)]">
       {items.map((item) => {
         const Icon = item.icon;
         const isActive = active === item.id;
@@ -217,137 +203,35 @@ function MobileNav({ active, onChange, showNotifications, setShowNotifications }
           <button
             key={item.id}
             onClick={() => onChange(item.id)}
-            className={`flex flex-col items-center justify-center gap-1 w-14 h-full transition ${
+            className={`flex flex-col items-center justify-center gap-1 min-w-[56px] min-h-[56px] flex-1 py-1.5 transition ${
               isActive ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'
             }`}
           >
             <Icon className="w-5 h-5" strokeWidth={isActive ? 2.5 : 1.5} />
-            <span className="text-[9px] font-semibold">{item.label}</span>
+            <span className="text-xs font-medium leading-none">{item.label}</span>
           </button>
         );
       })}
-      {/* Notification bell on mobile */}
-      <button
-        onClick={() => setShowNotifications(true)}
-        className="flex flex-col items-center justify-center gap-1 w-14 h-full transition text-[var(--text-muted)] relative"
-      >
-        <Bell className="w-5 h-5" strokeWidth={1.5} />
-        <span className="text-[9px] font-semibold">Alerts</span>
-        {notificationCount > 0 && (
-          <span className="absolute top-1 right-2 w-4 h-4 bg-[var(--accent)] text-black text-[8px] font-bold flex items-center justify-center rounded-full">
-            {notificationCount}
-          </span>
-        )}
-      </button>
     </nav>
-  );
-}
-
-/* ─────────── Notifications Dropdown ─────────── */
-function NotificationsDropdown({ 
-  show, 
-  onClose 
-}: { 
-  show: boolean; 
-  onClose: () => void 
-}) {
-  const [notifications, setNotifications] = useState<Record<string, any>[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('alpaca-trading-notifications');
-      if (stored) {
-        const data = JSON.parse(stored);
-        setNotifications(data.list || []);
-        setUnreadCount(data.unread || 0);
-      }
-    } catch {
-      // Ignore
-    }
-  }, []);
-
-  const markAllRead = () => {
-    try {
-      const stored = localStorage.getItem('alpaca-trading-notifications');
-      const data = stored ? JSON.parse(stored) : { list: [], unread: 0 };
-      data.list.forEach((n: any) => n.read = true);
-      data.unread = 0;
-      localStorage.setItem('alpaca-trading-notifications', JSON.stringify(data));
-      setUnreadCount(0);
-      setNotifications([...data.list]);
-    } catch {
-      // Ignore
-    }
-  };
-
-  if (!show) return null;
-
-  return (
-    <div className="fixed top-16 right-4 w-80 bg-[var(--card-bg)] rounded-xl border border-[var(--border)] shadow-2xl z-50 max-h-[60vh] overflow-hidden flex flex-col">
-      <div className="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between bg-[var(--surface-bg)]">
-        <div className="flex items-center gap-2">
-          <Bell className="w-4 h-4 text-amber-400" />
-          <h3 className="text-sm font-bold text-[var(--text-primary)]">Notifications</h3>
-        </div>
-        <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-      <div className="flex-1 overflow-y-auto p-2">
-        {notifications.length === 0 ? (
-          <div className="text-center py-8">
-            <Bell className="w-8 h-8 text-[var(--hover-bg)] mx-auto mb-2" />
-            <p className="text-sm text-[var(--text-muted)]">No notifications yet</p>
-          </div>
-        ) : (
-          notifications.map((note: any) => (
-            <div key={note.id} className={`p-3 rounded-lg mb-2 ${note.read ? 'bg-[var(--app-bg)]/30' : 'bg-[var(--surface-bg)]/50 border border-[var(--border)]/30'}`}>
-              <div className="flex items-start gap-2">
-                <Bell className={`w-4 h-4 flex-shrink-0 mt-0.5 ${note.priority === 'high' ? 'text-amber-500' : 'text-[var(--text-secondary)]'}`} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-[var(--text-primary)] truncate">{note.title}</p>
-                  <p className="text-[10px] text-[var(--text-muted)] truncate mt-0.5">{note.message}</p>
-                  <div className="flex items-center gap-2 mt-2 text-[9px] text-[var(--text-subtle)]">
-                    <span className="px-1.5 py-0.5 rounded bg-[var(--app-bg)] uppercase">{note.type}</span>
-                    {note.symbol && <span className="font-bold text-[var(--text-primary)]">{note.symbol}</span>}
-                    <span>• {new Date(note.timestamp).toLocaleTimeString()}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-      <div className="px-4 py-2 border-t border-[var(--border)] bg-[var(--surface-bg)]">
-        <button 
-          onClick={markAllRead} 
-          disabled={unreadCount === 0}
-          className="w-full py-1.5 text-xs font-bold text-amber-500 hover:bg-amber-500/10 rounded transition disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          Mark All Read
-        </button>
-      </div>
-    </div>
   );
 }
 
 /* ─────────── Branded Top Banner ─────────── */
 function TopBanner() {
   return (
-    <div className="sticky top-0 z-30 bg-[var(--surface-bg)] border-b border-[var(--border)]">
-      <div className="flex items-center justify-between px-3 sm:px-4 py-2.5">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-[var(--accent)] flex items-center justify-center flex-shrink-0">
-            <Landmark className="w-4 h-4 text-black" />
+    <div className="sticky top-0 z-30 bg-[var(--surface-bg)] border-b border-[var(--border)] pt-[env(safe-area-inset-top)]">
+      <div className="flex items-center justify-center px-3 sm:px-4 py-[1.1rem] relative">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl bg-[var(--accent)] flex items-center justify-center flex-shrink-0">
+            <Landmark className="w-6 h-6 text-black" />
           </div>
-          <div className="flex flex-col leading-none">
-            <span className="text-sm font-bold text-[var(--text-primary)] tracking-tight">Alpaca Trading</span>
-            <span className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider font-medium">Terminal</span>
+          <div className="flex flex-col leading-none text-center items-center">
+            <span className="text-[1.1rem] font-bold text-[var(--text-primary)] tracking-tight">ALPACA Trading</span>
+            <span className="text-[11px] text-[var(--text-muted)] uppercase tracking-widest font-semibold mt-0.5">TERMINAL</span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="hidden sm:inline text-[10px] text-[var(--text-muted)] bg-[var(--app-bg)] px-2 py-1 rounded-full border border-[var(--border)]">
+        <div className="absolute right-3 sm:right-4 flex items-center gap-2">
+          <span className="hidden sm:inline text-[10px] text-[var(--text-muted)] bg-[var(--app-bg)] px-2.5 py-1 rounded-full border border-[var(--border)] font-medium">
             Paper Trading
           </span>
         </div>
@@ -358,7 +242,7 @@ function TopBanner() {
 
 /* ─────────── Top Bar ─────────── */
 function TopBar({ account, marketOpen }: { account: AccountData | null; marketOpen: boolean }) {
-  const portfolioValue = account?.account.portfolioValue || 0;
+  const portfolioValue = account?.account.equity || account?.account.portfolioValue || 0;
   const unrealizedPL = account?.risk?.unrealizedPnL || 0;
   const pnlPercent = account?.risk?.pnlPercent || 0;
   const dayPnL = (account?.account.equity || 0) - (account?.account.lastEquity || 0);
@@ -386,26 +270,31 @@ function TopBar({ account, marketOpen }: { account: AccountData | null; marketOp
   }, []);
 
   return (
-    <header className="sticky top-[45px] z-20 bg-[var(--app-bg)]/90 backdrop-blur-xl border-b border-[var(--border)]">
+    <header className="sticky top-[calc(45px+env(safe-area-inset-top))] z-20 bg-[var(--app-bg)]/90 backdrop-blur-xl border-b border-[var(--border)]">
       <div className="flex items-center gap-3 px-3 sm:px-4 py-2.5 overflow-x-auto no-scrollbar">
         {/* Portfolio */}
         <div className="flex-shrink-0">
-          <p className="text-[9px] uppercase tracking-widest text-[var(--text-muted)] font-medium">Portfolio</p>
-          <p className="text-base sm:text-lg font-bold font-[family-name:var(--font-mono)] text-[var(--text-primary)] tabular-nums">
-            ${fmtUSD(portfolioValue)}
-          </p>
+          <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">Portfolio</p>
+          <div className="flex items-center gap-2">
+            <p className="text-3xl font-bold font-[family-name:var(--font-mono)] text-[var(--text-primary)] tabular-nums">
+              ${fmtUSD(portfolioValue)}
+            </p>
+            {marketOpen && (
+              <span className="w-2 h-2 rounded-full bg-[var(--green)] animate-pulse mt-1" title="Market is open" />
+            )}
+          </div>
         </div>
 
         {/* Total P&L */}
         <div className="flex-shrink-0 min-w-[80px] sm:min-w-[100px]">
-          <p className="text-[9px] uppercase tracking-widest text-[var(--text-muted)] font-medium">Total P&L</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">Total P&L</p>
           <div className="flex items-center gap-1">
             {isProfitable ? (
               <TrendingUp className="w-3 h-3 text-[var(--green)]" />
             ) : (
               <TrendingDown className="w-3 h-3 text-[var(--red)]" />
             )}
-            <p className={`text-xs sm:text-sm font-bold font-[family-name:var(--font-mono)] tabular-nums ${isProfitable ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
+            <p className={`text-base font-semibold font-[family-name:var(--font-mono)] tabular-nums ${isProfitable ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
               {isProfitable ? '+' : ''}{fmtUSD(unrealizedPL)}
             </p>
           </div>
@@ -416,14 +305,14 @@ function TopBar({ account, marketOpen }: { account: AccountData | null; marketOp
 
         {/* Day P&L */}
         <div className="flex-shrink-0 min-w-[80px] sm:min-w-[100px]">
-          <p className="text-[9px] uppercase tracking-widest text-[var(--text-muted)] font-medium">Day P&L</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">Day P&L</p>
           <div className="flex items-center gap-1">
             {isDayProfitable ? (
               <TrendingUp className="w-3 h-3 text-[var(--green)]" />
             ) : (
               <TrendingDown className="w-3 h-3 text-[var(--red)]" />
             )}
-            <p className={`text-xs sm:text-sm font-bold font-[family-name:var(--font-mono)] tabular-nums ${isDayProfitable ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
+            <p className={`text-base font-semibold font-[family-name:var(--font-mono)] tabular-nums ${isDayProfitable ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
               {isDayProfitable ? '+' : ''}{fmtUSD(dayPnL)}
             </p>
           </div>
@@ -435,8 +324,8 @@ function TopBar({ account, marketOpen }: { account: AccountData | null; marketOp
         {/* Buying Power — hidden on very small screens */}
         <div className="hidden xs:flex flex-shrink-0 min-w-[80px]">
           <div>
-            <p className="text-[9px] uppercase tracking-widest text-[var(--text-muted)] font-medium">BP</p>
-            <p className="text-xs sm:text-sm font-bold font-[family-name:var(--font-mono)] text-[var(--text-primary)] tabular-nums">
+            <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">BP</p>
+            <p className="text-base font-semibold font-[family-name:var(--font-mono)] text-[var(--text-primary)] tabular-nums">
               ${fmtInt(bp)}
             </p>
           </div>
@@ -445,8 +334,8 @@ function TopBar({ account, marketOpen }: { account: AccountData | null; marketOp
         {/* Cash — hidden on very small screens */}
         <div className="hidden xs:flex flex-shrink-0 min-w-[60px]">
           <div>
-            <p className="text-[9px] uppercase tracking-widest text-[var(--text-muted)] font-medium">Cash</p>
-            <p className="text-xs sm:text-sm font-bold font-[family-name:var(--font-mono)] text-[var(--text-secondary)] tabular-nums">
+            <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">Cash</p>
+            <p className="text-base font-semibold font-[family-name:var(--font-mono)] text-[var(--text-secondary)] tabular-nums">
               ${fmtInt(cash)}
             </p>
           </div>
@@ -585,14 +474,14 @@ function OrdersWidget({ orders, onCancel }: { orders: Order[]; onCancel: (id: st
       <div className="px-4 py-3 border-b border-[#1e232b] flex items-center justify-between">
         <div className="flex items-center gap-2">
           <List className="w-4 h-4 text-amber-400" />
-          <h3 className="text-sm font-semibold text-[var(--text-primary)]">Orders</h3>
+          <h3 className="text-lg font-semibold text-[var(--text-primary)]">Orders</h3>
         </div>
-        <span className="text-[10px] text-[var(--text-muted)] bg-[var(--surface-bg)] px-2 py-0.5 rounded">{orders.length}</span>
+        <span className="text-xs font-medium text-[var(--text-muted)] bg-[var(--surface-bg)] px-2 py-0.5 rounded">{orders.length}</span>
       </div>
       <div className="overflow-x-auto max-h-64 overflow-y-auto">
         <table className="w-full text-sm">
           <thead className="sticky top-0 bg-[var(--card-bg)]">
-            <tr className="text-left text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-[#1e232b]">
+            <tr className="text-left text-xs font-medium uppercase tracking-wider text-[var(--text-muted)] border-b border-[#1e232b]">
               <th className="px-4 py-2 font-medium">Time</th>
               <th className="px-4 py-2 font-medium">Symbol</th>
               <th className="px-4 py-2 font-medium">Side</th>
@@ -605,19 +494,19 @@ function OrdersWidget({ orders, onCancel }: { orders: Order[]; onCancel: (id: st
           <tbody>
             {orders.map((o) => (
               <tr key={o.id} className="border-b border-[var(--border)]/50 hover:bg-[var(--hover-bg)]/30 transition">
-                <td className="px-4 py-2 text-[#6b7280] font-[family-name:var(--font-mono)] text-[11px] tabular-nums">
+                <td className="px-4 py-2 text-[#6b7280] font-[family-name:var(--font-mono)] text-xs tabular-nums">
                   {new Date(o.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                 </td>
                 <td className="px-4 py-2 font-semibold text-[var(--text-primary)]">{o.symbol}</td>
                 <td className="px-4 py-3 sm:py-2">
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${o.side === 'buy' ? 'bg-[var(--green-soft)]/30 text-[var(--green)]' : 'bg-[var(--red-soft)]/30 text-[var(--red)]'}`}>
+                  <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${o.side === 'buy' ? 'bg-[var(--green-soft)]/30 text-[var(--green)]' : 'bg-[var(--red-soft)]/30 text-[var(--red)]'}`}>
                     {o.side.toUpperCase()}
                   </span>
                 </td>
                 <td className="px-4 py-2 text-right font-[family-name:var(--font-mono)] text-[var(--text-secondary)] tabular-nums">{o.qty}</td>
-                <td className="px-4 py-2 text-[10px] text-[var(--text-secondary)] uppercase">{o.type}</td>
+                <td className="px-4 py-2 text-xs text-[var(--text-secondary)] uppercase">{o.type}</td>
                 <td className="px-4 py-3 sm:py-2">
-                  <span className={`text-[10px] font-medium ${statusColor[o.status] || 'text-[#6b7280]'}`}>
+                  <span className={`text-xs font-medium ${statusColor[o.status] || 'text-[#6b7280]'}`}>
                     {o.status}
                   </span>
                 </td>
@@ -625,7 +514,7 @@ function OrdersWidget({ orders, onCancel }: { orders: Order[]; onCancel: (id: st
                   {(o.status === 'new' || o.status === 'pending_new' || o.status === 'accepted') && (
                     <button
                       onClick={() => onCancel(o.id)}
-                      className="text-[10px] text-[var(--text-muted)] hover:text-[var(--red)] transition"
+                      className="text-xs text-[var(--text-muted)] hover:text-[var(--red)] transition"
                     >
                       Cancel
                     </button>
@@ -883,14 +772,34 @@ export default function Dashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [marketOpen, setMarketOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showAlertModal, setShowAlertModal] = useState(false);
+
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [orderFilters, setOrderFilters] = useState<OrderFilters>({ dateRange: 'all' });
 
   // Initialize theme on mount
   useEffect(() => { initTheme(); }, []);
+
+  // One-time snapshot trigger after market close (weekdays only)
+  useEffect(() => {
+    try {
+      if (typeof window === 'undefined') return;
+      if (sessionStorage.getItem('snapshot_taken')) return;
+
+      const now = new Date();
+      const etHour = now.getUTCHours() - 4; // UTC-4 = ET (no DST handling, approx)
+      const etDay = now.getUTCDay(); // 0=Sun, 6=Sat
+      const isWeekday = etDay >= 1 && etDay <= 5;
+      const after4PM = etHour >= 16;
+
+      if (isWeekday && after4PM) {
+        fetch('/api/cron?action=snapshot', { method: 'GET' }).catch(() => {});
+        sessionStorage.setItem('snapshot_taken', 'true');
+      }
+    } catch {
+      // Silently fail
+    }
+  }, []);
 
   // Poll for order fills and send Telegram notifications
   useEffect(() => {
@@ -1048,7 +957,7 @@ export default function Dashboard() {
       <div className="flex-1 flex flex-col min-w-0 max-w-full pb-16 sm:pb-0">
         <TopBanner />
         <TopBar account={account} marketOpen={marketOpen} />
-        <NotificationsDropdown show={showNotifications} onClose={() => setShowNotifications(false)} />
+
 
         <main className="flex-1 p-3 sm:p-4 space-y-3 overflow-y-auto overflow-x-hidden">
           {/* Market Indices Bar — CNBC style */}
@@ -1060,8 +969,8 @@ export default function Dashboard() {
               {/* Watchlist */}
               <WatchlistWidget />
 
-              {/* Risk Threshold */}
-              <RiskThresholdSelector />
+              {/* Quick Trade */}
+              <TradeWidget onRefresh={refreshAll} />
 
               {/* Performance — full width */}
               <PerformanceCard 
@@ -1077,9 +986,6 @@ export default function Dashboard() {
                   cash={account?.account.cash || 0}
                   positions={positions}
                 />
-                
-                {/* Trade Widget */}
-                <TradeWidget onRefresh={refreshAll} />
               </div>
             </div>
           )}
@@ -1101,11 +1007,11 @@ export default function Dashboard() {
 
           {activeTab === 'settings' && <SettingsPanel account={account} />}
 
-          {activeTab === 'ai-strategies' && <AIStrategiesTab positions={positions} />}
+          {activeTab === 'advisor' && <AdvisorStrategiesTab />}
         </main>
       </div>
 
-      <MobileNav active={activeTab} onChange={setActiveTab} showNotifications={showNotifications} setShowNotifications={setShowNotifications} />
+      <MobileNav active={activeTab} onChange={setActiveTab} />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-// Simple in-memory rate limiter: 30 requests per minute per IP
+// Simple in-memory rate limiter: 100 requests per minute per IP
 // Note: resets on cold starts. For production, use Redis/Vercel KV.
 
 interface RateLimitEntry {
@@ -7,7 +7,7 @@ interface RateLimitEntry {
 }
 
 const WINDOW_MS = 60 * 1000; // 1 minute
-const MAX_REQUESTS = 30;
+const MAX_REQUESTS = 100;
 
 const store = new Map<string, RateLimitEntry>();
 

@@ -50,6 +50,9 @@ export async function getAlpacaNews(symbols?: string[], limit = 50): Promise<New
   url.searchParams.set('limit', String(limit));
   url.searchParams.set('sort', 'desc');
 
+  console.log(`[News] Fetching from Alpaca at ${new Date().toISOString()}`);
+  console.log(`[News] Alpaca URL: ${url.toString()}`);
+
   const res = await fetch(url.toString(), {
     headers: {
       'APCA-API-KEY-ID': key,
@@ -64,6 +67,12 @@ export async function getAlpacaNews(symbols?: string[], limit = 50): Promise<New
 
   const json = await res.json();
   const raw = json.news || [];
+
+  console.log(`[News] Alpaca returned ${raw.length} items`);
+  if (raw.length > 0) {
+    console.log(`[News] First headline raw: "${raw[0].headline}"`);
+    console.log(`[News] First headline source: ${raw[0].source}, symbols: ${(raw[0].symbols || []).join(',')}`);
+  }
 
   return raw.map((n: any) => ({
     id: n.id || `${n.source}-${Date.parse(n.created_at)}`,

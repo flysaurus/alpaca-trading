@@ -20,6 +20,8 @@ export async function GET(request: Request) {
       getPositions(),
     ]);
 
+    console.log('[API /account] Raw Alpaca account:', JSON.stringify(account, null, 2));
+
     const portfolioValue = Number(account.portfolio_value);
     const risk = calculatePortfolioRisk(positions, portfolioValue);
 

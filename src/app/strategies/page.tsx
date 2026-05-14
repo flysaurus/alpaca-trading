@@ -321,23 +321,29 @@ function DCAForm({ config, onChange, disabled }: { config: DCAStrategy['config']
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-xs font-medium text-[var(--text-secondary)] block mb-1">Start Date</label>
-          <input
-            type="date"
-            value={config.start_date}
-            onChange={(e) => onChange({ start_date: e.target.value })}
-            disabled={disabled}
-            className="w-full px-3 py-2 text-sm bg-[var(--app-bg)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] disabled:opacity-50"
-          />
+          <div className="relative">
+            <input
+              type="date"
+              value={config.start_date}
+              onChange={(e) => onChange({ start_date: e.target.value })}
+              disabled={disabled}
+              className="w-full px-3 py-2 pr-9 text-sm bg-[var(--app-bg)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] disabled:opacity-50 appearance-none"
+            />
+            <Calendar className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] pointer-events-none" />
+          </div>
         </div>
         <div>
           <label className="text-xs font-medium text-[var(--text-secondary)] block mb-1">End Date</label>
-          <input
-            type="date"
-            value={config.end_date || ''}
-            onChange={(e) => onChange({ end_date: e.target.value || undefined })}
-            disabled={disabled}
-            className="w-full px-3 py-2 text-sm bg-[var(--app-bg)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] disabled:opacity-50"
-          />
+          <div className="relative">
+            <input
+              type="date"
+              value={config.end_date || ''}
+              onChange={(e) => onChange({ end_date: e.target.value || undefined })}
+              disabled={disabled}
+              className="w-full px-3 py-2 pr-9 text-sm bg-[var(--app-bg)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] disabled:opacity-50 appearance-none"
+            />
+            <Calendar className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] pointer-events-none" />
+          </div>
         </div>
       </div>
     </div>

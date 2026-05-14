@@ -151,26 +151,6 @@ export default function SettingsPanel({ account }: Props) {
           </p>
         </div>
 
-        {/* Shorting Toggle */}
-        <div className="flex items-center justify-between py-2 border-t border-[#1e232b]">
-          <div>
-            <label className="text-xs text-[var(--text-secondary)]">Enable Short Selling</label>
-            <p className="text-[10px] text-[var(--text-muted)]">Allow sell orders without existing position</p>
-          </div>
-          <button
-            onClick={() => update({ enableShorting: !settings.enableShorting })}
-            className={`relative w-11 h-6 rounded-full transition ${
-              settings.enableShorting ? 'bg-[var(--red)]' : 'bg-[var(--hover-bg)]'
-            }`}
-          >
-            <span
-              className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
-                settings.enableShorting ? 'translate-x-5' : 'translate-x-0'
-              }`}
-            />
-          </button>
-        </div>
-
         {/* After-Hours Toggle */}
         <div className="flex items-center justify-between py-2 border-t border-[#1e232b]">
           <div>

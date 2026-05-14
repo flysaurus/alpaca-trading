@@ -164,7 +164,20 @@ export async function getBars({
     }
     return data;
   } catch (err: any) {
-    throw new AlpacaError(err.message || `Failed to fetch bars for ${symbol}`, 502);
+    console.error('[Alpaca] getBars error:', JSON.stringify({
+      symbol,
+      errType: typeof err,
+      errKeys: Object.keys(err || {}),
+      errMessage: err?.message,
+      errCode: err?.code,
+      errStatus: err?.status,
+      errBody: err?.response?.body,
+      errStack: err?.stack,
+    }, null, 2));
+    throw new AlpacaError(
+      err?.message || `Failed to fetch bars for ${symbol}`,
+      err?.status || 502
+    );
   }
 }
 

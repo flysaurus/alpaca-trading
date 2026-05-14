@@ -34,25 +34,139 @@ export function isMarketOpen(date: Date): boolean {
   return !MARKET_HOLIDAYS.has(dateStr);
 }
 
-// Sector classification based on common sectors
+// Comprehensive sector mapping for US equities
+// Sources: S&P 500, Russell 2000, and popular ETFs
+const SECTOR_MAP: Record<string, string> = {
+  // Technology
+  AAPL: 'Tech', MSFT: 'Tech', GOOGL: 'Tech', GOOG: 'Tech', AMZN: 'Tech', META: 'Tech',
+  NVDA: 'Tech', TSLA: 'Tech', AVGO: 'Tech', ADOBE: 'Tech', CRM: 'Tech', ORCL: 'Tech',
+  AMD: 'Tech', INTC: 'Tech', CSCO: 'Tech', QCOM: 'Tech', IBM: 'Tech', PANW: 'Tech',
+  PLTR: 'Tech', SNOW: 'Tech', NET: 'Tech', DDOG: 'Tech', MDB: 'Tech', TWLO: 'Tech',
+  OKTA: 'Tech', ZS: 'Tech', CRWD: 'Tech', FTNT: 'Tech', CYBR: 'Tech', S: 'Tech',
+  RDDT: 'Tech', U: 'Tech', HOOD: 'Tech', COIN: 'Tech', SQ: 'Tech', PYPL: 'Tech',
+  SHOP: 'Tech', MELI: 'Tech', SPOT: 'Tech', SNAP: 'Tech', PINS: 'Tech', RBLX: 'Tech',
+  EA: 'Tech', TTWO: 'Tech', ATVI: 'Tech', ZNGA: 'Tech', NU: 'Tech', SOFI: 'Tech',
+  AFRM: 'Tech', ROKU: 'Tech', ZM: 'Tech', DOCU: 'Tech', ASAN: 'Tech', MOND: 'Tech',
+  HUBS: 'Tech', VEEV: 'Tech', NOW: 'Tech', TEAM: 'Tech', ATLN: 'Tech', DAVA: 'Tech',
+  GTLB: 'Tech', SPT: 'Tech', BILL: 'Tech', WDAY: 'Tech', ADSK: 'Tech', ANSS: 'Tech',
+  CDNS: 'Tech', SNPS: 'Tech', PTC: 'Tech', AZPN: 'Tech', APP: 'Tech', IOT: 'Tech',
+  SOUN: 'Tech', ASTS: 'Tech', RKLB: 'Tech', VLD: 'Tech', SPCE: 'Tech', LUNR: 'Tech',
+  // Finance
+  JPM: 'Finance', BAC: 'Finance', WFC: 'Finance', C: 'Finance', GS: 'Finance',
+  MS: 'Finance', SCHW: 'Finance', AXP: 'Finance', USB: 'Finance', PNC: 'Finance',
+  TFC: 'Finance', BK: 'Finance', STT: 'Finance', FITB: 'Finance', RF: 'Finance',
+  CFG: 'Finance', KEY: 'Finance', ZION: 'Finance', HBAN: 'Finance', PBCT: 'Finance',
+  CMA: 'Finance', WBS: 'Finance', WAL: 'Finance', PACW: 'Finance', SIVB: 'Finance',
+  COF: 'Finance', DFS: 'Finance', SYF: 'Finance', ADS: 'Finance', ALLY: 'Finance',
+  NAVI: 'Finance', SLM: 'Finance', ICE: 'Finance', CME: 'Finance', NDAQ: 'Finance',
+  SPGI: 'Finance', MSCI: 'Finance', FDS: 'Finance', MCO: 'Finance', EFX: 'Finance',
+  TRU: 'Finance', EXPGY: 'Finance', BR: 'Finance', FIS: 'Finance', FISV: 'Finance',
+  GPN: 'Finance', TSS: 'Finance', V: 'Finance', MA: 'Finance',
+  BLK: 'Finance', NTRS: 'Finance', BEN: 'Finance',
+  TROW: 'Finance', AMG: 'Finance', IVZ: 'Finance', BKR: 'Finance', LMND: 'Finance',
+  AIG: 'Finance', MET: 'Finance', PRU: 'Finance', PFG: 'Finance', UNM: 'Finance',
+  LNC: 'Finance', RGA: 'Finance', RE: 'Finance', AXS: 'Finance', WRB: 'Finance',
+  CINF: 'Finance', TRV: 'Finance', CB: 'Finance', PGR: 'Finance', ALL: 'Finance',
+  // Healthcare
+  JNJ: 'Healthcare', UNH: 'Healthcare', PFE: 'Healthcare', MRK: 'Healthcare',
+  ABT: 'Healthcare', TMO: 'Healthcare', LLY: 'Healthcare', DHR: 'Healthcare',
+  BMY: 'Healthcare', AMGN: 'Healthcare', GILD: 'Healthcare', REGN: 'Healthcare',
+  VRTX: 'Healthcare', BIIB: 'Healthcare', ISRG: 'Healthcare', ZBH: 'Healthcare',
+  SYK: 'Healthcare', BSX: 'Healthcare', EW: 'Healthcare',
+  MDT: 'Healthcare', ABMD: 'Healthcare', DXCM: 'Healthcare', PODD: 'Healthcare',
+  TNDM: 'Healthcare', NVRO: 'Healthcare', PEN: 'Healthcare', NUVA: 'Healthcare',
+  GMED: 'Healthcare', OFIX: 'Healthcare', CNMD: 'Healthcare', LMAT: 'Healthcare',
+  ELMD: 'Healthcare', NHC: 'Healthcare', ENSG: 'Healthcare', SEM: 'Healthcare',
+  PNTG: 'Healthcare', ACFN: 'Healthcare', ADUS: 'Healthcare', AFAM: 'Healthcare',
+  LH: 'Healthcare', DGX: 'Healthcare', CRL: 'Healthcare', IQV: 'Healthcare',
+  SYNH: 'Healthcare', MEDP: 'Healthcare', PRVA: 'Healthcare', OSH: 'Healthcare',
+  AGLE: 'Healthcare', KNSA: 'Healthcare', ARWR: 'Healthcare', DNLI: 'Healthcare',
+  RNA: 'Healthcare', AXSM: 'Healthcare', SAGE: 'Healthcare', NBIX: 'Healthcare',
+  ALKS: 'Healthcare', ACAD: 'Healthcare', PCRX: 'Healthcare', XNCR: 'Healthcare',
+  FOLD: 'Healthcare', RARE: 'Healthcare', MRTX: 'Healthcare', ZYME: 'Healthcare',
+  SRPT: 'Healthcare', BPMC: 'Healthcare', KPTI: 'Healthcare', BLUE: 'Healthcare',
+  EDIT: 'Healthcare', NTLA: 'Healthcare', BEAM: 'Healthcare', CRSP: 'Healthcare',
+  VCYT: 'Healthcare', GH: 'Healthcare', NTRA: 'Healthcare', EXAS: 'Healthcare',
+  // Consumer
+  WMT: 'Consumer', COST: 'Consumer', PG: 'Consumer', KO: 'Consumer', PEP: 'Consumer',
+  MCD: 'Consumer', DIS: 'Consumer', NKE: 'Consumer', SBUX: 'Consumer', HD: 'Consumer',
+  TGT: 'Consumer', LOW: 'Consumer', TJX: 'Consumer', ROST: 'Consumer', BURL: 'Consumer',
+  DG: 'Consumer', DLTR: 'Consumer', FIVE: 'Consumer', BIG: 'Consumer', OLLI: 'Consumer',
+  GME: 'Consumer', BBBY: 'Consumer', CHWY: 'Consumer', PETS: 'Consumer', WOOF: 'Consumer',
+  EL: 'Consumer', CL: 'Consumer', KMB: 'Consumer', CLX: 'Consumer', CHD: 'Consumer',
+  HRL: 'Consumer', SJM: 'Consumer', CPB: 'Consumer', CAG: 'Consumer', GIS: 'Consumer',
+  K: 'Consumer', KHC: 'Consumer', MDLZ: 'Consumer', HSY: 'Consumer', MKC: 'Consumer',
+  // Energy
+  XOM: 'Energy', CVX: 'Energy', COP: 'Energy', SLB: 'Energy', EOG: 'Energy',
+  PXD: 'Energy', MPC: 'Energy', VLO: 'Energy', PSX: 'Energy', HES: 'Energy',
+  APA: 'Energy', OXY: 'Energy', MRO: 'Energy', DVN: 'Energy', FANG: 'Energy',
+  MUR: 'Energy', CNQ: 'Energy', CVE: 'Energy', IMO: 'Energy', SU: 'Energy',
+  BP: 'Energy', SHEL: 'Energy', TTE: 'Energy', EQNR: 'Energy', ENI: 'Energy',
+  // Industrials
+  HON: 'Industrials', UNP: 'Industrials', UPS: 'Industrials', CAT: 'Industrials',
+  BA: 'Industrials', MMM: 'Industrials', GE: 'Industrials', CSX: 'Industrials',
+  NSC: 'Industrials', ETN: 'Industrials', ITW: 'Industrials', PH: 'Industrials',
+  EMR: 'Industrials', ROP: 'Industrials', CMI: 'Industrials', PCAR: 'Industrials',
+  LUV: 'Industrials', DAL: 'Industrials', UAL: 'Industrials', AAL: 'Industrials',
+  JBLU: 'Industrials', ALK: 'Industrials', HA: 'Industrials', SAVE: 'Industrials',
+  ULCC: 'Industrials', FD: 'Industrials', FDX: 'Industrials', EXPD: 'Industrials',
+  CHRW: 'Industrials', XPO: 'Industrials', SAIA: 'Industrials', ODFL: 'Industrials',
+  ARCB: 'Industrials', TFII: 'Industrials', WERN: 'Industrials', KN: 'Industrials',
+  // Materials
+  LIN: 'Materials', APD: 'Materials', SHW: 'Materials', FCX: 'Materials',
+  NEM: 'Materials', GOLD: 'Materials', FNV: 'Materials', WPM: 'Materials',
+  RGLD: 'Materials', AEM: 'Materials', KGC: 'Materials', AU: 'Materials',
+  GFI: 'Materials', NGD: 'Materials', AGI: 'Materials', PAAS: 'Materials',
+  CDE: 'Materials', HL: 'Materials', EXK: 'Materials', MUX: 'Materials',
+  // Real Estate
+  AMT: 'Real Estate', PLD: 'Real Estate', CCI: 'Real Estate', EQIX: 'Real Estate',
+  PSA: 'Real Estate', O: 'Real Estate', DLR: 'Real Estate', SBAC: 'Real Estate',
+  WELL: 'Real Estate', SPG: 'Real Estate', AVB: 'Real Estate', EQR: 'Real Estate',
+  UDR: 'Real Estate', ESS: 'Real Estate', CPT: 'Real Estate', MAA: 'Real Estate',
+  // Utilities
+  NEE: 'Utilities', DUK: 'Utilities', SO: 'Utilities', D: 'Utilities',
+  AEP: 'Utilities', EXC: 'Utilities', SRE: 'Utilities', XEL: 'Utilities',
+  ES: 'Utilities', WEC: 'Utilities', PEG: 'Utilities', ED: 'Utilities',
+  FE: 'Utilities', AEE: 'Utilities', EIX: 'Utilities', ET: 'Utilities',
+  // Communication
+  NFLX: 'Communication', CMCSA: 'Communication', VZ: 'Communication', T: 'Communication',
+  CHTR: 'Communication', TMUS: 'Communication', SIRI: 'Communication', LYV: 'Communication',
+  MTCH: 'Communication',
+  Bumble: 'Communication', IAC: 'Communication', ANGI: 'Communication', YELP: 'Communication',
+  GRPN: 'Communication', TTGT: 'Communication', QUOT: 'Communication', EVER: 'Communication',
+  // ETFs - map to their underlying sector/theme
+  SPY: 'ETF', QQQ: 'ETF', IWM: 'ETF', DIA: 'ETF', VOO: 'ETF', VTI: 'ETF',
+  VXUS: 'ETF', BND: 'ETF', AGG: 'ETF', VNQ: 'Real Estate', XLK: 'Tech',
+  XLF: 'Finance', XLV: 'Healthcare', XLY: 'Consumer', XLE: 'Energy',
+  XLI: 'Industrials', XLB: 'Materials', XLU: 'Utilities', XLC: 'Communication',
+  XRT: 'Consumer', SMH: 'Tech', SOXX: 'Tech', IGV: 'Tech', HACK: 'Tech',
+  CLOU: 'Tech', BOTZ: 'Tech', ROBO: 'Tech', ARKK: 'Tech', ARKW: 'Tech',
+  ARKG: 'Healthcare', ARKF: 'Finance', ARKQ: 'Industrials', IBB: 'Healthcare',
+  XBI: 'Healthcare', PPH: 'Healthcare', IHF: 'Healthcare', KRE: 'Finance',
+  KBE: 'Finance', IAT: 'Finance', IAI: 'Finance', FXO: 'Finance',
+  PTF: 'Tech', PTH: 'Healthcare', PEZ: 'Consumer', PBJ: 'Consumer',
+  PBS: 'Communication', PUI: 'Utilities', PRN: 'Industrials', PZD: 'Industrials',
+  PSJ: 'Tech', PSI: 'Tech', PSIQ: 'Tech', PSCT: 'Tech', PXQ: 'Tech',
+  PSCH: 'Healthcare', PSL: 'Consumer', PSCF: 'Finance', PSCM: 'Materials',
+  PSCU: 'Utilities', PSCC: 'Consumer', CARZ: 'Consumer', BJK: 'Consumer',
+  FAN: 'Industrials', TAN: 'Industrials', ICLN: 'Industrials', PBW: 'Industrials',
+  QCLN: 'Industrials', PBD: 'Industrials', SMOG: 'Industrials', LIT: 'Materials',
+  REMX: 'Materials', URA: 'Materials', HAP: 'Materials', PICK: 'Materials',
+  COPX: 'Materials', SIL: 'Materials', SLVP: 'Materials', GOAU: 'Materials',
+  GDX: 'Materials', GDXJ: 'Materials', SGDJ: 'Materials', RING: 'Materials',
+  // Crypto
+  BTC: 'Crypto', ETH: 'Crypto', SOL: 'Crypto', ADA: 'Crypto', DOT: 'Crypto',
+  LINK: 'Crypto', MATIC: 'Crypto', AVAX: 'Crypto', UNI: 'Crypto', AAVE: 'Crypto',
+  LDO: 'Crypto', RPL: 'Crypto', SUSHI: 'Crypto', CRV: 'Crypto', COMP: 'Crypto',
+  MKR: 'Crypto', YFI: 'Crypto', SNX: 'Crypto', GRT: 'Crypto', NEAR: 'Crypto',
+  FTM: 'Crypto', ONE: 'Crypto', ALGO: 'Crypto', VET: 'Crypto', XTZ: 'Crypto',
+  ETC: 'Crypto', BCH: 'Crypto', LTC: 'Crypto', XLM: 'Crypto', XRP: 'Crypto',
+  DOGE: 'Crypto', SHIB: 'Crypto', PEPE: 'Crypto', FLOKI: 'Crypto', BONK: 'Crypto',
+  WIF: 'Crypto', BOME: 'Crypto', MEW: 'Crypto', POPCAT: 'Crypto', MOG: 'Crypto',
+};
+
 function classifySector(symbol: string): string | undefined {
-  const tech = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'NVDA', 'TSLA', 'AMD', 'INTC', 'ADBE', 'CRM', 'ORCL', 'CSCO', 'QCOM', 'AVGO'];
-  const finance = ['JPM', 'BAC', 'WFC', 'C', 'GS', 'MS', 'SCHW', 'AXP', 'USB', 'TFC', 'PNC', 'BLK', 'FITB', 'ZION'];
-  const healthcare = ['JNJ', 'UNH', 'PFE', 'MRK', 'TMO', 'LLY', 'ABT', 'BMY', 'AMGN', 'GILD', 'REGN', 'VRTX', 'NVS'];
-  const consumer = ['WMT', 'COST', 'PG', 'KO', 'PEP', 'MCD', 'DIS', 'NKE', 'SBUX', 'HD', 'TGT', 'LOW', 'GM', 'F'];
-  const energy = ['XOM', 'CVX', 'COP', 'SLB', 'EOG', 'PXD', 'MPC', 'VLO', 'HES', 'APA', 'BKR', 'HAL', 'OXY'];
-  const industrials = ['HON', 'UNP', 'UPS', 'CAT', 'GE', 'BA', 'MMM', 'CSX', 'ETN', 'LUV', 'EMR', 'NRG'];
-
-  const symbolUpper = symbol.toUpperCase();
-
-  if (tech.includes(symbolUpper)) return 'Tech';
-  if (finance.includes(symbolUpper)) return 'Finance';
-  if (healthcare.includes(symbolUpper)) return 'Healthcare';
-  if (consumer.includes(symbolUpper)) return 'Consumer';
-  if (energy.includes(symbolUpper)) return 'Energy';
-  if (industrials.includes(symbolUpper)) return 'Industrials';
-
-  return 'Other';
+  return SECTOR_MAP[symbol.toUpperCase()];
 }
 
 // ── Build Portfolio Allocation Data ───────────────────────────────
@@ -74,6 +188,12 @@ export function buildAllocationData(portfolioData: PortfolioData) {
         { label: 'Consumer', value: 0, color: '#14b8a6' },
         { label: 'Energy', value: 0, color: '#f97316' },
         { label: 'Industrials', value: 0, color: '#6366f1' },
+        { label: 'Materials', value: 0, color: '#b45309' },
+        { label: 'Real Estate', value: 0, color: '#ef4444' },
+        { label: 'Utilities', value: 0, color: '#06b6d4' },
+        { label: 'Communication', value: 0, color: '#f59e0b' },
+        { label: 'ETF', value: 0, color: '#94a3b8' },
+        { label: 'Crypto', value: 0, color: '#fbbf24' },
         { label: 'Other', value: 100, color: '#9ca3af' },
       ],
     };
@@ -115,6 +235,12 @@ export function buildAllocationData(portfolioData: PortfolioData) {
     'Consumer': '#14b8a6',
     'Energy': '#f97316',
     'Industrials': '#6366f1',
+    'Materials': '#b45309',
+    'Real Estate': '#ef4444',
+    'Utilities': '#06b6d4',
+    'Communication': '#f59e0b',
+    'ETF': '#94a3b8',
+    'Crypto': '#fbbf24',
     'Other': '#9ca3af',
   };
 
