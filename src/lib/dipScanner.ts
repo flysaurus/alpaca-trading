@@ -88,18 +88,25 @@ export async function scanForQualityDips(
   }
 
   // Step 1 — Merge and deduplicate universe
-  // Temporarily use test symbols to confirm snapshots fetch works
   const testSymbols = ['BIIB','QCOM','CBRE','JKHY','ALB','AAPL','MSFT','NVDA','AMZN'];
-  const universe = Array.from(new Set([...testSymbols, ...watchlistSymbols]));
-  console.log(`[dipScanner] Scanning ${universe.length} symbols`);
+  const allSymbols = [...SP500_SYMBOLS, ...watchlistSymbols];
+  const universe = Array.from(new Set([...testSymbols, ...allSymbols]));
+
+  // DEBUG LOGS
+  console.log('Input watchlist:', watchlistSymbols);
+  console.log('SP500 array length:', SP500_SYMBOLS.length);
+  console.log('Combined symbols:', allSymbols.length);
   console.log('Scanning symbols count:', universe.length);
   console.log('First 5 symbols:', universe.slice(0, 5));
 
   // Step 2 — Fetch snapshots in batches of 100
   const allSnapshots: Record<string, any> = {};
+  const url = `https://data.alpaca.markets/v2/stocks/snapshots?symbols=${encodeURIComponent(universe.slice(0, 5).join(','))}`;
+  console.log('Fetch URL (first batch sample):', url);
   console.log('Fetching snapshots for batch...');
   for (let i = 0; i < universe.length; i += 100) {
     const batch = universe.slice(i, i + 100);
+    console.log('Fetching snapshots for:', batch.slice(0, 5), '...total:', batch.length);
     try {
       const snaps = await fetchSnapshots(batch);
       Object.assign(allSnapshots, snaps);
@@ -108,7 +115,11 @@ export async function scanForQualityDips(
     }
   }
 
-  console.log(`[dipScanner] Fetched ${Object.keys(allSnapshots).length} snapshots`);
+  console.log('[dipScanner] Fetched snapshots total keys:', Object.keys(allSnapshots).length);
+  console.log('Snapshots response keys:', Object.keys(allSnapshots).length);
+  if (Object.keys(allSnapshots).length > 0) {
+    console.log('First snapshot key:', Object.keys(allSnapshots)[0]);
+  }
 
   // Step 3 — Filter stocks down 5%+ today
   const movers: Array<{
