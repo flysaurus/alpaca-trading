@@ -222,16 +222,18 @@ interface RiskScoreData {
 function RiskScoreWidget({ data, loading }: { data: RiskScoreData | null; loading: boolean }) {
   const [expanded, setExpanded] = useState(false);
 
+  console.log('Risk Score colors applied');
+
   if (loading || !data) {
     return (
-      <div className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] overflow-hidden">
+      <div className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-border-light-dark light:border-border-light-light overflow-hidden">
         <div className="h-[3px] w-full bg-gradient-to-r from-[#00d4aa] to-[#7c6aff]" />
         <div className="p-4 animate-pulse">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-[var(--hover-bg)]" />
+            <div className="w-14 h-14 rounded-full dark:bg-bg-hover-dark light:bg-bg-hover-light" />
             <div className="flex-1 space-y-2">
-              <div className="h-4 bg-[var(--hover-bg)] rounded w-32" />
-              <div className="h-3 bg-[var(--hover-bg)] rounded w-full" />
+              <div className="h-4 dark:bg-bg-hover-dark light:bg-bg-hover-light rounded w-32" />
+              <div className="h-3 dark:bg-bg-hover-dark light:bg-bg-hover-light rounded w-full" />
             </div>
           </div>
         </div>
@@ -244,7 +246,7 @@ function RiskScoreWidget({ data, loading }: { data: RiskScoreData | null; loadin
     B: 'bg-[#2dd4bf] text-black',
     C: 'bg-[#facc15] text-black',
     D: 'bg-[#fb923c] text-black',
-    F: 'bg-[#ef4444] text-white',
+    F: 'bg-[#ef4444] dark:text-text-primary-dark light:text-text-primary-light',
   };
 
   const barColors = (score: number, max: number) => {
@@ -264,7 +266,7 @@ function RiskScoreWidget({ data, loading }: { data: RiskScoreData | null; loadin
 
   return (
     <div
-      className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] overflow-hidden cursor-pointer transition hover:border-[var(--border-light)]"
+      className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-border-light-dark light:border-border-light-light overflow-hidden cursor-pointer transition hover:border-[var(--border-light)]"
       onClick={() => setExpanded(!expanded)}
     >
       <div className="h-[3px] w-full bg-gradient-to-r from-[#00d4aa] to-[#7c6aff]" />
@@ -273,8 +275,8 @@ function RiskScoreWidget({ data, loading }: { data: RiskScoreData | null; loadin
           {/* Score + Grade Circle */}
           <div className="flex items-center gap-3">
             <div className="text-center">
-              <p className="text-3xl font-bold text-[var(--text-primary)] leading-none">{data.score}</p>
-              <p className="text-[10px] text-[var(--text-muted)] mt-0.5">/100</p>
+              <p className="text-3xl font-bold dark:text-text-primary-dark light:text-text-primary-light leading-none">{data.score}</p>
+              <p className="text-[10px] dark:text-text-tertiary-dark light:text-text-tertiary-light mt-0.5">/100</p>
             </div>
             <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${gradeColors[data.grade] || 'bg-[var(--hover-bg)]'}`}>
               {data.grade}
@@ -283,12 +285,12 @@ function RiskScoreWidget({ data, loading }: { data: RiskScoreData | null; loadin
 
           {/* Label + Top Risk */}
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-[var(--text-primary)]">{data.label} Risk</p>
-            <p className="text-[11px] text-[var(--text-secondary)] truncate mt-0.5">{data.top_risk}</p>
+            <p className="text-sm font-semibold dark:text-text-primary-dark light:text-text-primary-light">{data.label} Risk</p>
+            <p className="text-[11px] dark:text-text-secondary-dark light:text-text-secondary-light truncate mt-0.5">{data.top_risk}</p>
           </div>
 
           {/* Expand chevron */}
-          <ChevronDown className={`w-4 h-4 text-[var(--text-muted)] transition-transform ${expanded ? 'rotate-180' : ''}`} />
+          <ChevronDown className={`w-4 h-4 dark:text-text-tertiary-dark light:text-text-tertiary-light transition-transform ${expanded ? 'rotate-180' : ''}`} />
         </div>
 
         {/* Factor Bars */}
@@ -298,11 +300,11 @@ function RiskScoreWidget({ data, loading }: { data: RiskScoreData | null; loadin
             const pct = (factor.score / max) * 100;
             return (
               <div key={key} className="flex items-center gap-2">
-                <span className="text-[10px] text-[var(--text-muted)] w-24 truncate">{label}</span>
-                <div className="flex-1 h-1.5 bg-[var(--app-bg)] rounded-full overflow-hidden">
+                <span className="text-[10px] dark:text-text-tertiary-dark light:text-text-tertiary-light w-24 truncate">{label}</span>
+                <div className="flex-1 h-1.5 dark:bg-bg-base-dark light:bg-bg-base-light rounded-full overflow-hidden">
                   <div className={`h-full rounded-full ${barColors(factor.score, max)}`} style={{ width: `${pct}%` }} />
                 </div>
-                <span className="text-[10px] text-[var(--text-muted)] w-8 text-right">{factor.score}/{max}</span>
+                <span className="text-[10px] dark:text-text-tertiary-dark light:text-text-tertiary-light w-8 text-right">{factor.score}/{max}</span>
               </div>
             );
           })}
@@ -310,15 +312,15 @@ function RiskScoreWidget({ data, loading }: { data: RiskScoreData | null; loadin
 
         {/* Expanded detail */}
         {expanded && (
-          <div className="mt-3 pt-3 border-t border-[var(--border)] space-y-2">
+          <div className="mt-3 pt-3 border-t dark:border-border-light-dark light:border-border-light-light space-y-2">
             {factors.map(({ key, label }) => {
               const factor = data.factors[key as keyof typeof data.factors];
               return (
                 <div key={key} className="flex items-start gap-2">
                   <div className={`w-1.5 h-1.5 rounded-full mt-1.5 ${barColors(factor.score, 25)}`} />
                   <div className="flex-1">
-                    <p className="text-[11px] font-medium text-[var(--text-primary)]">{label}</p>
-                    <p className="text-[10px] text-[var(--text-secondary)]">{factor.detail}</p>
+                    <p className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light">{label}</p>
+                    <p className="text-[10px] dark:text-text-secondary-dark light:text-text-secondary-light">{factor.detail}</p>
                   </div>
                 </div>
               );
