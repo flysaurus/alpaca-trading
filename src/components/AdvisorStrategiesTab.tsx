@@ -356,6 +356,7 @@ interface EnrichedDipCandidate {
 function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: string) => void }) {
   const [candidates, setCandidates] = useState<EnrichedDipCandidate[]>([]);
   const [loading, setLoading] = useState(true);
+  console.log('Market Scanner colors applied');
   const [marketLabel, setMarketLabel] = useState('Unknown');
   const [executing, setExecuting] = useState<string | null>(null);
   const [orderTicket, setOrderTicket] = useState<string | null>(null);
@@ -528,25 +529,25 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
         <div className="flex items-center gap-2">
           <Search className="w-4 h-4 text-[#6366f1]" />
           <div>
-            <h3 className="text-lg font-semibold text-[var(--text-primary)]">Market Scanner</h3>
-            <p className="text-[11px] text-[var(--text-muted)]">Quality dips updated every 10 min</p>
+            <h3 className="text-lg font-semibold dark:text-text-primary-dark light:text-text-primary-light">Market Scanner</h3>
+            <p className="text-[11px] dark:text-text-tertiary-dark light:text-text-tertiary-light">Quality dips updated every 10 min</p>
           </div>
         </div>
         {[1, 2, 3].map((i) => (
           <div
             key={i}
-            className="bg-[var(--card-bg)] rounded-2xl border border-[#6366f1]/30 p-4 animate-pulse"
+            className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border border-[#6366f1]/30 p-4 animate-pulse"
           >
             <div className="flex items-center gap-3 mb-3">
-              <div className="h-6 bg-[var(--hover-bg)] rounded w-24" />
-              <div className="h-6 bg-[var(--hover-bg)] rounded w-16" />
+              <div className="h-6 dark:bg-bg-hover-dark light:bg-bg-hover-light rounded w-24" />
+              <div className="h-6 dark:bg-bg-hover-dark light:bg-bg-hover-light rounded w-16" />
             </div>
-            <div className="h-4 bg-[var(--hover-bg)] rounded w-48 mb-2" />
-            <div className="h-3 bg-[var(--hover-bg)] rounded w-full mb-3" />
+            <div className="h-4 dark:bg-bg-hover-dark light:bg-bg-hover-light rounded w-48 mb-2" />
+            <div className="h-3 dark:bg-bg-hover-dark light:bg-bg-hover-light rounded w-full mb-3" />
             <div className="flex gap-2">
-              <div className="h-8 bg-[var(--hover-bg)] rounded w-24" />
-              <div className="h-8 bg-[var(--hover-bg)] rounded w-20" />
-              <div className="h-8 bg-[var(--hover-bg)] rounded w-16" />
+              <div className="h-8 dark:bg-bg-hover-dark light:bg-bg-hover-light rounded w-24" />
+              <div className="h-8 dark:bg-bg-hover-dark light:bg-bg-hover-light rounded w-20" />
+              <div className="h-8 dark:bg-bg-hover-dark light:bg-bg-hover-light rounded w-16" />
             </div>
           </div>
         ))}
@@ -556,13 +557,13 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
 
   if (candidates.length === 0) {
     return (
-      <div className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] p-6 text-center">
+      <div className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-border-light-dark light:border-border-light-light p-6 text-center">
         <div className="flex items-center gap-2 mb-3 justify-center">
           <Search className="w-4 h-4 text-[#6366f1]" />
-          <h3 className="text-lg font-semibold text-[var(--text-primary)]">Market Scanner</h3>
+          <h3 className="text-lg font-semibold dark:text-text-primary-dark light:text-text-primary-light">Market Scanner</h3>
         </div>
-        <p className="text-[11px] text-[var(--text-muted)] mb-2">Quality dips updated every 10 min</p>
-        <p className="text-sm text-[var(--text-secondary)]">
+        <p className="text-[11px] dark:text-text-tertiary-dark light:text-text-tertiary-light mb-2">Quality dips updated every 10 min</p>
+        <p className="text-sm dark:text-text-secondary-dark light:text-text-secondary-light">
           No quality dips detected today.
           <br />
           Market is <span className="font-semibold">{marketLabel}</span>.
@@ -577,8 +578,8 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
         <div className="flex items-center gap-2">
           <Search className="w-4 h-4 text-[#6366f1]" />
           <div>
-            <h3 className="text-lg font-semibold text-[var(--text-primary)]">Market Scanner</h3>
-            <p className="text-[11px] text-[var(--text-muted)]">Quality dips updated every 10 min</p>
+            <h3 className="text-lg font-semibold dark:text-text-primary-dark light:text-text-primary-light">Market Scanner</h3>
+            <p className="text-[11px] dark:text-text-tertiary-dark light:text-text-tertiary-light">Quality dips updated every 10 min</p>
           </div>
         </div>
         <span className="text-[11px] text-[#6366f1] font-semibold bg-[#6366f1]/10 px-2 py-0.5 rounded-full">
@@ -589,7 +590,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
       {candidates.map((c) => (
         <div
           key={c.symbol}
-          className="bg-[var(--card-bg)] rounded-2xl border-2 border-[#6366f1]/40 overflow-hidden transition hover:border-[#6366f1]/70"
+          className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border-2 border-[#6366f1]/40 overflow-hidden transition hover:border-[#6366f1]/70"
         >
           {/* Header */}
           <div className="px-4 pt-4 pb-2">
@@ -599,20 +600,20 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
                   <Search className="w-3 h-3" />
                   Quality Dip
                 </span>
-                <span className="px-2 py-0.5 rounded-lg bg-[#6366f1] text-white text-[11px] font-bold">
+                <span className="px-2 py-0.5 rounded-lg bg-[#6366f1] dark:text-text-primary-dark light:text-text-primary-light text-[11px] font-bold">
                   Score: {c.score}/100
                 </span>
               </div>
-              <span className={`text-sm font-bold font-mono ${c.change_pct < 0 ? 'text-[var(--red)]' : 'text-[var(--green)]'}`}>
+              <span className={`text-sm font-bold font-mono ${c.change_pct < 0 ? 'dark:text-accent-danger-dark light:text-accent-danger-light' : 'dark:text-accent-success-dark light:text-accent-success-light'}`}>
                 {c.change_pct > 0 ? '+' : ''}{c.change_pct.toFixed(1)}%
               </span>
             </div>
 
-            <h4 className="text-base font-bold text-[var(--text-primary)]">
+            <h4 className="text-base font-bold dark:text-text-primary-dark light:text-text-primary-light">
               {c.symbol} — ${c.current_price.toFixed(2)}
             </h4>
 
-            <div className="flex items-center gap-3 mt-1 text-[11px] text-[var(--text-muted)]">
+            <div className="flex items-center gap-3 mt-1 text-[11px] dark:text-text-tertiary-dark light:text-text-tertiary-light">
               <span>RSI: {c.rsi ?? 'N/A'}</span>
               <span>Vol: {c.volume_ratio.toFixed(1)}x normal</span>
             </div>
@@ -621,7 +622,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
           {/* News summary */}
           {c.news_reason?.one_line_summary && (
             <div className="px-4 py-2 bg-[#6366f1]/5 border-y border-[#6366f1]/10">
-              <p className="text-[11px] text-[var(--text-secondary)] italic">
+              <p className="text-[11px] dark:text-text-secondary-dark light:text-text-secondary-light italic">
                 &ldquo;{c.news_reason.one_line_summary}&rdquo;
               </p>
             </div>
@@ -630,9 +631,9 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
           {/* Recovery history */}
           {c.news_reason?.recovery_probability && (
             <div className="px-4 py-1.5">
-              <p className="text-[10px] text-[var(--text-muted)]">
+              <p className="text-[10px] dark:text-text-tertiary-dark light:text-text-tertiary-light">
                 Recovery probability:{' '}
-                <span className="font-semibold text-[var(--text-primary)]">
+                <span className="font-semibold dark:text-text-primary-dark light:text-text-primary-light">
                   {c.news_reason.recovery_probability}
                 </span>
               </p>
@@ -647,7 +648,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
                 <div className="rounded-xl p-3 space-y-3" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)' }}>
                   {/* QTY */}
                   <div>
-                    <label className="text-[11px] font-medium uppercase tracking-wide text-[#9ca3af] block mb-1">Shares</label>
+                    <label className="text-[11px] font-medium uppercase tracking-wide dark:text-text-tertiary-dark light:text-text-tertiary-light block mb-1">Shares</label>
                     <input
                       type="text"
                       inputMode="numeric"
@@ -657,22 +658,22 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
                         const raw = e.target.value.replace(/\D/g, '');
                         setOrderQty(raw === '' ? 0 : Number(raw));
                       }}
-                      className="w-full px-3 py-2 text-sm bg-[#1a1a2e] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#6366f1]"
+                      className="w-full px-3 py-2 text-sm dark:bg-bg-base-dark light:bg-bg-base-light border dark:border-border-light-dark light:border-border-light-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:border-[#6366f1]"
                     />
                   </div>
 
                   {/* ORDER TYPE */}
                   <div>
-                    <label className="text-[11px] font-medium uppercase tracking-wide text-[#9ca3af] block mb-1">Order Type</label>
-                    <div className="flex rounded-lg overflow-hidden border border-[rgba(255,255,255,0.1)]">
+                    <label className="text-[11px] font-medium uppercase tracking-wide dark:text-text-tertiary-dark light:text-text-tertiary-light block mb-1">Order Type</label>
+                    <div className="flex rounded-lg overflow-hidden border dark:border-border-light-dark light:border-border-light-light">
                       {(['market', 'limit', 'stop', 'stop_limit'] as const).map((type) => (
                         <button
                           key={type}
                           onClick={() => setOrderType(type)}
                           className={`flex-1 py-1.5 text-[10px] font-bold transition ${
                             orderType === type
-                              ? 'bg-[#6366f1] text-white'
-                              : 'bg-[#1a1a2e] text-[#9ca3af] hover:bg-[#2a2a3e]'
+                              ? 'bg-[#6366f1] dark:text-text-primary-dark light:text-text-primary-light'
+                              : 'dark:bg-bg-base-dark light:bg-bg-base-light dark:text-text-tertiary-dark light:text-text-tertiary-light hover:dark:bg-bg-hover-dark light:bg-bg-hover-light'
                           }`}
                         >
                           {type === 'stop_limit' ? 'Stop Limit' : type.charAt(0).toUpperCase() + type.slice(1)}
@@ -684,13 +685,13 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
                   {/* LIMIT PRICE */}
                   {(orderType === 'limit' || orderType === 'stop_limit') && (
                     <div>
-                      <label className="text-[11px] font-medium uppercase tracking-wide text-[#9ca3af] block mb-1">Limit Price $</label>
+                      <label className="text-[11px] font-medium uppercase tracking-wide dark:text-text-tertiary-dark light:text-text-tertiary-light block mb-1">Limit Price $</label>
                       <input
                         type="number"
                         step="0.01"
                         value={limitPrice}
                         onChange={(e) => setLimitPrice(Number(e.target.value))}
-                        className="w-full px-3 py-2 text-sm bg-[#1a1a2e] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#6366f1]"
+                        className="w-full px-3 py-2 text-sm dark:bg-bg-base-dark light:bg-bg-base-light border dark:border-border-light-dark light:border-border-light-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:border-[#6366f1]"
                       />
                     </div>
                   )}
@@ -698,29 +699,29 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
                   {/* STOP PRICE */}
                   {(orderType === 'stop' || orderType === 'stop_limit') && (
                     <div>
-                      <label className="text-[11px] font-medium uppercase tracking-wide text-[#9ca3af] block mb-1">Stop Price $</label>
+                      <label className="text-[11px] font-medium uppercase tracking-wide dark:text-text-tertiary-dark light:text-text-tertiary-light block mb-1">Stop Price $</label>
                       <input
                         type="number"
                         step="0.01"
                         value={stopPrice}
                         onChange={(e) => setStopPrice(Number(e.target.value))}
-                        className="w-full px-3 py-2 text-sm bg-[#1a1a2e] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#6366f1]"
+                        className="w-full px-3 py-2 text-sm dark:bg-bg-base-dark light:bg-bg-base-light border dark:border-border-light-dark light:border-border-light-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:border-[#6366f1]"
                       />
                     </div>
                   )}
 
                   {/* TIME IN FORCE */}
                   <div>
-                    <label className="text-[11px] font-medium uppercase tracking-wide text-[#9ca3af] block mb-1">Time in Force</label>
-                    <div className="flex rounded-lg overflow-hidden border border-[rgba(255,255,255,0.1)]">
+                    <label className="text-[11px] font-medium uppercase tracking-wide dark:text-text-tertiary-dark light:text-text-tertiary-light block mb-1">Time in Force</label>
+                    <div className="flex rounded-lg overflow-hidden border dark:border-border-light-dark light:border-border-light-light">
                       {(['day', 'gtc', 'ioc'] as const).map((tif) => (
                         <button
                           key={tif}
                           onClick={() => setTimeInForce(tif)}
                           className={`flex-1 py-1.5 text-[10px] font-bold transition ${
                             timeInForce === tif
-                              ? 'bg-[#6366f1] text-white'
-                              : 'bg-[#1a1a2e] text-[#9ca3af] hover:bg-[#2a2a3e]'
+                              ? 'bg-[#6366f1] dark:text-text-primary-dark light:text-text-primary-light'
+                              : 'dark:bg-bg-base-dark light:bg-bg-base-light dark:text-text-tertiary-dark light:text-text-tertiary-light hover:dark:bg-bg-hover-dark light:bg-bg-hover-light'
                           }`}
                         >
                           {tif.toUpperCase()}
@@ -731,8 +732,8 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
 
                   {/* ESTIMATED TOTAL */}
                   <div>
-                    <label className="text-[11px] font-medium uppercase tracking-wide text-[#9ca3af] block mb-1">Est. Total</label>
-                    <div className="px-3 py-2 text-sm bg-[#1a1a2e] border border-[rgba(255,255,255,0.1)] rounded-lg text-white font-mono">
+                    <label className="text-[11px] font-medium uppercase tracking-wide dark:text-text-tertiary-dark light:text-text-tertiary-light block mb-1">Est. Total</label>
+                    <div className="px-3 py-2 text-sm dark:bg-bg-base-dark light:bg-bg-base-light border dark:border-border-light-dark light:border-border-light-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light font-mono">
                       ${(orderQty * (limitPrice || c.current_price)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                   </div>
@@ -744,7 +745,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
                 <button
                   onClick={() => handleConfirmOrder(c)}
                   disabled={orderSubmitting}
-                  className="flex-1 py-2 rounded-xl bg-[#0d9488] text-white text-[11px] font-bold hover:bg-[#0f766e] transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                  className="flex-1 py-2 rounded-xl bg-[#0d9488] dark:text-text-primary-dark light:text-text-primary-light text-[11px] font-bold hover:bg-[#0f766e] transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
                 >
                   {orderSubmitting ? (
                     <Loader2 className="w-3 h-3 animate-spin" />
@@ -756,7 +757,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
                 <button
                   onClick={handleCancelOrder}
                   disabled={orderSubmitting}
-                  className="px-4 py-2 rounded-xl border border-[var(--border)] text-[var(--text-muted)] text-[11px] font-bold hover:bg-[var(--hover-bg)] transition disabled:opacity-40"
+                  className="px-4 py-2 rounded-xl border dark:border-border-light-dark light:border-border-light-light dark:text-text-tertiary-dark light:text-text-tertiary-light text-[11px] font-bold hover:dark:bg-bg-hover-dark light:bg-bg-hover-light transition disabled:opacity-40"
                 >
                   Cancel
                 </button>
@@ -767,7 +768,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
               <button
                 onClick={() => handleExecute(c)}
                 disabled={!c.safe_to_buy}
-                className="flex-1 py-2 rounded-xl bg-[#6366f1] text-white text-[11px] font-bold hover:bg-[#5558e0] transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                className="flex-1 py-2 rounded-xl bg-[#6366f1] dark:text-text-primary-dark light:text-text-primary-light text-[11px] font-bold hover:bg-[#5558e0] transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
               >
                 <DollarSign className="w-3 h-3" />
                 Execute {Math.max(1, Math.floor((c.suggested_amount || 500) / c.current_price))} share(s) ~${c.suggested_amount || 500}
@@ -780,7 +781,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
               </button>
               <button
                 onClick={() => handleSkip(c.symbol)}
-                className="px-3 py-2 rounded-xl border border-[var(--border)] text-[var(--text-muted)] text-[11px] font-bold hover:bg-[var(--hover-bg)] transition"
+                className="px-3 py-2 rounded-xl border dark:border-border-light-dark light:border-border-light-light dark:text-text-tertiary-dark light:text-text-tertiary-light text-[11px] font-bold hover:dark:bg-bg-hover-dark light:bg-bg-hover-light transition"
               >
                 Skip
               </button>
