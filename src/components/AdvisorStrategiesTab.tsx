@@ -467,6 +467,10 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
   };
 
   const handleConfirmOrder = async (candidate: EnrichedDipCandidate) => {
+    if (!orderQty || orderQty <= 0) {
+      alert('Please enter a valid share quantity.');
+      return;
+    }
     setOrderSubmitting(true);
     try {
       const orderPayload = {
@@ -640,10 +644,14 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
                   <div>
                     <label className="text-[11px] font-medium uppercase tracking-wide text-[#9ca3af] block mb-1">Shares</label>
                     <input
-                      type="number"
-                      min="1"
-                      value={orderQty}
-                      onChange={(e) => setOrderQty(Math.max(1, Number(e.target.value)))}
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={orderQty || ''}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/\D/g, '');
+                        setOrderQty(raw === '' ? 0 : Number(raw));
+                      }}
                       className="w-full px-3 py-2 text-sm bg-[#1a1a2e] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#6366f1]"
                     />
                   </div>
