@@ -493,6 +493,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
       await updateScannerAction(candidate.symbol, 'executed', {
         executed_price: candidate.current_price,
       });
+      console.log('Tracked', candidate.symbol, 'executed');
       alert(`${candidate.symbol} order placed successfully`);
       setOrderTicket(null);
     } catch (err: any) {
@@ -508,12 +509,14 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
 
   const handleAnalyze = (candidate: EnrichedDipCandidate) => {
     updateScannerAction(candidate.symbol, 'watching');
+    console.log('Tracked', candidate.symbol, 'watching');
     const prompt = `Analyze ${candidate.symbol} quality dip. It's down ${candidate.change_pct.toFixed(1)}% today. Score: ${candidate.score}/100. Reason: ${candidate.news_reason?.one_line_summary || 'N/A'}. RSI: ${candidate.rsi ?? 'N/A'}. Should I buy?`;
     onAnalyze(candidate.symbol, prompt);
   };
 
   const handleSkip = (symbol: string) => {
     updateScannerAction(symbol, 'skipped');
+    console.log('Tracked', symbol, 'skipped');
     setCandidates((prev) => prev.filter((x) => x.symbol !== symbol));
   };
 
