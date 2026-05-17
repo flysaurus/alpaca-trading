@@ -8,7 +8,7 @@ export interface RiskParameters {
 }
 
 export const DEFAULT_RISK: RiskParameters = {
-  maxPositionSize: 0.05, // 5%
+  maxPositionSize: 1.0, // no limit
   maxDailyLoss: 0.02, // 2%
   stopLossPercent: 0.05, // 5%
   trailingStopPercent: 0.08, // 8%
