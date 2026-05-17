@@ -452,14 +452,20 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
   const handleExecute = async (candidate: EnrichedDipCandidate) => {
     setExecuting(candidate.symbol);
     try {
+      const estimatedPrice = candidate.current_price;
+      const suggestedAmount = candidate.suggested_amount || 500;
+      const qty = Math.floor(suggestedAmount / estimatedPrice);
+      const finalQty = Math.max(1, qty);
+
       const orderPayload = {
         symbol: candidate.symbol,
         side: 'buy',
         type: 'market',
-        time_in_force: 'day',
-        notional: candidate.suggested_amount || 500,
+        qty: finalQty,
+        estimatedPrice: estimatedPrice,
+        timeInForce: 'day',
       };
-      console.log('Order payload:', JSON.stringify(orderPayload));
+      console.log('DipCard order payload:', { symbol: candidate.symbol, qty: finalQty, estimatedPrice });
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -617,7 +623,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
               ) : (
                 <DollarSign className="w-3 h-3" />
               )}
-              Execute ${c.suggested_amount || 500}
+              Execute ${Math.max(1, Math.floor((c.suggested_amount || 500) / c.current_price))} share(s) ~$${c.suggested_amount || 500}
             </button>
             <button
               onClick={() => handleAnalyze(c)}
