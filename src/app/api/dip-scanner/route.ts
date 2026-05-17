@@ -118,7 +118,6 @@ export async function GET(request: NextRequest) {
       const today = new Date().toISOString().split('T')[0];
 
       // Get a user_id — we don't have auth context here, so use a default
-      // In production, this should come from the authenticated session
       const { data: userData } = await supabase
         .from('users')
         .select('id')
@@ -126,29 +125,23 @@ export async function GET(request: NextRequest) {
         .single();
       const userId = userData?.id || '00000000-0000-0000-0000-000000000000';
 
-      const rows = enrichedCandidates.map((c) => ({
-        user_id: userId,
-        date: today,
-        symbol: c.symbol,
-        action: c.safe_to_buy ? 'buy' : 'watch',
-        score: c.score,
-        change_pct_at_recommendation: c.change_pct,
-        price_at_recommendation: c.current_price,
-        suggested_amount: c.suggested_amount,
-        stop_loss: c.suggested_stop,
-        news_reason: c.news_reason,
-        market_state: marketState.state || 'unknown',
-      }));
-
-      const { error } = await supabase
-        .from('scanner_recommendations')
-        .upsert(rows, { onConflict: 'user_id,date,symbol' });
-
-      if (error) {
-        console.error('[dip-scanner] Supabase upsert error:', error.message);
-      } else {
-        console.log(`[dip-scanner] Saved ${rows.length} recommendations to Supabase`);
+      for (const candidate of enrichedCandidates) {
+        await supabase
+          .from('scanner_recommendations')
+          .upsert({
+            user_id: userId,
+            date: today,
+            symbol: candidate.symbol,
+            action: candidate.safe_to_buy ? 'buy' : 'watch',
+            score: candidate.score,
+            change_pct_at_rec: candidate.change_pct,
+            price_at_rec: candidate.current_price,
+            suggested_amount: candidate.suggested_amount,
+            user_action: 'pending'
+          }, { onConflict: 'user_id,date,symbol' });
       }
+
+      console.log('Saved', enrichedCandidates.length, 'recs to DB');
     }
   } catch (err: any) {
     console.error('[dip-scanner] Failed to save recommendations:', err.message);
