@@ -706,12 +706,98 @@ export async function POST(req: NextRequest) {
 
     console.log('[Advisor API] Full enrichedContext:', JSON.stringify(enrichedContext, null, 2));
 
+    // ── Research context: detect ticker symbols in user message ──
+    const portfolioSymbols = new Set(
+      (portfolioContext?.positions || []).map((p: any) => p.symbol?.toUpperCase()).filter(Boolean)
+    );
+    const tickerRegex = /\b([A-Z]{1,5})\b/g;
+    const detectedSymbols: string[] = [];
+    let tickerMatch;
+    while ((tickerMatch = tickerRegex.exec(message)) !== null) {
+      const sym = tickerMatch[1];
+      if (!portfolioSymbols.has(sym) && !detectedSymbols.includes(sym)) {
+        detectedSymbols.push(sym);
+      }
+    }
+    console.log('Research symbols detected:', detectedSymbols);
+
+    let researchContext: Record<string, any> = {};
+    if (detectedSymbols.length > 0) {
+      try {
+        const { keyId, secretKey } = getAlpacaCreds();
+        if (keyId && secretKey) {
+          const quotesRes = await fetch(
+            `https://data.alpaca.markets/v2/stocks/quotes?symbols=${detectedSymbols.join(',')}`,
+            {
+              headers: {
+                'APCA-API-KEY-ID': keyId,
+                'APCA-API-SECRET-KEY': secretKey,
+              },
+              cache: 'no-store',
+            }
+          );
+
+          if (quotesRes.ok) {
+            const quotesData = await quotesRes.json();
+            const quotes = quotesData.quotes || {};
+
+            for (const sym of detectedSymbols) {
+              const q = quotes[sym];
+              if (q && q.ap) {
+                researchContext[sym] = {
+                  current_price: Number(q.ap),
+                  ask_price: Number(q.ap),
+                  bid_price: Number(q.bp),
+                  last_update: q.t,
+                };
+              }
+            }
+
+            // Enrich with 52-week data from Yahoo
+            for (const sym of detectedSymbols) {
+              if (researchContext[sym]) {
+                try {
+                  const { fetchYahoo52Week } = await import('@/lib/yahoo');
+                  const range = await fetchYahoo52Week(sym);
+                  if (range && range.high > 0 && range.low > 0) {
+                    researchContext[sym].week52_high = Number(range.high.toFixed(2));
+                    researchContext[sym].week52_low = Number(range.low.toFixed(2));
+                  }
+                } catch (err: any) {
+                  console.warn(`[Advisor] 52w fetch failed for ${sym}:`, err.message);
+                }
+              }
+            }
+          }
+        }
+      } catch (err: any) {
+        console.warn('[Advisor] Research context fetch failed:', err.message);
+      }
+      console.log('Fetched prices:', researchContext);
+    }
+
+    // Inject research context into the user message
+    let augmentedMessage = message;
+    const researchEntries = Object.entries(researchContext);
+    if (researchEntries.length > 0) {
+      const researchNote = researchEntries
+        .map(([sym, data]: [string, any]) => {
+          const parts = [`NOTE: Real-time data for ${sym}: Current price $${data.current_price}`];
+          if (data.week52_high && data.week52_low) {
+            parts.push(`52W range $${data.week52_low} to $${data.week52_high}`);
+          }
+          return parts.join(', ');
+        })
+        .join('\n');
+      augmentedMessage = researchNote + '\n\n' + augmentedMessage;
+    }
+
     // Try each provider in order
     let lastError = '';
     for (const provider of providers) {
       try {
         console.log(`[Advisor] Trying ${provider.model}...`);
-        const upstream = await tryLLM(provider, message, enrichedContext, history);
+        const upstream = await tryLLM(provider, augmentedMessage, enrichedContext, history);
 
         if (upstream.ok) {
           console.log(`[Advisor] ✓ ${provider.model} responded`);
