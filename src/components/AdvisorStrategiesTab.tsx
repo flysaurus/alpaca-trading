@@ -356,6 +356,13 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
   const [loading, setLoading] = useState(true);
   const [marketLabel, setMarketLabel] = useState('Unknown');
   const [executing, setExecuting] = useState<string | null>(null);
+  const [orderTicket, setOrderTicket] = useState<string | null>(null);
+  const [orderType, setOrderType] = useState<'market' | 'limit' | 'stop' | 'stop_limit'>('market');
+  const [orderQty, setOrderQty] = useState<number>(0);
+  const [limitPrice, setLimitPrice] = useState<number>(0);
+  const [stopPrice, setStopPrice] = useState<number>(0);
+  const [timeInForce, setTimeInForce] = useState<'day' | 'gtc' | 'ioc'>('day');
+  const [orderSubmitting, setOrderSubmitting] = useState(false);
 
   const scannerUserId = getUserId();
   const today = new Date().toISOString().split('T')[0];
@@ -449,23 +456,30 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
     return () => clearInterval(intervalId);
   }, [fetchDipScanner]);
 
-  const handleExecute = async (candidate: EnrichedDipCandidate) => {
-    setExecuting(candidate.symbol);
-    try {
-      const estimatedPrice = candidate.current_price;
-      const suggestedAmount = candidate.suggested_amount || 500;
-      const qty = Math.floor(suggestedAmount / estimatedPrice);
-      const finalQty = Math.max(1, qty);
+  const handleExecute = (candidate: EnrichedDipCandidate) => {
+    const defaultQty = Math.max(1, Math.floor(500 / candidate.current_price));
+    setOrderTicket(candidate.symbol);
+    setOrderType('market');
+    setOrderQty(defaultQty);
+    setLimitPrice(candidate.current_price);
+    setStopPrice(Number((candidate.current_price * 0.95).toFixed(2)));
+    setTimeInForce('day');
+  };
 
+  const handleConfirmOrder = async (candidate: EnrichedDipCandidate) => {
+    setOrderSubmitting(true);
+    try {
       const orderPayload = {
         symbol: candidate.symbol,
         side: 'buy',
-        type: 'market',
-        qty: finalQty,
-        estimatedPrice: estimatedPrice,
-        timeInForce: 'day',
+        type: orderType.toLowerCase(),
+        qty: Number(orderQty),
+        estimatedPrice: limitPrice || candidate.current_price,
+        timeInForce: timeInForce.toLowerCase(),
+        ...(limitPrice && orderType !== 'market' ? { limitPrice: Number(limitPrice) } : {}),
+        ...(stopPrice && (orderType === 'stop' || orderType === 'stop_limit') ? { stopPrice: Number(stopPrice) } : {}),
       };
-      console.log('DipCard order payload:', { symbol: candidate.symbol, qty: finalQty, estimatedPrice });
+      console.log('Order payload:', JSON.stringify(orderPayload));
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -476,11 +490,16 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
         executed_price: candidate.current_price,
       });
       alert(`${candidate.symbol} order placed successfully`);
+      setOrderTicket(null);
     } catch (err: any) {
       alert(`Failed to place order: ${err.message}`);
     } finally {
-      setExecuting(null);
+      setOrderSubmitting(false);
     }
+  };
+
+  const handleCancelOrder = () => {
+    setOrderTicket(null);
   };
 
   const handleAnalyze = (candidate: EnrichedDipCandidate) => {
@@ -612,32 +631,148 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
           )}
 
           {/* Actions */}
-          <div className="px-4 pb-4 pt-2 flex items-center gap-2">
-            <button
-              onClick={() => handleExecute(c)}
-              disabled={executing === c.symbol || !c.safe_to_buy}
-              className="flex-1 py-2 rounded-xl bg-[#6366f1] text-white text-[11px] font-bold hover:bg-[#5558e0] transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
-            >
-              {executing === c.symbol ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
-              ) : (
+          {orderTicket === c.symbol ? (
+            <>
+              {/* Order Ticket */}
+              <div className="px-4 pb-2">
+                <div className="rounded-xl p-3 space-y-3" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  {/* QTY */}
+                  <div>
+                    <label className="text-[11px] font-medium uppercase tracking-wide text-[#9ca3af] block mb-1">Shares</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={orderQty}
+                      onChange={(e) => setOrderQty(Math.max(1, Number(e.target.value)))}
+                      className="w-full px-3 py-2 text-sm bg-[#1a1a2e] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#6366f1]"
+                    />
+                  </div>
+
+                  {/* ORDER TYPE */}
+                  <div>
+                    <label className="text-[11px] font-medium uppercase tracking-wide text-[#9ca3af] block mb-1">Order Type</label>
+                    <div className="flex rounded-lg overflow-hidden border border-[rgba(255,255,255,0.1)]">
+                      {(['market', 'limit', 'stop', 'stop_limit'] as const).map((type) => (
+                        <button
+                          key={type}
+                          onClick={() => setOrderType(type)}
+                          className={`flex-1 py-1.5 text-[10px] font-bold transition ${
+                            orderType === type
+                              ? 'bg-[#6366f1] text-white'
+                              : 'bg-[#1a1a2e] text-[#9ca3af] hover:bg-[#2a2a3e]'
+                          }`}
+                        >
+                          {type === 'stop_limit' ? 'Stop Limit' : type.charAt(0).toUpperCase() + type.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* LIMIT PRICE */}
+                  {(orderType === 'limit' || orderType === 'stop_limit') && (
+                    <div>
+                      <label className="text-[11px] font-medium uppercase tracking-wide text-[#9ca3af] block mb-1">Limit Price $</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={limitPrice}
+                        onChange={(e) => setLimitPrice(Number(e.target.value))}
+                        className="w-full px-3 py-2 text-sm bg-[#1a1a2e] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#6366f1]"
+                      />
+                    </div>
+                  )}
+
+                  {/* STOP PRICE */}
+                  {(orderType === 'stop' || orderType === 'stop_limit') && (
+                    <div>
+                      <label className="text-[11px] font-medium uppercase tracking-wide text-[#9ca3af] block mb-1">Stop Price $</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={stopPrice}
+                        onChange={(e) => setStopPrice(Number(e.target.value))}
+                        className="w-full px-3 py-2 text-sm bg-[#1a1a2e] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:border-[#6366f1]"
+                      />
+                    </div>
+                  )}
+
+                  {/* TIME IN FORCE */}
+                  <div>
+                    <label className="text-[11px] font-medium uppercase tracking-wide text-[#9ca3af] block mb-1">Time in Force</label>
+                    <div className="flex rounded-lg overflow-hidden border border-[rgba(255,255,255,0.1)]">
+                      {(['day', 'gtc', 'ioc'] as const).map((tif) => (
+                        <button
+                          key={tif}
+                          onClick={() => setTimeInForce(tif)}
+                          className={`flex-1 py-1.5 text-[10px] font-bold transition ${
+                            timeInForce === tif
+                              ? 'bg-[#6366f1] text-white'
+                              : 'bg-[#1a1a2e] text-[#9ca3af] hover:bg-[#2a2a3e]'
+                          }`}
+                        >
+                          {tif.toUpperCase()}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* ESTIMATED TOTAL */}
+                  <div>
+                    <label className="text-[11px] font-medium uppercase tracking-wide text-[#9ca3af] block mb-1">Est. Total</label>
+                    <div className="px-3 py-2 text-sm bg-[#1a1a2e] border border-[rgba(255,255,255,0.1)] rounded-lg text-white font-mono">
+                      ${(orderQty * (limitPrice || c.current_price)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Confirm / Cancel */}
+              <div className="px-4 pb-4 pt-2 flex items-center gap-2">
+                <button
+                  onClick={() => handleConfirmOrder(c)}
+                  disabled={orderSubmitting}
+                  className="flex-1 py-2 rounded-xl bg-[#0d9488] text-white text-[11px] font-bold hover:bg-[#0f766e] transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                >
+                  {orderSubmitting ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Check className="w-3 h-3" />
+                  )}
+                  Confirm Order
+                </button>
+                <button
+                  onClick={handleCancelOrder}
+                  disabled={orderSubmitting}
+                  className="px-4 py-2 rounded-xl border border-[var(--border)] text-[var(--text-muted)] text-[11px] font-bold hover:bg-[var(--hover-bg)] transition disabled:opacity-40"
+                >
+                  Cancel
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="px-4 pb-4 pt-2 flex items-center gap-2">
+              <button
+                onClick={() => handleExecute(c)}
+                disabled={!c.safe_to_buy}
+                className="flex-1 py-2 rounded-xl bg-[#6366f1] text-white text-[11px] font-bold hover:bg-[#5558e0] transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+              >
                 <DollarSign className="w-3 h-3" />
-              )}
-              Execute ${Math.max(1, Math.floor((c.suggested_amount || 500) / c.current_price))} share(s) ~$${c.suggested_amount || 500}
-            </button>
-            <button
-              onClick={() => handleAnalyze(c)}
-              className="px-4 py-2 rounded-xl border border-[#6366f1]/40 text-[#6366f1] text-[11px] font-bold hover:bg-[#6366f1]/10 transition"
-            >
-              Analyze
-            </button>
-            <button
-              onClick={() => handleSkip(c.symbol)}
-              className="px-3 py-2 rounded-xl border border-[var(--border)] text-[var(--text-muted)] text-[11px] font-bold hover:bg-[var(--hover-bg)] transition"
-            >
-              Skip
-            </button>
-          </div>
+                Execute {Math.max(1, Math.floor((c.suggested_amount || 500) / c.current_price))} share(s) ~${c.suggested_amount || 500}
+              </button>
+              <button
+                onClick={() => handleAnalyze(c)}
+                className="px-4 py-2 rounded-xl border border-[#6366f1]/40 text-[#6366f1] text-[11px] font-bold hover:bg-[#6366f1]/10 transition"
+              >
+                Analyze
+              </button>
+              <button
+                onClick={() => handleSkip(c.symbol)}
+                className="px-3 py-2 rounded-xl border border-[var(--border)] text-[var(--text-muted)] text-[11px] font-bold hover:bg-[var(--hover-bg)] transition"
+              >
+                Skip
+              </button>
+            </div>
+          )}
         </div>
       ))}
     </div>
