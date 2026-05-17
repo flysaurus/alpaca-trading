@@ -73,17 +73,36 @@ Respond in JSON only:
     };
   }
 
+  console.log('Raw LLM response for', symbol, ':', raw);
+
   let parsed: DipReason;
   try {
+    // Try direct parse first
     parsed = JSON.parse(raw) as DipReason;
   } catch {
-    // Fallback if the model doesn't return clean JSON
-    parsed = {
-      reason: 'UNKNOWN',
-      recovery_probability: 'MEDIUM',
-      one_line_summary: 'Failed to parse LLM response',
-      red_flags: ['JSON parse error'],
-    };
+    // Try extracting JSON from response
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (match) {
+      try {
+        parsed = JSON.parse(match[0]) as DipReason;
+      } catch {
+        // Return safe default
+        parsed = {
+          reason: 'UNKNOWN',
+          recovery_probability: 'MEDIUM',
+          one_line_summary: 'Analysis unavailable',
+          red_flags: [],
+        };
+      }
+    } else {
+      // Return safe default
+      parsed = {
+        reason: 'UNKNOWN',
+        recovery_probability: 'MEDIUM',
+        one_line_summary: 'Analysis unavailable',
+        red_flags: [],
+      };
+    }
   }
 
   cache.set(symbol, { timestamp: now, data: parsed });

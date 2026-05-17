@@ -452,16 +452,18 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
   const handleExecute = async (candidate: EnrichedDipCandidate) => {
     setExecuting(candidate.symbol);
     try {
+      const orderPayload = {
+        symbol: candidate.symbol,
+        side: 'buy',
+        type: 'market',
+        time_in_force: 'day',
+        notional: candidate.suggested_amount || 500,
+      };
+      console.log('Order payload:', JSON.stringify(orderPayload));
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          symbol: candidate.symbol,
-          side: 'buy',
-          type: 'market',
-          time_in_force: 'day',
-          notional: candidate.suggested_amount || 500,
-        }),
+        body: JSON.stringify(orderPayload),
       });
       if (!res.ok) throw new Error(`Order failed: ${res.status}`);
       await updateScannerAction(candidate.symbol, 'executed', {

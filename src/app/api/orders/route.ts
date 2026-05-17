@@ -87,11 +87,15 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
+    console.log('Order request body:', JSON.stringify(body));
     const { symbol, qty, side, type, limitPrice, stopPrice, timeInForce, trailPrice, trailPercent } = body;
 
     // ── Safety validation ──
     const safety = validateOrder({ symbol, qty, side, estimatedPrice: limitPrice || body.estimatedPrice });
+    console.log('Safety check result:', JSON.stringify(safety))
+    console.log('Validation inputs:', { symbol, qty, side, estimatedPrice: limitPrice || body.estimatedPrice })
     if (!safety.valid) {
+      console.log('Order rejected by safety check:', safety.error)
       return NextResponse.json(
         { error: safety.error },
         { status: 400, headers: rateLimitHeaders(limit) }
@@ -124,7 +128,7 @@ export async function POST(request: Request) {
     }
 
     // ── Place order ──
-    const order = await placeOrder({
+    const alpacaPayload = {
       symbol: symbol.toUpperCase(),
       qty: Number(qty),
       side,
@@ -134,7 +138,10 @@ export async function POST(request: Request) {
       ...(stopPrice ? { stop_price: Number(stopPrice) } : {}),
       ...(trailPrice ? { trail_price: Number(trailPrice) } : {}),
       ...(trailPercent ? { trail_percent: Number(trailPercent) } : {}),
-    });
+    };
+    console.log('Alpaca payload:', JSON.stringify(alpacaPayload));
+    const alpacaResponse = await placeOrder(alpacaPayload);
+    console.log('Alpaca response body:', JSON.stringify(alpacaResponse));
 
     // ── Telegram notification ──
     let telegramResult: { ok: boolean; error?: string } | null = null;
@@ -144,54 +151,54 @@ export async function POST(request: Request) {
     console.log('[API /orders] Telegram config:', { hasToken: !!botToken, hasChatId: !!chatId, tokenPrefix: botToken?.slice(0, 10) });
 
     if (chatId && botToken) {
-      const filledPrice = order.filled_avg_price
-        ? Number(order.filled_avg_price)
+      const filledPrice = alpacaResponse.filled_avg_price
+        ? Number(alpacaResponse.filled_avg_price)
         : (limitPrice || body.estimatedPrice || 0);
 
       let text: string;
 
-      if (order.status === 'filled') {
+      if (alpacaResponse.status === 'filled') {
         text = `
 ✅ <b>ORDER FILLED</b>
 ──────────────────
-📅 <b>Date:</b> ${formatDate(order.filled_at || order.created_at)}
-⏰ <b>Time:</b> ${formatTime(order.filled_at || order.created_at)}
+📅 <b>Date:</b> ${formatDate(alpacaResponse.filled_at || alpacaResponse.created_at)}
+⏰ <b>Time:</b> ${formatTime(alpacaResponse.filled_at || alpacaResponse.created_at)}
 
-📊 <b>Symbol:</b> ${order.symbol}
-${order.side === 'buy' ? '🟢' : '🔴'} <b>Side:</b> ${order.side.toUpperCase()}
-📋 <b>Type:</b> ${(order.type || 'market').toUpperCase()}
-🔢 <b>Qty:</b> ${order.filled_qty || order.qty} shares
+📊 <b>Symbol:</b> ${alpacaResponse.symbol}
+${alpacaResponse.side === 'buy' ? '🟢' : '🔴'} <b>Side:</b> ${alpacaResponse.side.toUpperCase()}
+📋 <b>Type:</b> ${(alpacaResponse.type || 'market').toUpperCase()}
+🔢 <b>Qty:</b> ${alpacaResponse.filled_qty || alpacaResponse.qty} shares
 💵 <b>Filled Price:</b> $${Number(filledPrice).toFixed(2)}
-${order.side === 'buy' ? '💸 <b>Debited:</b>' : '💰 <b>Credited:</b>'} $${(Number(order.filled_qty || order.qty) * Number(filledPrice)).toFixed(2)}
+${alpacaResponse.side === 'buy' ? '💸 <b>Debited:</b>' : '💰 <b>Credited:</b>'} $${(Number(alpacaResponse.filled_qty || alpacaResponse.qty) * Number(filledPrice)).toFixed(2)}
 ──────────────────
 ✅ <b>Status:</b> FILLED
 `;
-      } else if (order.status === 'canceled' || order.status === 'pending_cancel') {
+      } else if (alpacaResponse.status === 'canceled' || alpacaResponse.status === 'pending_cancel') {
         text = `
 ❌ <b>ORDER CANCELLED</b>
 ──────────────────
-📅 <b>Date:</b> ${formatDate(order.canceled_at || order.updated_at || order.created_at)}
-⏰ <b>Time:</b> ${formatTime(order.canceled_at || order.updated_at || order.created_at)}
+📅 <b>Date:</b> ${formatDate(alpacaResponse.canceled_at || alpacaResponse.updated_at || alpacaResponse.created_at)}
+⏰ <b>Time:</b> ${formatTime(alpacaResponse.canceled_at || alpacaResponse.updated_at || alpacaResponse.created_at)}
 
-📊 <b>Symbol:</b> ${order.symbol}
-${order.side === 'buy' ? '🟢' : '🔴'} <b>Side:</b> ${order.side.toUpperCase()}
-📋 <b>Type:</b> ${(order.type || 'market').toUpperCase()}
-🔢 <b>Qty:</b> ${order.qty} shares
+📊 <b>Symbol:</b> ${alpacaResponse.symbol}
+${alpacaResponse.side === 'buy' ? '🟢' : '🔴'} <b>Side:</b> ${alpacaResponse.side.toUpperCase()}
+📋 <b>Type:</b> ${(alpacaResponse.type || 'market').toUpperCase()}
+🔢 <b>Qty:</b> ${alpacaResponse.qty} shares
 ──────────────────
 ❌ <b>Status:</b> CANCELLED
 `;
-      } else if (order.status === 'accepted' || order.status === 'accepted_for_bidding') {
+      } else if (alpacaResponse.status === 'accepted' || alpacaResponse.status === 'accepted_for_bidding') {
         text = `
 📨 <b>ORDER ACCEPTED</b>
 ──────────────────
-📅 <b>Date:</b> ${formatDate(order.updated_at || order.created_at)}
-⏰ <b>Time:</b> ${formatTime(order.updated_at || order.created_at)}
+📅 <b>Date:</b> ${formatDate(alpacaResponse.updated_at || alpacaResponse.created_at)}
+⏰ <b>Time:</b> ${formatTime(alpacaResponse.updated_at || alpacaResponse.created_at)}
 
-📊 <b>Symbol:</b> ${order.symbol}
-${order.side === 'buy' ? '🟢' : '🔴'} <b>Side:</b> ${order.side.toUpperCase()}
-📋 <b>Type:</b> ${(order.type || 'market').toUpperCase()}
-🔢 <b>Qty:</b> ${order.qty} shares
-💰 <b>Limit Price:</b> ${order.limit_price ? '$' + order.limit_price : 'Market'}
+📊 <b>Symbol:</b> ${alpacaResponse.symbol}
+${alpacaResponse.side === 'buy' ? '🟢' : '🔴'} <b>Side:</b> ${alpacaResponse.side.toUpperCase()}
+📋 <b>Type:</b> ${(alpacaResponse.type || 'market').toUpperCase()}
+🔢 <b>Qty:</b> ${alpacaResponse.qty} shares
+💰 <b>Limit Price:</b> ${alpacaResponse.limit_price ? '$' + alpacaResponse.limit_price : 'Market'}
 ──────────────────
 📨 <b>Status:</b> ACCEPTED
 `;
@@ -199,20 +206,20 @@ ${order.side === 'buy' ? '🟢' : '🔴'} <b>Side:</b> ${order.side.toUpperCase(
         text = `
 🔔 <b>ORDER PLACED</b>
 ──────────────────
-📅 <b>Date:</b> ${formatDate(order.created_at)}
-⏰ <b>Time:</b> ${formatTime(order.created_at)}
+📅 <b>Date:</b> ${formatDate(alpacaResponse.created_at)}
+⏰ <b>Time:</b> ${formatTime(alpacaResponse.created_at)}
 
-📊 <b>Symbol:</b> ${order.symbol}
-${order.side === 'buy' ? '🟢' : '🔴'} <b>Side:</b> ${order.side.toUpperCase()}
-📋 <b>Type:</b> ${(order.type || 'market').toUpperCase()}
-🔢 <b>Qty:</b> ${order.qty} shares
-💰 <b>Limit Price:</b> ${order.limit_price ? '$' + order.limit_price : 'Market'}
+📊 <b>Symbol:</b> ${alpacaResponse.symbol}
+${alpacaResponse.side === 'buy' ? '🟢' : '🔴'} <b>Side:</b> ${alpacaResponse.side.toUpperCase()}
+📋 <b>Type:</b> ${(alpacaResponse.type || 'market').toUpperCase()}
+🔢 <b>Qty:</b> ${alpacaResponse.qty} shares
+💰 <b>Limit Price:</b> ${alpacaResponse.limit_price ? '$' + alpacaResponse.limit_price : 'Market'}
 ──────────────────
 ⏳ <b>Status:</b> PENDING
 `;
       }
 
-      console.log('[API /orders] Sending Telegram notification:', { chatId, status: order.status, symbol: order.symbol });
+      console.log('[API /orders] Sending Telegram notification:', { chatId, status: alpacaResponse.status, symbol: alpacaResponse.symbol });
 
       telegramResult = await sendTelegramMessage({
         chatId,
@@ -229,15 +236,15 @@ ${order.side === 'buy' ? '🟢' : '🔴'} <b>Side:</b> ${order.side.toUpperCase(
       {
         success: true,
         order: {
-          id: order.id,
-          symbol: order.symbol,
-          side: order.side,
-          qty: Number(order.qty),
-          type: order.type,
-          status: order.status,
-          filledQty: Number(order.filled_qty || 0),
-          filledAvgPrice: order.filled_avg_price ? Number(order.filled_avg_price) : null,
-          createdAt: order.created_at,
+          id: alpacaResponse.id,
+          symbol: alpacaResponse.symbol,
+          side: alpacaResponse.side,
+          qty: Number(alpacaResponse.qty),
+          type: alpacaResponse.type,
+          status: alpacaResponse.status,
+          filledQty: Number(alpacaResponse.filled_qty || 0),
+          filledAvgPrice: alpacaResponse.filled_avg_price ? Number(alpacaResponse.filled_avg_price) : null,
+          createdAt: alpacaResponse.created_at,
         },
         telegram: telegramResult,
       },

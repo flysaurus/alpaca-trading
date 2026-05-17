@@ -40,7 +40,10 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const marketState = await marketRes.json();
+  const marketResponse = await marketRes.json();
+  // Extract the nested marketState object (not the full response with isOpen/nextOpen)
+  const marketState = marketResponse.marketState || marketResponse;
+  console.log('[dip-scanner] Market state:', marketState.state, '| dip_buying_enabled:', marketState.dip_buying_enabled);
 
   // 2. Get watchlist symbols from header or query param
   const watchlistHeader = request.headers.get('x-watchlist');
@@ -134,7 +137,7 @@ export async function GET(request: NextRequest) {
         suggested_amount: c.suggested_amount,
         stop_loss: c.suggested_stop,
         news_reason: c.news_reason,
-        market_state: marketState.marketState?.state || marketState.state || 'unknown',
+        market_state: marketState.state || 'unknown',
       }));
 
       const { error } = await supabase

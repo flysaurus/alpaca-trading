@@ -142,7 +142,7 @@ export async function scanForQualityDips(
     const close = dailyBar.c || dailyBar.C || 0;
     const prevClose = prevDailyBar.c || prevDailyBar.C || 0;
     const todayVolume = dailyBar.v || dailyBar.V || 0;
-    const avgVolume = dailyBar.vw || dailyBar.VW || close || 1;
+    const prevVolume = prevDailyBar.v || prevDailyBar.V || 0;
 
     if (!close || !prevClose) continue;
 
@@ -156,9 +156,14 @@ export async function scanForQualityDips(
 
     if (changePercent > -0.05) continue; // Only down 5%+
 
-    // Estimate average volume from VWAP if needed, or use a rough proxy
-    // Alpaca snapshots don't have 20-day avg, so we use a heuristic
-    const volRatio = todayVolume / (avgVolume || 1);
+    // Volume ratio: today vs yesterday (prevDailyBar.v)
+    const volRatio = prevVolume > 0 ? todayVolume / prevVolume : 1.0;
+
+    if (symbol === 'AMD') {
+      console.log('AMD vol today:', todayVolume);
+      console.log('AMD vol prev:', prevVolume);
+      console.log('AMD vol ratio:', volRatio);
+    }
 
     movers.push({
       symbol,
@@ -166,7 +171,7 @@ export async function scanForQualityDips(
       changePct: changePercent,
       currentPrice: close,
       todayVolume,
-      avgVolume,
+      avgVolume: prevVolume,
       volRatio,
       inWatchlist: watchlistSymbols.includes(symbol),
     });
