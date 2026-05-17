@@ -307,6 +307,75 @@ export async function GET(req: Request) {
     }
   }
 
+  if (action === 'update_rec_prices') {
+    try {
+      const { getClient } = await import('@/lib/supabase');
+      const supabase = getClient();
+
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+      const { data: recs, error: fetchError } = await supabase
+        .from('scanner_recommendations')
+        .select('id, symbol, executed_price, executed_at')
+        .eq('user_action', 'executed')
+        .gte('executed_at', thirtyDaysAgo);
+
+      if (fetchError) {
+        throw new Error(`Fetch failed: ${fetchError.message}`);
+      }
+
+      let updated = 0;
+      if (recs && recs.length > 0) {
+        const { keyId, secretKey } = getAlpacaCreds();
+        const symbols = [...new Set(recs.map((r: any) => r.symbol))].join(',');
+
+        const snapshotRes = await fetch(
+          `https://data.alpaca.markets/v2/stocks/snapshots?symbols=${encodeURIComponent(symbols)}`,
+          {
+            headers: {
+              'APCA-API-KEY-ID': keyId,
+              'APCA-API-SECRET-KEY': secretKey,
+            },
+          }
+        );
+
+        const snapshots = snapshotRes.ok ? await snapshotRes.json() : {};
+
+        for (const rec of recs as any[]) {
+          const snap = snapshots?.[rec.symbol];
+          const currentPrice = snap?.latestTrade?.p || snap?.dailyBar?.c || 0;
+          if (!currentPrice || !rec.executed_price) continue;
+
+          const return_30d = ((currentPrice - rec.executed_price) / rec.executed_price) * 100;
+
+          const { error } = await supabase
+            .from('scanner_recommendations')
+            .update({
+              current_price_30d: currentPrice,
+              return_30d: return_30d,
+            })
+            .eq('id', rec.id);
+
+          if (!error) updated++;
+        }
+      }
+
+      console.log(`[Cron] Updated rec prices: ${updated} executed recommendations`);
+
+      return NextResponse.json({
+        action: 'update_rec_prices',
+        timestamp: new Date().toISOString(),
+        updated,
+      });
+    } catch (err: any) {
+      console.error('[Cron] Update rec prices failed:', err.message);
+      return NextResponse.json(
+        { error: `Update rec prices failed: ${err.message}` },
+        { status: 500 }
+      );
+    }
+  }
+
   return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
 }
 

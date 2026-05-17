@@ -13,6 +13,10 @@
       "schedule": "0 21 * * 1-5"
     },
     {
+      "path": "/api/cron?action=update_rec_prices",
+      "schedule": "0 21 * * 1-5"
+    },
+    {
       "path": "/api/cron/execute-strategies",
       "schedule": "0 14 * * 1-5"
     }
