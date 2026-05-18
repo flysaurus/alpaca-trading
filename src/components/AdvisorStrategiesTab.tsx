@@ -335,15 +335,12 @@ function RiskScoreWidget({ data, loading }: { data: RiskScoreData | null; loadin
 
 interface SellSignal {
   symbol: string;
-  action: string;
+  signal_type: string;
   confidence: number;
-  target_price: number;
-  reasoning: string;
-  currentPrice: number;
-  qty: number;
-  marketValue: number;
-  unrealizedPL: number;
-  unrealizedPLPercent: number;
+  priority: 'HIGH' | 'MEDIUM' | 'LOW';
+  reason: string;
+  current_price: number;
+  metadata?: Record<string, unknown>;
 }
 
 function SellSignals({ portfolioContext, onAnalyze }: { portfolioContext: PortfolioContext | null; onAnalyze: (symbol: string, prompt: string) => void }) {
@@ -362,6 +359,22 @@ function SellSignals({ portfolioContext, onAnalyze }: { portfolioContext: Portfo
     async function fetchSellSignals() {
       setLoading(true);
       try {
+        const { analyzeAllPositions } = await import('@/lib/sellSignals');
+        const positions = portfolioContext!.positions.map((pos) => ({
+          symbol: pos.symbol,
+          current_price: pos.current_price,
+          avg_entry_price: pos.market_value / Math.max(pos.qty, 1),
+          qty: pos.qty,
+          market_value: pos.market_value,
+          unrealized_pl: pos.unrealized_pl,
+          unrealized_plpc: pos.unrealized_plpc,
+          total_equity: portfolioContext!.account.total_equity,
+        }));
+
+        const allSignals = await analyzeAllPositions(positions);
+        if (cancelled) return;
+
+        // Merge with LLM recommendation (keep LLM sell if also technically triggered)
         const results = await Promise.all(
           portfolioContext!.positions.map(async (pos) => {
             try {
@@ -379,15 +392,12 @@ function SellSignals({ portfolioContext, onAnalyze }: { portfolioContext: Portfo
               if (data.action === 'sell') {
                 return {
                   symbol: pos.symbol,
-                  action: data.action,
+                  signal_type: 'AI_ADVISOR',
                   confidence: data.confidence || 5,
-                  target_price: data.target_price || 0,
-                  reasoning: data.reasoning || '',
-                  currentPrice: pos.current_price,
-                  qty: pos.qty,
-                  marketValue: pos.market_value,
-                  unrealizedPL: pos.unrealized_pl,
-                  unrealizedPLPercent: pos.unrealized_plpc,
+                  priority: 'MEDIUM' as const,
+                  reason: data.reasoning || `AI recommends selling ${pos.symbol} at ${data.target_price ? '$'+data.target_price : 'market'}`,
+                  current_price: pos.current_price,
+                  metadata: { target_price: data.target_price, reasoning: data.reasoning },
                 } as SellSignal;
               }
               return null;
@@ -397,10 +407,24 @@ function SellSignals({ portfolioContext, onAnalyze }: { portfolioContext: Portfo
           })
         );
 
-        if (cancelled) return;
-        const sellSignals = results.filter(Boolean) as SellSignal[];
-        sellSignals.sort((a, b) => b.confidence - a.confidence);
-        setSignals(sellSignals);
+        const aiSignals = results.filter((s): s is SellSignal => s !== null);
+
+        // Combine technical + AI signals, deduplicate by symbol+type
+        const signalMap = new Map<string, SellSignal>();
+        for (const s of [...allSignals, ...aiSignals]) {
+          const key = `${s.symbol}-${s.signal_type}`;
+          if (!signalMap.has(key)) signalMap.set(key, s);
+        }
+
+        const merged = Array.from(signalMap.values());
+        merged.sort((a, b) => {
+          const priorityOrder = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+          const pDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
+          if (pDiff !== 0) return pDiff;
+          return b.confidence - a.confidence;
+        });
+
+        setSignals(merged);
       } catch (err) {
         console.error('[SellSignals] Fetch failed:', err);
       } finally {
@@ -412,7 +436,7 @@ function SellSignals({ portfolioContext, onAnalyze }: { portfolioContext: Portfo
     return () => { cancelled = true; };
   }, [portfolioContext]);
 
-  const visibleSignals = signals.filter((s) => !dismissed.has(s.symbol));
+  const visibleSignals = signals.filter((s) => !dismissed.has(`${s.symbol}-${s.signal_type}`));
 
   // Loading skeleton
   if (loading) {
@@ -445,38 +469,67 @@ function SellSignals({ portfolioContext, onAnalyze }: { portfolioContext: Portfo
         <span className="text-[11px] dark:text-text-tertiary-dark light:text-text-tertiary-light">{visibleSignals.length} position{visibleSignals.length > 1 ? 's' : ''} flagged</span>
       </div>
 
-      {visibleSignals.map((s) => (
+      {visibleSignals.map((s) => {
+        const signalColors: Record<string, string> = {
+          TRAILING_STOP_HIT: 'border-l-red-500 bg-red-500/5',
+          RSI_OVERBOUGHT: 'border-l-amber-500 bg-amber-500/5',
+          MOMENTUM_DEATH_CROSS: 'border-l-red-400 bg-red-400/5',
+          POSITION_SIZE_DRIFT: 'border-l-orange-500 bg-orange-500/5',
+          TAKE_PROFIT_TARGET: 'border-l-green-500 bg-green-500/5',
+          EARNINGS_RISK: 'border-l-violet-500 bg-violet-500/5',
+          AI_ADVISOR: 'border-l-indigo-500 bg-indigo-500/5',
+        };
+        const borderColorClass = signalColors[s.signal_type] || 'border-l-gray-500 bg-gray-500/5';
+        const priorityBadge = s.priority === 'HIGH'
+          ? 'dark:bg-red-500/20 light:bg-red-500/10 dark:text-red-400 light:text-red-600'
+          : s.priority === 'MEDIUM'
+            ? 'dark:bg-amber-500/20 light:bg-amber-500/10 dark:text-amber-400 light:text-amber-600'
+            : 'dark:bg-gray-500/20 light:bg-gray-500/10 dark:text-gray-400 light:text-gray-600';
+
+        return (
         <div
-          key={s.symbol}
-          className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-[#ef4444]/20 light:border-[#ef4444]/20 p-4 space-y-2"
-          style={{ borderLeftWidth: '3px', borderLeftColor: '#ef4444' }}
+          key={`${s.symbol}-${s.signal_type}`}
+          className={`dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-[#334155] light:border-[#e2e8f0] p-4 space-y-2 border-l-[3px] ${borderColorClass}`}
         >
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-sm">🔴</span>
-              <span className="text-xs font-bold uppercase dark:text-[#fca5a5] light:text-[#dc2626]">Sell Signal</span>
+              <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${priorityBadge}`}>
+                {s.signal_type.replace(/_/g, ' ')}
+              </span>
               <span className="text-[10px] dark:text-text-tertiary-dark light:text-text-tertiary-light">
-                Score: {Math.round(s.confidence * 10)}/100
+                {s.priority} · confidence {s.confidence}/10
               </span>
             </div>
           </div>
 
-          {/* Symbol + P&L */}
+          {/* Symbol */}
           <div className="flex items-center gap-3">
             <span className="text-base font-bold dark:text-[#f9fafb] light:text-[#0f172a]">{s.symbol}</span>
             <span className="font-[family-name:var(--font-mono)] text-sm dark:text-text-primary-dark light:text-text-primary-light">
-              ${fmtUSD(s.currentPrice)}
-            </span>
-            <span className={`font-[family-name:var(--font-mono)] text-xs font-bold ${s.unrealizedPL >= 0 ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
-              {s.unrealizedPL >= 0 ? '+' : ''}{fmtUSD(s.unrealizedPL)} ({s.unrealizedPLPercent >= 0 ? '+' : ''}{s.unrealizedPLPercent.toFixed(2)}%)
+              ${fmtUSD(s.current_price)}
             </span>
           </div>
 
-          {/* Reasoning */}
-          {s.reasoning && (
-            <p className="text-xs dark:text-text-secondary-dark light:text-text-secondary-light italic dark:bg-[#1e293b]/50 light:bg-[#fef2f2] rounded-lg px-3 py-2">
-              "{s.reasoning}"
+          {/* Reason */}
+          <p className="text-xs dark:text-text-secondary-dark light:text-text-secondary-light dark:bg-[#1e293b]/50 light:bg-[#f1f5f9] rounded-lg px-3 py-2 italic">
+            {s.reason}
+          </p>
+
+          {/* Show metadata for key signal types */}
+          {s.signal_type === 'TRAILING_STOP_HIT' && s.metadata && (
+            <p className="text-[10px] dark:text-text-muted-dark light:text-text-muted-light">
+              Recent high: ${(s.metadata.recent_high as number)?.toFixed(2)} · Drawdown: {(s.metadata.drawdown_pct as number)?.toFixed(1)}%
+            </p>
+          )}
+          {s.signal_type === 'EARNINGS_RISK' && s.metadata && (
+            <p className="text-[10px] dark:text-text-muted-dark light:text-text-muted-light">
+              Earnings: {s.metadata.earnings_date as string} ({s.metadata.days_away as number} days)
+            </p>
+          )}
+          {s.signal_type === 'POSITION_SIZE_DRIFT' && s.metadata && (
+            <p className="text-[10px] dark:text-text-muted-dark light:text-text-muted-light">
+              {(s.metadata.position_pct as number)?.toFixed(1)}% of portfolio
             </p>
           )}
 
@@ -484,16 +537,15 @@ function SellSignals({ portfolioContext, onAnalyze }: { portfolioContext: Portfo
           <div className="flex gap-2">
             <button
               onClick={() => {
-                console.log('Sell signal confirmed:', s.symbol);
+                console.log('Sell signal action:', s.symbol, s.signal_type);
               }}
               className="flex-1 py-2 rounded-xl bg-red-600 text-white text-[11px] font-bold hover:bg-red-500 transition"
             >
-              Sell
+              {s.signal_type === 'TAKE_PROFIT_TARGET' ? 'Take Profit' : 'Sell'}
             </button>
             <button
               onClick={() => {
-                const avgCost = s.marketValue / Math.max(s.qty, 1);
-                const prompt = `Analyze my ${s.symbol} position. I bought at $${avgCost.toFixed(2)}, currently at $${s.currentPrice.toFixed(2)}, P&L is $${s.unrealizedPL.toFixed(2)}.`;
+                const prompt = `Analyze my ${s.symbol} position at $${s.current_price.toFixed(2)}. Signal: ${s.signal_type.replace(/_/g, ' ')}. ${s.reason}. Should I act on this signal?`;
                 onAnalyze(s.symbol, prompt);
               }}
               className="flex-1 py-2 rounded-xl border dark:border-[#0d9488]/40 light:border-[#0d9488]/40 dark:text-[#0d9488] light:text-[#0d9488] text-[11px] font-bold hover:dark:bg-[#0d9488]/10 hover:light:bg-[#0d9488]/5 transition"
@@ -501,14 +553,14 @@ function SellSignals({ portfolioContext, onAnalyze }: { portfolioContext: Portfo
               Analyze
             </button>
             <button
-              onClick={() => setDismissed((prev) => new Set(prev).add(s.symbol))}
+              onClick={() => setDismissed((prev) => new Set([...prev, `${s.symbol}-${s.signal_type}`]))}
               className="px-3 py-2 rounded-xl border dark:border-[#334155] light:border-[#e2e8f0] dark:text-text-tertiary-dark light:text-text-tertiary-light text-[11px] font-medium hover:dark:bg-bg-hover-dark hover:light:bg-bg-hover-light transition"
             >
               Hold
             </button>
           </div>
         </div>
-      ))}
+      )})}
     </div>
   );
 }
@@ -518,14 +570,29 @@ function SellSignals({ portfolioContext, onAnalyze }: { portfolioContext: Portfo
 interface EnrichedDipCandidate {
   symbol: string;
   score: number;
+  grade: string;
   change_pct: number;
   current_price: number;
   volume_ratio: number;
   rsi: number | null;
+  rsi_7?: number | null;
+  rsi_14?: number | null;
+  rsi_28?: number | null;
   safe_to_buy?: boolean;
   suggested_entry?: number;
   suggested_stop?: number;
   suggested_amount?: number;
+  stop_loss_pct?: number;
+  atr?: number | null;
+  earnings_days_away?: number | null;
+  sma_proximity?: {
+    sma20_near?: boolean;
+    sma50_near?: boolean;
+    sma200_near?: boolean;
+    week52_low_near?: boolean;
+  };
+  sma_score?: number;
+  earnings_score?: number;
   news_reason?: {
     reason?: string;
     recovery_probability?: string;
@@ -798,10 +865,41 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
               {c.symbol} — ${c.current_price.toFixed(2)}
             </h4>
 
-            <div className="flex items-center gap-3 mt-1 text-[11px] dark:text-text-tertiary-dark light:text-text-tertiary-light">
-              <span>RSI: {c.rsi ?? 'N/A'}</span>
-              <span>Vol: {c.volume_ratio.toFixed(1)}x normal</span>
+            <div className="flex items-center gap-3 mt-1 text-[11px] dark:text-text-tertiary-dark light:text-text-tertiary-light flex-wrap">
+              <span>RSI: {c.rsi != null ? c.rsi.toFixed(1) : 'N/A'} <span className="opacity-60">(7: {c.rsi_7?.toFixed(1) ?? '?'} / 14: {c.rsi_14?.toFixed(1) ?? '?'} / 28: {c.rsi_28?.toFixed(1) ?? '?'})</span></span>
+              <span>Vol: {c.volume_ratio.toFixed(1)}x</span>
             </div>
+            {c.sma_proximity && (
+              <div className="flex items-center gap-2 mt-1.5 text-[10px] flex-wrap">
+                {c.sma_proximity.sma50_near && (
+                  <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium">
+                    Near 50-day SMA
+                  </span>
+                )}
+                {c.sma_proximity.sma200_near && (
+                  <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium">
+                    Near 200-day SMA
+                  </span>
+                )}
+                {c.sma_proximity.sma20_near && (
+                  <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 font-medium">
+                    Near 20-day SMA
+                  </span>
+                )}
+                {c.sma_proximity.week52_low_near && (
+                  <span className="px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-600 dark:text-violet-400 font-medium">
+                    Near 52wk Low
+                  </span>
+                )}
+              </div>
+            )}
+            {c.atr != null && (
+              <div className="flex items-center gap-3 mt-1 text-[10px] dark:text-text-muted-dark light:text-text-muted-light">
+                <span>ATR: ${c.atr.toFixed(2)}</span>
+                <span>Stop: ${c.suggested_stop?.toFixed(2)} (-{c.stop_loss_pct?.toFixed(1)}%)</span>
+                <span>Size: ${c.suggested_amount?.toLocaleString()}</span>
+              </div>
+            )}
           </div>
 
           {/* News summary */}

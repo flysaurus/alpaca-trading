@@ -16,7 +16,6 @@ interface EnrichedCandidate extends DipCandidate {
   safe_to_buy: boolean;
   suggested_entry: number;
   suggested_stop: number;
-  suggested_amount: number;
 }
 
 export async function GET(request: NextRequest) {
@@ -111,8 +110,7 @@ export async function GET(request: NextRequest) {
       news_reason: dipReason,
       safe_to_buy: safeToBuy,
       suggested_entry: candidate.current_price,
-      suggested_stop: candidate.current_price * 0.92,
-      suggested_amount: 500,
+      suggested_stop: candidate.current_price * (1 - candidate.stop_loss_pct / 100),
     });
   }
 
