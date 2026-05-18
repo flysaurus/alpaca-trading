@@ -346,6 +346,17 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
     }
   }, [expandedSymbol]);
 
+
+  // Auto-fetch all recommendations on mount for badge display
+  useEffect(() => {
+    rows.forEach((p) => {
+      const key = p.symbol.toUpperCase();
+      if (!recCache.current.has(key)) {
+        fetchRecommendation(p);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows.length]);
   if (positions.length === 0 && cash <= 0) {
     return (
       <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] p-6 text-center">
@@ -439,7 +450,8 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
               const isExpanded = expandedSymbol === p.symbol;
               const rec = recCache.current.get(p.symbol.toUpperCase())?.data;
               const recAction = rec?.action || 'hold';
-              const actionBadge = recAction === 'buy' ? 'dark:bg-[#10b981]/10 light:bg-[#10b981]/10 text-[#10b981]' : recAction === 'sell' ? 'dark:bg-[#ef4444]/10 light:bg-[#ef4444]/10 text-[#ef4444]' : 'dark:bg-[#f59e0b]/10 light:bg-[#f59e0b]/10 text-[#f59e0b]';
+              const actionBadge = recAction === 'buy' ? 'dark:bg-[#10b981]/15 light:bg-[#10b981]/15 text-[#10b981]' : recAction === 'sell' ? 'dark:bg-[#ef4444]/15 light:bg-[#ef4444]/15 text-[#ef4444]' : 'dark:bg-[#f59e0b]/15 light:bg-[#f59e0b]/15 text-[#f59e0b]';
+              const actionDot = recAction === 'buy' ? 'bg-[#10b981]' : recAction === 'sell' ? 'bg-[#ef4444]' : 'bg-[#f59e0b]';
 
               return (
                 <React.Fragment key={p.symbol}>
@@ -459,7 +471,8 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
                     <div className="flex items-center gap-2">
                       <p className="text-base font-semibold dark:text-text-primary-dark light:text-text-primary-light">{p.symbol}</p>
                       {rec && (
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${actionBadge}`}>
+                        <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold uppercase ${actionBadge}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${actionDot}`} />
                           {recAction}
                         </span>
                       )}
