@@ -618,6 +618,13 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
   const [stopPrice, setStopPrice] = useState<number>(0);
   const [timeInForce, setTimeInForce] = useState<'day' | 'gtc' | 'ioc'>('day');
   const [orderSubmitting, setOrderSubmitting] = useState(false);
+  const [backtestStats, setBacktestStats] = useState<{
+    hit_rate: number;
+    total_signals: number;
+    profitable_signals: number;
+    avg_return_7d: number | null;
+    avg_return_30d: number | null;
+  } | null>(null);
 
   const scannerUserId = getUserId();
   const today = new Date().toISOString().split('T')[0];
@@ -710,6 +717,22 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
 
     return () => clearInterval(intervalId);
   }, [fetchDipScanner]);
+
+  // Fetch backtest stats
+  useEffect(() => {
+    async function fetchBacktest() {
+      try {
+        const res = await fetch('/api/scanner/backtest');
+        if (res.ok) {
+          const data = await res.json();
+          setBacktestStats(data);
+        }
+      } catch (err) {
+        console.warn('[MarketScanner] Backtest fetch failed:', err);
+      }
+    }
+    fetchBacktest();
+  }, []);
 
   const handleExecute = (candidate: EnrichedDipCandidate) => {
     const defaultQty = Math.max(1, Math.floor(500 / candidate.current_price));
@@ -837,6 +860,21 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
         <span className="text-[11px] text-[#6366f1] font-semibold bg-[#6366f1]/10 px-2 py-0.5 rounded-full">
           {candidates.length} found
         </span>
+        {backtestStats && backtestStats.total_signals > 0 && (
+          <div className="flex items-center gap-1.5 ml-2">
+            <span className="text-[10px] dark:text-text-muted-dark light:text-text-muted-light">
+              {backtestStats.total_signals} tracked
+            </span>
+            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${backtestStats.hit_rate >= 0.7 ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' : backtestStats.hit_rate >= 0.5 ? 'text-amber-600 dark:text-amber-400 bg-amber-500/10' : 'text-red-600 dark:text-red-400 bg-red-500/10'}`}>
+              {Math.round(backtestStats.hit_rate * 100)}% win
+            </span>
+            {backtestStats.avg_return_7d != null && (
+              <span className={`text-[10px] font-medium ${backtestStats.avg_return_7d > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                {backtestStats.avg_return_7d > 0 ? '+' : ''}{backtestStats.avg_return_7d.toFixed(1)}% avg
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {candidates.map((c) => (
