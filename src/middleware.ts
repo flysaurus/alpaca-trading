@@ -13,9 +13,11 @@ import { createServerClient } from '@supabase/ssr';
 // Public routes that don't require authentication
 const PUBLIC_PATHS = [
   '/login',
+  '/setup-keys',              // One-time Alpaca key setup
+  '/authenticate-session',    // Master password entry
   '/auth/callback',
-  '/api',           // API routes handle their own auth
-  '/_next',         // Next.js internals
+  '/api',        // API routes handle their own auth
+  '/_next',      // Next.js internals
   '/favicon.ico',
   '/manifest.ts',
 ];
