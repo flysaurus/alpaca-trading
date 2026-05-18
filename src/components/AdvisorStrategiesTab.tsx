@@ -333,8 +333,189 @@ function RiskScoreWidget({ data, loading }: { data: RiskScoreData | null; loadin
     </div>
   );
 }
+/* ── Sell Signals ──────────────────────────────────────────────── */
 
-/* ── Market Scanner ────────────────────────────────────────────── */
+interface SellSignal {
+  symbol: string;
+  action: string;
+  confidence: number;
+  target_price: number;
+  reasoning: string;
+  currentPrice: number;
+  qty: number;
+  marketValue: number;
+  unrealizedPL: number;
+  unrealizedPLPercent: number;
+}
+
+function SellSignals({ portfolioContext, onAnalyze }: { portfolioContext: PortfolioContext | null; onAnalyze: (symbol: string, prompt: string) => void }) {
+  const [signals, setSignals] = useState<SellSignal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!portfolioContext?.positions?.length) {
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function fetchSellSignals() {
+      setLoading(true);
+      try {
+        const results = await Promise.all(
+          portfolioContext!.positions.map(async (pos) => {
+            try {
+              const avgCost = pos.market_value / Math.max(pos.qty, 1);
+              const params = new URLSearchParams({
+                symbol: pos.symbol,
+                currentPrice: String(pos.current_price),
+                avgCost: String(avgCost),
+                unrealizedPL: String(pos.unrealized_pl),
+                qty: String(pos.qty),
+                equity: String(portfolioContext!.account.total_equity),
+              });
+              const res = await fetch(`/api/positions/recommendation?${params}`);
+              const data = await res.json();
+              if (data.action === 'sell') {
+                return {
+                  symbol: pos.symbol,
+                  action: data.action,
+                  confidence: data.confidence || 5,
+                  target_price: data.target_price || 0,
+                  reasoning: data.reasoning || '',
+                  currentPrice: pos.current_price,
+                  qty: pos.qty,
+                  marketValue: pos.market_value,
+                  unrealizedPL: pos.unrealized_pl,
+                  unrealizedPLPercent: pos.unrealized_plpc,
+                } as SellSignal;
+              }
+              return null;
+            } catch {
+              return null;
+            }
+          })
+        );
+
+        if (cancelled) return;
+        const sellSignals = results.filter(Boolean) as SellSignal[];
+        sellSignals.sort((a, b) => b.confidence - a.confidence);
+        setSignals(sellSignals);
+      } catch (err) {
+        console.error('[SellSignals] Fetch failed:', err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    fetchSellSignals();
+    return () => { cancelled = true; };
+  }, [portfolioContext]);
+
+  const visibleSignals = signals.filter((s) => !dismissed.has(s.symbol));
+
+  // Loading skeleton
+  if (loading) {
+    return (
+      <div className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-border-light-dark light:border-border-light-light p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <div className="h-5 dark:bg-bg-hover-dark light:bg-bg-hover-light rounded w-28 animate-pulse" />
+        </div>
+        {[1, 2].map((i) => (
+          <div key={i} className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-xl border dark:border-border-light-dark light:border-border-light-light p-3 animate-pulse">
+            <div className="h-5 dark:bg-bg-hover-dark light:bg-bg-hover-light rounded w-32 mb-2" />
+            <div className="h-4 dark:bg-bg-hover-dark light:bg-bg-hover-light rounded w-48 mb-2" />
+            <div className="h-3 dark:bg-bg-hover-dark light:bg-bg-hover-light rounded w-full" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Hide entire section if no sell signals
+  if (visibleSignals.length === 0) return null;
+
+  const fmtUSD = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <span className="text-lg">🔴</span>
+        <h3 className="text-lg font-semibold dark:text-[#fca5a5] light:text-[#dc2626]">Sell Signals</h3>
+        <span className="text-[11px] dark:text-text-tertiary-dark light:text-text-tertiary-light">{visibleSignals.length} position{visibleSignals.length > 1 ? 's' : ''} flagged</span>
+      </div>
+
+      {visibleSignals.map((s) => (
+        <div
+          key={s.symbol}
+          className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-[#ef4444]/20 light:border-[#ef4444]/20 p-4 space-y-2"
+          style={{ borderLeftWidth: '3px', borderLeftColor: '#ef4444' }}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm">🔴</span>
+              <span className="text-xs font-bold uppercase dark:text-[#fca5a5] light:text-[#dc2626]">Sell Signal</span>
+              <span className="text-[10px] dark:text-text-tertiary-dark light:text-text-tertiary-light">
+                Score: {Math.round(s.confidence * 10)}/100
+              </span>
+            </div>
+          </div>
+
+          {/* Symbol + P&L */}
+          <div className="flex items-center gap-3">
+            <span className="text-base font-bold dark:text-[#f9fafb] light:text-[#0f172a]">{s.symbol}</span>
+            <span className="font-[family-name:var(--font-mono)] text-sm dark:text-text-primary-dark light:text-text-primary-light">
+              ${fmtUSD(s.currentPrice)}
+            </span>
+            <span className={`font-[family-name:var(--font-mono)] text-xs font-bold ${s.unrealizedPL >= 0 ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
+              {s.unrealizedPL >= 0 ? '+' : ''}{fmtUSD(s.unrealizedPL)} ({s.unrealizedPLPercent >= 0 ? '+' : ''}{s.unrealizedPLPercent.toFixed(2)}%)
+            </span>
+          </div>
+
+          {/* Reasoning */}
+          {s.reasoning && (
+            <p className="text-xs dark:text-text-secondary-dark light:text-text-secondary-light italic dark:bg-[#1e293b]/50 light:bg-[#fef2f2] rounded-lg px-3 py-2">
+              "{s.reasoning}"
+            </p>
+          )}
+
+          {/* Actions */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                console.log('Sell signal confirmed:', s.symbol);
+              }}
+              className="flex-1 py-2 rounded-xl bg-red-600 text-white text-[11px] font-bold hover:bg-red-500 transition"
+            >
+              Sell
+            </button>
+            <button
+              onClick={() => {
+                const avgCost = s.marketValue / Math.max(s.qty, 1);
+                const prompt = `Analyze my ${s.symbol} position. I bought at $${avgCost.toFixed(2)}, currently at $${s.currentPrice.toFixed(2)}, P&L is $${s.unrealizedPL.toFixed(2)}.`;
+                onAnalyze(s.symbol, prompt);
+              }}
+              className="flex-1 py-2 rounded-xl border dark:border-[#0d9488]/40 light:border-[#0d9488]/40 dark:text-[#0d9488] light:text-[#0d9488] text-[11px] font-bold hover:dark:bg-[#0d9488]/10 hover:light:bg-[#0d9488]/5 transition"
+            >
+              Analyze
+            </button>
+            <button
+              onClick={() => setDismissed((prev) => new Set(prev).add(s.symbol))}
+              className="px-3 py-2 rounded-xl border dark:border-border-light-dark light:border-border-light-light dark:text-text-tertiary-dark light:text-text-tertiary-light text-[11px] font-medium hover:dark:bg-bg-hover-dark hover:light:bg-bg-hover-light transition"
+            >
+              Hold
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── Opportunity Scanner ────────────────────────────────────────── */
 
 interface EnrichedDipCandidate {
   symbol: string;
@@ -358,7 +539,7 @@ interface EnrichedDipCandidate {
 function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: string) => void }) {
   const [candidates, setCandidates] = useState<EnrichedDipCandidate[]>([]);
   const [loading, setLoading] = useState(true);
-  console.log('Market Scanner colors applied');
+  console.log('Opportunity Scanner colors applied');
   console.log('Order ticket colors applied');
   console.log('History card colors applied');
   console.log('Chat colors applied');
@@ -536,7 +717,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
         <div className="flex items-center gap-2">
           <Search className="w-4 h-4 text-[#6366f1]" />
           <div>
-            <h3 className="text-lg font-semibold dark:text-text-primary-dark light:text-text-primary-light">Market Scanner</h3>
+            <h3 className="text-lg font-semibold dark:text-text-primary-dark light:text-text-primary-light">Opportunity Scanner</h3>
             <p className="text-[11px] dark:text-text-tertiary-dark light:text-text-tertiary-light">Quality dips updated every 10 min</p>
           </div>
         </div>
@@ -567,7 +748,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
       <div className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-border-light-dark light:border-border-light-light p-6 text-center">
         <div className="flex items-center gap-2 mb-3 justify-center">
           <Search className="w-4 h-4 text-[#6366f1]" />
-          <h3 className="text-lg font-semibold dark:text-text-primary-dark light:text-text-primary-light">Market Scanner</h3>
+          <h3 className="text-lg font-semibold dark:text-text-primary-dark light:text-text-primary-light">Opportunity Scanner</h3>
         </div>
         <p className="text-[11px] dark:text-text-tertiary-dark light:text-text-tertiary-light mb-2">Quality dips updated every 10 min</p>
         <p className="text-sm dark:text-text-secondary-dark light:text-text-secondary-light">
@@ -585,7 +766,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
         <div className="flex items-center gap-2">
           <Search className="w-4 h-4 text-[#6366f1]" />
           <div>
-            <h3 className="text-lg font-semibold dark:text-text-primary-dark light:text-text-primary-light">Market Scanner</h3>
+            <h3 className="text-lg font-semibold dark:text-text-primary-dark light:text-text-primary-light">Opportunity Scanner</h3>
             <p className="text-[11px] dark:text-text-tertiary-dark light:text-text-tertiary-light">Quality dips updated every 10 min</p>
           </div>
         </div>
@@ -778,7 +959,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
                 className="flex-1 py-2 rounded-xl bg-teal-600 dark:text-text-primary-dark light:text-text-primary-light text-[11px] font-bold hover:bg-teal-500 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
               >
                 <DollarSign className="w-3 h-3" />
-                $ Buy {Math.max(1, Math.floor((c.suggested_amount || 500) / c.current_price))} share(s) ~${c.suggested_amount || 500}
+                Buy
               </button>
               <button
                 onClick={() => handleAnalyze(c)}
@@ -1511,15 +1692,18 @@ export default function AdvisorStrategiesTab() {
       {/* Section A½ — Risk Score */}
       <RiskScoreWidget data={riskScore} loading={riskScoreLoading} />
 
-      {/* Section A⅔ — Morning Recommendations */}
+      {/* Section A⅝ — Sell Signals */}
+      <SellSignals portfolioContext={portfolioContext} onAnalyze={handleAnalyzeDip} />
+
+      {/* Section A⅔ — Buy Opportunities */}
       <section className="mb-6">
         <h3 className="text-lg font-semibold mb-4 dark:text-text-primary-dark light:text-text-primary-light">
-          📊 Morning Recommendations
+          📊 Buy Opportunities
         </h3>
         <MorningRecommendationsList />
       </section>
 
-      {/* Section A¾ — Market Scanner */}
+      {/* Section A¾ — Opportunity Scanner */}
       <MarketScanner onAnalyze={handleAnalyzeDip} />
 
       {/* Floating Chat Button + Modal */}
