@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* ── Theme Variants (Tailwind v4 native) ──────────────────────── */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+@custom-variant light (&:where([data-theme="light"], [data-theme="light"] *));
+
 /* ── Dark / Light Theme System ───────────────────────────────── */
 
 :root {
