@@ -3,9 +3,14 @@ import { getPositionRecommendation, PositionRecommendation } from '@/lib/positio
 import { getAlpacaNews, NewsItem } from '@/lib/news';
 import { getEarningsData, getInsiderTrading, getNewsSentiment, getSectorMomentum } from '@/lib/stockAnalysis';
 
-// In-memory cache: 24 hours per symbol
+// In-memory cache: up to 1 hour per symbol (per Vercel function instance)
 const cache = new Map<string, { data: PositionRecommendation; expiresAt: number }>();
-const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
+function getCacheKey(symbol: string): string {
+  const hourSlot = Math.floor(Date.now() / 3600000);
+  return `rec-${symbol.toUpperCase()}-${hourSlot}`;
+}
 
 export async function GET(req: Request) {
   try {
@@ -22,30 +27,34 @@ export async function GET(req: Request) {
       );
     }
 
-    // Check cache
-    const cacheKey = symbol.toUpperCase();
+    // Check cache (hourly-per-symbol key for consistency)
+    const sym = symbol.toUpperCase();
+    const cacheKey = getCacheKey(symbol);
     const cached = cache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) {
+      console.log(`[PosRec] CACHE HIT for ${sym} (key: ${cacheKey})`);
       return NextResponse.json({ ...cached.data, cached: true });
     }
+    console.log(`[PosRec] CACHE MISS for ${sym} (key: ${cacheKey}), fetching fresh...`);
+    console.log(`[PosRec] Inputs for ${sym}:`, { currentPrice, avgCost, unrealizedPL, qty: searchParams.get('qty'), equity: searchParams.get('equity') });
 
     // Fetch recent news for symbol
     let recentNews: string[] = [];
     try {
-      const newsItems: NewsItem[] = await getAlpacaNews([cacheKey], 5);
+      const newsItems: NewsItem[] = await getAlpacaNews([sym], 5);
       recentNews = newsItems.map((n: NewsItem) => n.headline).filter(Boolean);
     } catch (err: any) {
-      console.warn(`[PosRec] News fetch failed for ${cacheKey}:`, err.message);
+      console.warn(`[PosRec] News fetch failed for ${sym}:`, err.message);
     }
 
     // Fetch stock analysis data (non-blocking — null on failure)
     let stockAnalysis: any = {};
     try {
       const [earnings, insider, sentiment, sector] = await Promise.all([
-        getEarningsData(cacheKey),
-        getInsiderTrading(cacheKey),
-        getNewsSentiment(cacheKey),
-        getSectorMomentum(cacheKey),
+        getEarningsData(sym),
+        getInsiderTrading(sym),
+        getNewsSentiment(sym),
+        getSectorMomentum(sym),
       ]);
       stockAnalysis = {
         earnings: earnings || undefined,
@@ -54,12 +63,12 @@ export async function GET(req: Request) {
         sector: sector || undefined,
       };
     } catch (err: any) {
-      console.warn(`[PosRec] Stock analysis fetch failed for ${cacheKey}:`, err.message);
+      console.warn(`[PosRec] Stock analysis fetch failed for ${sym}:`, err.message);
     }
 
     // Stub position + portfolio (caller provides real data via query params)
     const position = {
-      symbol: cacheKey,
+      symbol: sym,
       qty: searchParams.get('qty') ? parseFloat(searchParams.get('qty')!) : 0,
       market_value: currentPrice * (searchParams.get('qty') ? parseFloat(searchParams.get('qty')!) : 0),
     };
@@ -69,7 +78,7 @@ export async function GET(req: Request) {
     };
 
     const recommendation = await getPositionRecommendation(
-      cacheKey,
+      sym,
       currentPrice,
       avgCost,
       unrealizedPL,
@@ -78,7 +87,9 @@ export async function GET(req: Request) {
       recentNews
     );
 
-    // Cache for 24 hours
+    console.log(`[PosRec] Fetched rec for ${sym} → ${recommendation.action}`, new Date().toISOString());
+
+    // Cache: 1 hour per hourly slot
     cache.set(cacheKey, {
       data: { ...recommendation, stockAnalysis },
       expiresAt: Date.now() + CACHE_TTL,

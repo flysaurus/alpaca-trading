@@ -31,7 +31,7 @@ export async function callLLM(prompt: string): Promise<string> {
       const body: Record<string, unknown> = {
         model: provider.model,
         messages: [{ role: 'user', content: prompt }],
-        temperature: 0.3,
+        temperature: 0.1,
         max_tokens: 500,
       };
 

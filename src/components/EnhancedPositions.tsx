@@ -296,7 +296,13 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
 
     setRecLoading(true);
     setLoadingRecs((prev) => new Set(prev).add(key));
-    console.log(`[Positions] Fetching rec for: ${key}`);
+    console.log(`[Positions] Fetching rec for ${key} → inputs:`, {
+      currentPrice: p.currentPrice,
+      avgCost: p.avgEntryPrice,
+      unrealizedPL: p.unrealizedPL,
+      qty: p.qty,
+      equity: totalEquity,
+    });
     try {
       const params = new URLSearchParams({
         symbol: key,
@@ -309,7 +315,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
       const res = await fetch(`/api/positions/recommendation?${params}`);
       const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error || 'API error');
-      console.log(`[Positions] Rec for ${key}:`, data);
+      console.log(`[Positions] Rec for ${key} → ${data.action} (cached: ${data.cached}) @`, new Date().toISOString());
 
       const rec: RecData = {
         action: data.action || 'hold',
