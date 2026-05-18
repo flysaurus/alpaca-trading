@@ -264,8 +264,8 @@ export default function ChatModal({ isOpen, onClose, alpacaAccountId }: ChatModa
       {/* Modal */}
       <div
         className="fixed z-50
-          bottom-[80px] right-2 w-[90vw] max-h-[60vh]
-          md:w-[380px] md:h-[500px] md:bottom-24 md:right-6 md:max-h-[500px]
+          bottom-[80px] right-3 w-[90vw] max-w-[360px] h-[50vh] max-h-[420px]
+          md:w-[380px] md:h-[500px] md:bottom-8 md:right-6 md:max-h-[500px]
           animate-in slide-in-from-bottom duration-300 md:slide-in-from-bottom-0 md:zoom-in-95
           rounded-2xl"
         onClick={(e) => e.stopPropagation()}
@@ -275,10 +275,10 @@ export default function ChatModal({ isOpen, onClose, alpacaAccountId }: ChatModa
           <div className="h-[3px] w-full bg-gradient-to-r from-[#00d4aa] to-[#7c6aff] rounded-t-2xl flex-shrink-0" />
 
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b dark:border-[#334155]/70 light:border-[#e2e8f0] flex-shrink-0">
+          <div className="flex items-center justify-between py-2 px-3 border-b dark:border-[#334155]/70 light:border-[#e2e8f0] flex-shrink-0">
             <div className="flex items-center gap-2">
-              <Brain className="w-5 h-5 text-[#00d4aa]" />
-              <h3 className="text-lg font-bold text-[#00d4aa] tracking-wider">AI ADVISOR</h3>
+              <Brain className="w-4 h-4 text-[#00d4aa]" />
+              <h3 className="text-base font-bold text-[#00d4aa] tracking-wider">AI ADVISOR</h3>
             </div>
             <div className="flex items-center gap-2">
               {isLoading && <Loader2 className="w-4 h-4 text-[var(--accent)] animate-spin" />}
