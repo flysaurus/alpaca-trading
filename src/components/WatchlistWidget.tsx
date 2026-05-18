@@ -182,15 +182,15 @@ export default function WatchlistWidget() {
               <ChevronDown className={`w-3 h-3 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
             </button>
             {showDropdown && (
-              <div className={`absolute right-0 top-full mt-1 w-56 dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg shadow-xl z-50 ${
+              <div className={`absolute right-0 top-full mt-1 w-56 dark:bg-[#1e293b] light:bg-white dark:border-[#334155] light:border-[#e2e8f0] border rounded-lg shadow-xl z-50 ${
                 watchlists.length > 3 ? 'max-h-44 overflow-y-auto' : ''
               }`}>
                 <div className="py-1">
                   {watchlists.map((w) => (
                     <div
                       key={w.id}
-                      className={`flex items-center justify-between px-3 py-2 cursor-pointer transition ${
-                        w.id === activeId ? 'bg-amber-500/10 text-amber-400' : 'dark:text-text-primary-dark light:text-text-primary-light hover:bg-[var(--hover-bg)] hover:dark:text-text-primary-dark light:text-text-primary-light'
+                      className={`flex items-center justify-between px-3 py-2 cursor-pointer transition dark:text-[#f9fafb] light:text-[#0f172a] dark:hover:bg-[#334155] light:hover:bg-[#f1f5f9] ${
+                        w.id === activeId ? 'bg-amber-500/10 text-amber-400' : ''
                       }`}
                       onClick={() => switchList(w.id)}
                     >
@@ -210,7 +210,7 @@ export default function WatchlistWidget() {
                     </div>
                   ))}
                 </div>
-                <div className="border-t border-[#1e232b] px-3 py-2">
+                <div className="dark:border-t-[#334155] light:border-t-[#e2e8f0] border-t px-3 py-2">
                   <button
                     onClick={() => {
                       setShowDropdown(false);
