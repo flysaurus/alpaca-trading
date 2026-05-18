@@ -40,5 +40,12 @@ Return ONLY valid JSON — no markdown, no explanation:
 }`;
 
   const response = await callLLM(prompt);
-  return JSON.parse(response);
+
+  // Strip markdown JSON fences if present
+  let cleaned = response.trim();
+  if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '');
+  }
+
+  return JSON.parse(cleaned);
 }
