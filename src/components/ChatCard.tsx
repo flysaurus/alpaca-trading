@@ -244,7 +244,7 @@ export default function ChatCard({ isExpanded, setExpanded, alpacaAccountId }: C
   return (
     <div
       id="chat-card"
-      className="rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] overflow-hidden transition-all duration-200 ease-in-out dark:bg-[#1e293b] light:bg-[#f8fafc]"
+      className="rounded-xl border dark:border-[#334155] light:border-[#e2e8f0] overflow-hidden transition-all duration-200 ease-in-out dark:bg-[#1e293b] light:bg-[#f8fafc]"
       style={{ maxHeight: isExpanded ? 320 : 44 }}
     >
       {/* Header — always visible */}
@@ -290,8 +290,8 @@ export default function ChatCard({ isExpanded, setExpanded, alpacaAccountId }: C
                     <div
                       className={`max-w-[85%] px-2.5 py-1.5 rounded-2xl text-xs leading-relaxed ${
                         msg.role === 'user'
-                          ? 'border dark:border-[#334155]/70 light:border-[#e2e8f0] dark:bg-bg-hover-dark light:bg-bg-hover-light dark:text-text-primary-dark light:text-text-primary-light rounded-br-md'
-                          : 'border dark:border-[#334155]/70 light:border-[#e2e8f0] dark:bg-[#0d9488]/10 light:bg-[#0d9488]/5 dark:text-text-primary-dark light:text-text-primary-light rounded-bl-md prose dark:prose-invert prose-sm max-w-none'
+                          ? 'border dark:border-[#334155] light:border-[#e2e8f0] dark:bg-bg-hover-dark light:bg-bg-hover-light dark:text-text-primary-dark light:text-text-primary-light rounded-br-md'
+                          : 'border dark:border-[#334155] light:border-[#e2e8f0] dark:bg-[#0d9488]/10 light:bg-[#0d9488]/5 dark:text-text-primary-dark light:text-text-primary-light rounded-bl-md prose dark:prose-invert prose-sm max-w-none'
                       }`}
                     >
                       {msg.role === 'user' ? (
@@ -321,7 +321,7 @@ export default function ChatCard({ isExpanded, setExpanded, alpacaAccountId }: C
 
             {isLoading && messages[messages.length - 1]?.role === 'user' && (
               <div className="flex justify-start">
-                <div className="border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-2xl rounded-bl-md px-2.5 py-1.5">
+                <div className="border dark:border-[#334155] light:border-[#e2e8f0] rounded-2xl rounded-bl-md px-2.5 py-1.5">
                   <div className="flex gap-1">
                     <span className="w-1.5 h-1.5 dark:bg-text-tertiary-dark light:bg-text-tertiary-light rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                     <span className="w-1.5 h-1.5 dark:bg-text-tertiary-dark light:bg-text-tertiary-light rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -339,7 +339,7 @@ export default function ChatCard({ isExpanded, setExpanded, alpacaAccountId }: C
           </div>
 
           {/* Quick Action Chips */}
-          <div className="px-3 py-1 border-t dark:border-[#334155]/70 light:border-[#e2e8f0] flex-shrink-0">
+          <div className="px-3 py-1 border-t dark:border-[#334155] light:border-[#e2e8f0] flex-shrink-0">
             <div className="flex gap-1.5 overflow-x-auto">
               {[
                 'Latest brief',
@@ -360,7 +360,7 @@ export default function ChatCard({ isExpanded, setExpanded, alpacaAccountId }: C
           </div>
 
           {/* Input */}
-          <form onSubmit={handleSubmit} className="px-3 py-1.5 border-t dark:border-[#334155]/70 light:border-[#e2e8f0] flex-shrink-0">
+          <form onSubmit={handleSubmit} className="px-3 py-1.5 border-t dark:border-[#334155] light:border-[#e2e8f0] flex-shrink-0">
             <div className="flex items-center gap-1.5">
               <input
                 ref={inputRef}
@@ -369,7 +369,7 @@ export default function ChatCard({ isExpanded, setExpanded, alpacaAccountId }: C
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask your advisor..."
                 disabled={isLoading}
-                className="flex-1 px-2.5 py-1.5 text-[11px] dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:focus:ring-accent-primary-dark light:focus:ring-accent-primary-light"
+                className="flex-1 px-2.5 py-1.5 text-[11px] dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155] light:border-[#e2e8f0] rounded-lg dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:focus:ring-accent-primary-dark light:focus:ring-accent-primary-light"
               />
               <button
                 type="submit"
@@ -382,7 +382,7 @@ export default function ChatCard({ isExpanded, setExpanded, alpacaAccountId }: C
           </form>
 
           {/* Footer */}
-          <div className="flex items-center justify-between px-3 py-1 border-t dark:border-[#334155]/70 light:border-[#e2e8f0] flex-shrink-0">
+          <div className="flex items-center justify-between px-3 py-1 border-t dark:border-[#334155] light:border-[#e2e8f0] flex-shrink-0">
             <span className="text-[9px] dark:text-text-tertiary-dark light:text-text-tertiary-light">
               {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
             </span>

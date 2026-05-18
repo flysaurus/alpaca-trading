@@ -68,7 +68,7 @@ function TradeHistory({ trades }: { trades: AutonomousConfig['trade_log'] }) {
   const [showHistory, setShowHistory] = useState(false);
 
   return (
-    <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] p-4">
+    <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155] light:border-[#e2e8f0] p-4">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
           <Activity className="w-4 h-4 text-amber-400" />
@@ -317,7 +317,7 @@ export default function AutonomousSettingsPage() {
         <DangerBanner enabled={config.enabled} />
 
         {/* Main Toggle */}
-        <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] p-4 mb-6">
+        <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155] light:border-[#e2e8f0] p-4 mb-6">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-sm font-bold text-[var(--text-primary)]">Autonomous Mode</h3>
@@ -350,7 +350,7 @@ export default function AutonomousSettingsPage() {
         </div>
 
         {/* Configuration */}
-        <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] p-4 mb-6">
+        <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155] light:border-[#e2e8f0] p-4 mb-6">
           <h3 className="text-sm font-bold text-[var(--text-primary)] mb-4">Trading Parameters</h3>
           
           <div className="space-y-4">
@@ -418,7 +418,7 @@ export default function AutonomousSettingsPage() {
         </div>
 
         {/* Current Status */}
-        <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] p-4 mb-6">
+        <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155] light:border-[#e2e8f0] p-4 mb-6">
           <h3 className="text-sm font-bold text-[var(--text-primary)] mb-3">Current Status</h3>
           <div className="grid grid-cols-2 gap-4 text-xs">
             <div>

@@ -51,7 +51,7 @@ export default function OrderFilterBar({ filters, onChange }: Props) {
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition ${
             showFilters || activeCount > 0
               ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-              : 'bg-[var(--hover-bg)] dark:text-text-primary-dark light:text-text-primary-light border dark:border-[#334155]/70 light:border-[#e2e8f0]'
+              : 'bg-[var(--hover-bg)] dark:text-text-primary-dark light:text-text-primary-light border dark:border-[#334155] light:border-[#e2e8f0]'
           }`}
         >
           <Filter className="w-3 h-3" />
@@ -85,7 +85,7 @@ export default function OrderFilterBar({ filters, onChange }: Props) {
       </div>
 
       {showFilters && (
-        <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] p-3 space-y-3">
+        <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155] light:border-[#e2e8f0] p-3 space-y-3">
           {/* Date Range */}
           <div>
             <label className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1.5 block">Date Range</label>
@@ -97,7 +97,7 @@ export default function OrderFilterBar({ filters, onChange }: Props) {
                   className={`px-2.5 py-1 rounded-lg text-[10px] font-medium transition ${
                     filters.dateRange === opt.value
                       ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                      : 'dark:bg-bg-input-dark light:bg-bg-input-light dark:text-text-primary-dark light:text-text-primary-light border dark:border-[#334155]/70 light:border-[#e2e8f0] hover:border-[var(--border-light)]'
+                      : 'dark:bg-bg-input-dark light:bg-bg-input-light dark:text-text-primary-dark light:text-text-primary-light border dark:border-[#334155] light:border-[#e2e8f0] hover:border-[var(--border-light)]'
                   }`}
                 >
                   {opt.label}
@@ -113,7 +113,7 @@ export default function OrderFilterBar({ filters, onChange }: Props) {
                     type="date"
                     value={filters.startDate || ''}
                     onChange={(e) => update({ startDate: e.target.value })}
-                    className="w-full dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg px-3 py-1.5 pr-8 text-xs dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light font-[family-name:var(--font-mono)] appearance-none"
+                    className="w-full dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155] light:border-[#e2e8f0] rounded-lg px-3 py-1.5 pr-8 text-xs dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light font-[family-name:var(--font-mono)] appearance-none"
                   />
                   <Calendar className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted)] pointer-events-none" />
                 </div>
@@ -123,7 +123,7 @@ export default function OrderFilterBar({ filters, onChange }: Props) {
                     type="date"
                     value={filters.endDate || ''}
                     onChange={(e) => update({ endDate: e.target.value })}
-                    className="w-full dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg px-3 py-1.5 pr-8 text-xs dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light font-[family-name:var(--font-mono)] appearance-none"
+                    className="w-full dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155] light:border-[#e2e8f0] rounded-lg px-3 py-1.5 pr-8 text-xs dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light font-[family-name:var(--font-mono)] appearance-none"
                   />
                   <Calendar className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted)] pointer-events-none" />
                 </div>
@@ -147,7 +147,7 @@ export default function OrderFilterBar({ filters, onChange }: Props) {
               <select
                 value={filters.side || 'all'}
                 onChange={(e) => update({ side: e.target.value as 'buy' | 'sell' | 'all' })}
-                className="w-full dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg px-3 py-1.5 text-xs dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light"
+                className="w-full dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155] light:border-[#e2e8f0] rounded-lg px-3 py-1.5 text-xs dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light"
               >
                 <option value="all">All</option>
                 <option value="buy">Buy</option>
@@ -159,7 +159,7 @@ export default function OrderFilterBar({ filters, onChange }: Props) {
               <select
                 value={filters.status || 'all'}
                 onChange={(e) => update({ status: e.target.value })}
-                className="w-full dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg px-3 py-1.5 text-xs dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light"
+                className="w-full dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155] light:border-[#e2e8f0] rounded-lg px-3 py-1.5 text-xs dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light"
               >
                 <option value="all">All</option>
                 <option value="new">New</option>

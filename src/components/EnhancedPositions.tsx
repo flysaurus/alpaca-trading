@@ -370,7 +370,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
   }, [rows.length]);
   if (positions.length === 0 && cash <= 0) {
     return (
-      <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] p-6 text-center">
+      <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155] light:border-[#e2e8f0] p-6 text-center">
         <BarChart3 className="w-8 h-8 text-[var(--hover-bg)] mx-auto mb-2" />
         <p className="text-sm text-[var(--text-muted)]">No open positions</p>
       </div>
@@ -378,8 +378,8 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
   }
 
   return (
-    <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] overflow-hidden relative">
-      <div className="px-4 py-3 border-b dark:border-[#334155]/70 light:border-[#e2e8f0] flex items-start justify-between">
+    <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155] light:border-[#e2e8f0] overflow-hidden relative">
+      <div className="px-4 py-3 border-b dark:border-[#334155] light:border-[#e2e8f0] flex items-start justify-between">
         <div className="flex flex-col gap-1">
           <span className="text-base font-semibold dark:text-[#f9fafb] light:text-[#0f172a]">{positions.length} Positions</span>
           {selected.size > 0 && (
@@ -395,7 +395,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
           <span className="text-base font-semibold font-[family-name:var(--font-mono)] dark:text-[#f9fafb] light:text-[#0f172a]">${fmtUSD(totalValue)}</span>
           <button
             onClick={handleDownloadCSV}
-            className="flex items-center gap-1 text-xs font-medium dark:text-text-primary-dark light:text-text-primary-light dark:bg-bg-input-dark light:bg-bg-input-light px-2 py-0.5 rounded border dark:border-[#334155]/70 light:border-[#e2e8f0] hover:dark:text-text-primary-dark light:text-text-primary-light hover:border-[var(--text-muted)] transition"
+            className="flex items-center gap-1 text-xs font-medium dark:text-text-primary-dark light:text-text-primary-light dark:bg-bg-input-dark light:bg-bg-input-light px-2 py-0.5 rounded border dark:border-[#334155] light:border-[#e2e8f0] hover:dark:text-text-primary-dark light:text-text-primary-light hover:border-[var(--text-muted)] transition"
             title="Download positions as CSV"
           >
             <Download className="w-3 h-3" />
@@ -407,7 +407,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
       <div className="overflow-x-auto">
         <table className="w-full text-sm min-w-[950px]">
           <thead>
-            <tr className="border-b dark:border-[#334155]/70 light:border-[#e2e8f0] dark:bg-bg-input-dark light:bg-bg-input-light/40">
+            <tr className="border-b dark:border-[#334155] light:border-[#e2e8f0] dark:bg-bg-input-dark light:bg-bg-input-light/40">
               <th className="px-3 py-2 text-left">
                 <input
                   type="checkbox"
@@ -673,7 +673,7 @@ ${reasoning}`;
             })}
 
             {/* Total row */}
-            <tr className="dark:bg-bg-input-dark light:bg-bg-input-light/60 border-t-2 dark:border-[#334155]/70 light:border-[#e2e8f0]">
+            <tr className="dark:bg-bg-input-dark light:bg-bg-input-light/60 border-t-2 dark:border-[#334155] light:border-[#e2e8f0]">
               <td className="px-3 py-3" />
               <td className="px-3 py-3 text-sm font-bold dark:text-text-primary-dark light:text-text-primary-light">TOTAL</td>
               <td className="px-3 py-3" />
@@ -705,7 +705,7 @@ ${reasoning}`;
 
       {/* Bulk Sell Panel */}
       {showBulkPanel && selected.size > 0 && (
-        <div className="border-t dark:border-[#334155]/70 light:border-[#e2e8f0] dark:bg-bg-input-dark light:bg-bg-input-light/80 p-4 space-y-3">
+        <div className="border-t dark:border-[#334155] light:border-[#e2e8f0] dark:bg-bg-input-dark light:bg-bg-input-light/80 p-4 space-y-3">
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-bold dark:text-text-primary-dark light:text-text-primary-light">Bulk Sell — {selected.size} position{selected.size > 1 ? 's' : ''}</h4>
             <button onClick={() => { setShowBulkPanel(false); setBulkResults([]); }} className="text-[var(--text-muted)] hover:dark:text-text-primary-dark light:text-text-primary-light">
@@ -720,7 +720,7 @@ ${reasoning}`;
               const result = bulkResults.find((r) => r.symbol === symbol);
 
               return (
-                <div key={symbol} className="flex items-center gap-2 bg-[var(--card-bg)] rounded-lg px-3 py-2 border dark:border-[#334155]/70 light:border-[#e2e8f0]">
+                <div key={symbol} className="flex items-center gap-2 bg-[var(--card-bg)] rounded-lg px-3 py-2 border dark:border-[#334155] light:border-[#e2e8f0]">
                   <div className="w-16">
                     <p className="text-sm font-bold dark:text-text-primary-dark light:text-text-primary-light">{symbol}</p>
                     <p className="text-xs text-[var(--text-muted)]">@{pos?.currentPrice.toFixed(2)}</p>
@@ -730,14 +730,14 @@ ${reasoning}`;
                     type="number"
                     value={cfg.qty}
                     onChange={(e) => updateSellConfig(symbol, { qty: e.target.value })}
-                    className="w-20 dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded px-2 py-1 text-sm dark:text-text-primary-dark light:text-text-primary-light font-[family-name:var(--font-mono)] focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light"
+                    className="w-20 dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155] light:border-[#e2e8f0] rounded px-2 py-1 text-sm dark:text-text-primary-dark light:text-text-primary-light font-[family-name:var(--font-mono)] focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light"
                     placeholder="Qty"
                   />
 
                   <select
                     value={cfg.type}
                     onChange={(e) => updateSellConfig(symbol, { type: e.target.value as 'market' | 'limit' })}
-                    className="dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded px-2 py-1 text-sm dark:text-text-primary-dark light:text-text-primary-light font-[family-name:var(--font-mono)] focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light"
+                    className="dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155] light:border-[#e2e8f0] rounded px-2 py-1 text-sm dark:text-text-primary-dark light:text-text-primary-light font-[family-name:var(--font-mono)] focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light"
                   >
                     <option value="market">MKT</option>
                     <option value="limit">LMT</option>
@@ -749,13 +749,13 @@ ${reasoning}`;
                         type="number"
                         value={cfg.limitPrice}
                         onChange={(e) => updateSellConfig(symbol, { limitPrice: e.target.value })}
-                        className="w-24 dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded px-2 py-1 text-sm dark:text-text-primary-dark light:text-text-primary-light font-[family-name:var(--font-mono)] focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light"
+                        className="w-24 dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155] light:border-[#e2e8f0] rounded px-2 py-1 text-sm dark:text-text-primary-dark light:text-text-primary-light font-[family-name:var(--font-mono)] focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light"
                         placeholder="Limit $"
                       />
                       <select
                         value={cfg.timeInForce}
                         onChange={(e) => updateSellConfig(symbol, { timeInForce: e.target.value as 'day' | 'gtc' | 'opg' })}
-                        className="dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded px-2 py-1 text-sm dark:text-text-primary-dark light:text-text-primary-light font-[family-name:var(--font-mono)] focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light"
+                        className="dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155] light:border-[#e2e8f0] rounded px-2 py-1 text-sm dark:text-text-primary-dark light:text-text-primary-light font-[family-name:var(--font-mono)] focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light"
                       >
                         <option value="day">DAY</option>
                         <option value="gtc">GTC</option>

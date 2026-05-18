@@ -212,7 +212,7 @@ function StrategyCard({
   };
 
   return (
-    <div className={`bg-[var(--card-bg)] rounded-2xl border ${strategy.active ? 'border-[var(--accent)]/30' : "dark:border-[#334155]/70 light:border-[#e2e8f0]"} overflow-hidden transition-all`}>
+    <div className={`bg-[var(--card-bg)] rounded-2xl border ${strategy.active ? 'border-[var(--accent)]/30' : "dark:border-[#334155] light:border-[#e2e8f0]"} overflow-hidden transition-all`}>
       {/* Header */}
       <div className="flex items-start justify-between p-4 border-b border-[var(--border)]">
         <div className="flex items-start gap-3 min-w-0">
@@ -570,7 +570,7 @@ function AddStrategyModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-[var(--card-bg)] rounded-2xl border dark:border-[#334155]/70 light:border-[#e2e8f0] w-full max-w-sm overflow-hidden">
+      <div className="bg-[var(--card-bg)] rounded-2xl border dark:border-[#334155] light:border-[#e2e8f0] w-full max-w-sm overflow-hidden">
         <div className="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between">
           <h3 className="text-sm font-bold text-[var(--text-primary)]">Add Strategy</h3>
           <button onClick={onClose} className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)]">
@@ -740,7 +740,7 @@ export default function StrategiesPage() {
           <div className="flex items-center gap-2">
             <a
               href="/"
-              className="inline-flex items-center gap-1 px-3 py-2 text-xs font-bold bg-[var(--card-bg)] text-[var(--text-primary)] rounded-lg border dark:border-[#334155]/70 light:border-[#e2e8f0] hover:bg-[var(--hover-bg)] transition"
+              className="inline-flex items-center gap-1 px-3 py-2 text-xs font-bold bg-[var(--card-bg)] text-[var(--text-primary)] rounded-lg border dark:border-[#334155] light:border-[#e2e8f0] hover:bg-[var(--hover-bg)] transition"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               Back
@@ -757,7 +757,7 @@ export default function StrategiesPage() {
 
         {/* Strategy List */}
         {strategies.length === 0 ? (
-          <div className="bg-[var(--card-bg)] rounded-2xl border dark:border-[#334155]/70 light:border-[#e2e8f0] p-8 text-center">
+          <div className="bg-[var(--card-bg)] rounded-2xl border dark:border-[#334155] light:border-[#e2e8f0] p-8 text-center">
             <Brain className="w-10 h-10 text-[var(--hover-bg)] mx-auto mb-3" />
             <p className="text-sm text-[var(--text-muted)]">No strategies yet</p>
             <p className="text-xs text-[var(--text-subtle)] mt-1">Click Add to create your first strategy</p>

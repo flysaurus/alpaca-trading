@@ -96,7 +96,7 @@ export default function SettingsPanel({ account }: Props) {
       </div>
 
       {/* Risk Settings */}
-      <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] p-4 space-y-5">
+      <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155] light:border-[#e2e8f0] p-4 space-y-5">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-[var(--text-primary)]">Risk Settings</h3>
           <button
@@ -178,7 +178,7 @@ export default function SettingsPanel({ account }: Props) {
       </div>
 
       {/* Theme Toggle */}
-      <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] p-4">
+      <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155] light:border-[#e2e8f0] p-4">
         <div className="flex items-center justify-between">
           <div>
             <label className="text-xs text-[var(--text-secondary)]">Theme</label>
@@ -194,7 +194,7 @@ export default function SettingsPanel({ account }: Props) {
       </div>
 
       {/* Autonomous Settings Link */}
-      <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] p-4">
+      <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155] light:border-[#e2e8f0] p-4">
         <a 
           href="/settings/autonomous" 
           className="flex items-center justify-between p-3 bg-red-500/10 border border-red-500/20 rounded-lg hover:bg-red-500/20 transition-colors"
