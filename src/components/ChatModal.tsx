@@ -264,14 +264,13 @@ export default function ChatModal({ isOpen, onClose, alpacaAccountId }: ChatModa
       {/* Modal */}
       <div
         className="fixed z-50
-          bottom-0 right-0 w-full max-w-[400px] max-h-[85vh]
-          md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2
-          md:w-[600px] md:bottom-auto md:right-auto md:max-h-[85vh]
+          bottom-[80px] right-2 w-[90vw] max-h-[60vh]
+          md:w-[380px] md:h-[500px] md:bottom-24 md:right-6 md:max-h-[500px]
           animate-in slide-in-from-bottom duration-300 md:slide-in-from-bottom-0 md:zoom-in-95
-          rounded-t-2xl md:rounded-2xl"
+          rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-t-2xl md:rounded-2xl border dark:border-border-light-dark light:border-border-light-light overflow-hidden flex flex-col shadow-2xl max-h-[85vh]">
+        <div className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-border-light-dark light:border-border-light-light overflow-hidden flex flex-col shadow-2xl h-full">
           {/* Top gradient bar */}
           <div className="h-[3px] w-full bg-gradient-to-r from-[#00d4aa] to-[#7c6aff] rounded-t-2xl flex-shrink-0" />
 

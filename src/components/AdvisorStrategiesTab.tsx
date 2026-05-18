@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import {
   Brain,
+  BrainCircuit,
   Zap,
   DollarSign,
   Layers,
@@ -1710,10 +1711,10 @@ export default function AdvisorStrategiesTab() {
       <ChatModal isOpen={chatOpen} onClose={() => setChatOpen(false)} alpacaAccountId={alpacaAccountId} />
       <button
         onClick={() => setChatOpen(true)}
-        className="fixed bottom-20 right-4 w-12 h-12 rounded-full bg-[var(--accent)] dark:bg-accent-primary-dark light:bg-accent-primary-light flex items-center justify-center shadow-lg hover:scale-110 transition z-40"
+        className="fixed bottom-28 right-4 w-12 h-12 rounded-full bg-[var(--accent)] dark:bg-accent-primary-dark light:bg-accent-primary-light flex items-center justify-center shadow-lg hover:scale-110 transition z-40"
         title="AI Advisor"
       >
-        💬
+        <BrainCircuit size={22} />
       </button>
 
       {/* Section D — Strategies */}
