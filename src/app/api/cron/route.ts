@@ -376,6 +376,105 @@ export async function GET(req: Request) {
     }
   }
 
+  if (action === 'morning_brief_recommendations') {
+    try {
+      // 1. Fetch market state
+      const baseUrl = new URL(req.url).origin;
+      const marketRes = await fetch(`${baseUrl}/api/market`, {
+        next: { revalidate: 60 },
+      });
+      const marketData = marketRes.ok ? await marketRes.json() : {};
+      const marketState = marketData.marketState || {};
+
+      // 2. Fetch portfolio context
+      const [account, positions] = await Promise.all([
+        fetchAlpacaAccount(),
+        fetchAlpacaPositions(),
+      ]);
+
+      const equity = parseFloat(account.equity || 0);
+      const cash = parseFloat(account.cash || 0);
+
+      const portfolio = {
+        account: { equity, cash, buying_power: account.buying_power },
+        positions: (positions || []).map((p: any) => ({
+          symbol: p.symbol,
+          qty: parseFloat(p.qty || 0),
+          market_value: parseFloat(p.market_value || 0),
+          current_price: parseFloat(p.current_price || p.lastday_price || 0),
+          unrealized_pl: parseFloat(p.unrealized_pl || 0),
+          unrealized_plpc: parseFloat(p.unrealized_plpc || 0),
+        })),
+      };
+
+      // 3. Build watchlist from positions
+      const watchlist: string[] = Array.from(new Set(
+        portfolio.positions.map((p: any) => p.symbol)
+      ));
+
+      console.log(`[Cron] Morning brief recommendations for ${watchlist.length} symbols`);
+
+      // 4. Generate recommendations
+      const { generateMorningRecommendations } = await import(
+        '@/lib/morningBriefRecommendations'
+      );
+      const recs = await generateMorningRecommendations(
+        portfolio,
+        marketState,
+        watchlist
+      );
+
+      // 5. Send Telegram
+      const chatId = process.env.TELEGRAM_CHAT_ID;
+      if (chatId && recs.length > 0) {
+        const dateStr = new Date().toLocaleDateString('en-US', {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+        });
+
+        const recLines = recs.map((r, i) => 
+          `\n<b>${i + 1}. ${r.symbol}</b>\n` +
+          `   Strategy: ${r.strategy}\n` +
+          `   Action: <b>BUY</b>\n` +
+          `   Score: ${r.score}/100\n` +
+          `   Entry: ${r.entry_range}\n` +
+          `   ${r.reason}`
+        ).join('\n');
+
+        const telegramText = [
+          `<b>📊 Morning Brief — ${dateStr}</b>`,
+          `Market: ${marketState.label || 'Unknown'}`,
+          '──────────────────',
+          recLines,
+          '──────────────────',
+          'Open the app for full analysis →',
+        ].join('\n');
+
+        await sendTelegramMessage({
+          chatId,
+          text: telegramText,
+          parseMode: 'HTML',
+        });
+      } else {
+        console.log('[Cron] No recommendations or no Telegram chat configured');
+      }
+
+      return NextResponse.json({
+        action: 'morning_brief_recommendations',
+        timestamp: new Date().toISOString(),
+        recommendations: recs,
+        sent: chatId ? recs.length > 0 : false,
+      });
+    } catch (err: any) {
+      console.error('[Cron] Morning brief recommendations failed:', err.message);
+      return NextResponse.json(
+        { error: `Morning brief recommendations failed: ${err.message}` },
+        { status: 500 }
+      );
+    }
+  }
+
   return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
 }
 
