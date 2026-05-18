@@ -22,9 +22,11 @@ interface ChatModalProps {
   isOpen: boolean;
   onClose: () => void;
   alpacaAccountId: string | null;
+  pendingMessage?: string | null;
+  onMessageConsumed?: () => void;
 }
 
-export default function ChatModal({ isOpen, onClose, alpacaAccountId }: ChatModalProps) {
+export default function ChatModal({ isOpen, onClose, alpacaAccountId, pendingMessage, onMessageConsumed }: ChatModalProps) {
   const messages = useAdvisorStore((s) => s.messages);
   const setMessages = useAdvisorStore((s) => s.setMessages);
   const addMessage = useAdvisorStore((s) => s.addMessage);
@@ -38,6 +40,7 @@ export default function ChatModal({ isOpen, onClose, alpacaAccountId }: ChatModa
   const [error, setError] = useState<string | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const userId = getUserId();
 
   // Auto-scroll
@@ -46,6 +49,16 @@ export default function ChatModal({ isOpen, onClose, alpacaAccountId }: ChatModa
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, isLoading]);
+
+  // Pre-fill input when parent provides a pending message
+  useEffect(() => {
+    if (isOpen && pendingMessage) {
+      setInput(pendingMessage);
+      onMessageConsumed?.();
+      // Focus input after render
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  }, [isOpen, pendingMessage]);
 
   // Listen for position analysis requests from Positions tab
   useEffect(() => {
@@ -56,7 +69,8 @@ export default function ChatModal({ isOpen, onClose, alpacaAccountId }: ChatModa
       if (currentMessages.length === 1 && currentMessages[0].id === 'welcome') {
         setMessages([]);
       }
-      sendMessage(prompt);
+      setInput(prompt);
+      setTimeout(() => inputRef.current?.focus(), 100);
     };
     window.addEventListener('ai-analyze-position', handler as EventListener);
     return () => window.removeEventListener('ai-analyze-position', handler as EventListener);
@@ -378,6 +392,7 @@ export default function ChatModal({ isOpen, onClose, alpacaAccountId }: ChatModa
           <form onSubmit={handleSubmit} className="px-3 py-2 border-t dark:border-[#334155]/70 light:border-[#e2e8f0] flex-shrink-0">
             <div className="flex items-center gap-2">
               <input
+                ref={inputRef}
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}

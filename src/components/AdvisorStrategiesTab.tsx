@@ -1370,6 +1370,7 @@ export default function AdvisorStrategiesTab() {
   const setStorePortfolioContext = useAdvisorStore((s) => s.setPortfolioContext);
   const userId = getUserId();
   const [chatOpen, setChatOpen] = useState(false);
+  const [pendingAnalysis, setPendingAnalysis] = useState<string | null>(null);
 
   // Fetch portfolio context on mount
   useEffect(() => {
@@ -1476,10 +1477,8 @@ export default function AdvisorStrategiesTab() {
   };
 
   const handleAnalyzeDip = (symbol: string, prompt: string) => {
-    // Dispatch event that AIChatPanel listens for
-    window.dispatchEvent(
-      new CustomEvent('ai-analyze-position', { detail: { prompt } })
-    );
+    setPendingAnalysis(prompt);
+    setChatOpen(true);
   };
 
   return (
@@ -1502,7 +1501,7 @@ export default function AdvisorStrategiesTab() {
       <MarketScanner onAnalyze={handleAnalyzeDip} />
 
       {/* Floating Chat Button + Modal */}
-      <ChatModal isOpen={chatOpen} onClose={() => setChatOpen(false)} alpacaAccountId={alpacaAccountId} />
+      <ChatModal isOpen={chatOpen} onClose={() => setChatOpen(false)} alpacaAccountId={alpacaAccountId} pendingMessage={pendingAnalysis} onMessageConsumed={() => setPendingAnalysis(null)} />
       <button
         onClick={() => setChatOpen(true)}
         className="fixed bottom-28 right-4 w-12 h-12 rounded-full bg-[var(--accent)] dark:bg-accent-primary-dark light:bg-accent-primary-light flex items-center justify-center shadow-lg hover:scale-110 transition z-40"
