@@ -164,7 +164,7 @@ async function fetchMarketData() {
 function PortfolioPulse({ context, loading }: { context: PortfolioContext | null; loading: boolean }) {
   if (loading || !context) {
     return (
-      <div className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] p-4">
+      <div className="bg-[var(--card-bg)] rounded-2xl border dark:border-border-mid-dark light:border-border-mid-light p-4">
         <div className="grid grid-cols-3 gap-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="space-y-2 animate-pulse">
@@ -182,11 +182,11 @@ function PortfolioPulse({ context, loading }: { context: PortfolioContext | null
   const isDayPositive = dayPL >= 0;
 
   return (
-    <div className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] p-4">
+    <div className="bg-[var(--card-bg)] rounded-2xl border dark:border-border-mid-dark light:border-border-mid-light p-4">
       <div className="grid grid-cols-3 gap-3">
         <div className="text-center">
           <p className="text-[11px] font-medium uppercase tracking-wide text-[#6b7280] mb-1">Equity</p>
-          <p className="text-sm font-semibold font-mono text-[#111827] dark:text-[var(--text-primary)]">${fmtUSD(account?.total_equity || 0)}</p>
+          <p className="text-sm font-semibold font-mono text-[#111827] dark:dark:text-text-primary-dark light:text-text-primary-light">${fmtUSD(account?.total_equity || 0)}</p>
         </div>
         <div className="text-center border-x border-[var(--border)]">
           <p className="text-[11px] font-medium uppercase tracking-wide text-[#6b7280] mb-1">Day P&L</p>
@@ -196,7 +196,7 @@ function PortfolioPulse({ context, loading }: { context: PortfolioContext | null
         </div>
         <div className="text-center">
           <p className="text-[11px] font-medium uppercase tracking-wide text-[#6b7280] mb-1">Cash</p>
-          <p className="text-sm font-semibold font-mono text-[#111827] dark:text-[var(--text-primary)]">${fmtUSD(account?.cash || 0)}</p>
+          <p className="text-sm font-semibold font-mono text-[#111827] dark:dark:text-text-primary-dark light:text-text-primary-light">${fmtUSD(account?.cash || 0)}</p>
         </div>
       </div>
     </div>
@@ -360,6 +360,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
   console.log('Order ticket colors applied');
   console.log('History card colors applied');
   console.log('Chat colors applied');
+  console.log('Input fields updated in: [AdvisorStrategiesTab, SymbolSearch, WatchlistWidget, OrderFilters, NewsIntelligence, EnhancedPositions]');
   const [marketLabel, setMarketLabel] = useState('Unknown');
   const [executing, setExecuting] = useState<string | null>(null);
   const [orderTicket, setOrderTicket] = useState<string | null>(null);
@@ -661,7 +662,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
                         const raw = e.target.value.replace(/\D/g, '');
                         setOrderQty(raw === '' ? 0 : Number(raw));
                       }}
-                      className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:border-[#6366f1]"
+                      className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light focus:border-[#6366f1]"
                     />
                   </div>
 
@@ -694,7 +695,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
                         step="0.01"
                         value={limitPrice}
                         onChange={(e) => setLimitPrice(Number(e.target.value))}
-                        className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:border-[#6366f1]"
+                        className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light focus:border-[#6366f1]"
                       />
                     </div>
                   )}
@@ -708,7 +709,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
                         step="0.01"
                         value={stopPrice}
                         onChange={(e) => setStopPrice(Number(e.target.value))}
-                        className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:border-[#6366f1]"
+                        className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light focus:border-[#6366f1]"
                       />
                     </div>
                   )}
@@ -1148,7 +1149,7 @@ function AIChatPanel({ alpacaAccountId }: { alpacaAccountId: string | null }) {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask your advisor..."
             disabled={isLoading}
-            className="flex-1 px-3 py-2 text-xs dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-light-dark light:border-border-light-light rounded-xl dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:border-[var(--accent)]"
+            className="flex-1 px-3 py-2 text-xs dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-light-dark light:border-border-light-light rounded-xl dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light"
           />
           <button
             type="submit"
@@ -1229,22 +1230,22 @@ function InlineStrategyCard({
   }, [expanded, meta.id, userId]);
 
   return (
-    <div className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] overflow-hidden transition-all">
+    <div className="bg-[var(--card-bg)] rounded-2xl border dark:border-border-mid-dark light:border-border-mid-light overflow-hidden transition-all">
       <button
         onClick={() => setExpanded((v) => !v)}
         className="w-full flex items-center justify-between p-4 text-left hover:bg-[var(--hover-bg)]/30 transition-colors"
       >
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-[var(--app-bg)]">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 dark:bg-bg-input-dark light:bg-bg-input-light">
             <Icon className={`w-5 h-5 ${meta.color}`} />
           </div>
           <div className="min-w-0">
-            <h3 className="text-lg font-semibold text-[var(--text-primary)]">{meta.name}</h3>
+            <h3 className="text-lg font-semibold dark:text-text-primary-dark light:text-text-primary-light">{meta.name}</h3>
             <p className="text-[11px] text-[var(--text-muted)] truncate">{meta.description}</p>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="text-[11px] text-[var(--text-muted)] bg-[var(--app-bg)] px-2 py-0.5 rounded-full">{myStrategies.length}</span>
+          <span className="text-[11px] text-[var(--text-muted)] dark:bg-bg-input-dark light:bg-bg-input-light px-2 py-0.5 rounded-full">{myStrategies.length}</span>
           <ChevronDown className={`w-4 h-4 text-[var(--text-muted)] transition-transform ${expanded ? 'rotate-180' : ''}`} />
         </div>
       </button>
@@ -1254,7 +1255,7 @@ function InlineStrategyCard({
           {!showForm && (
             <button
               onClick={() => { setShowForm(true); setEditingId(null); }}
-              className="w-full mt-3 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-[var(--border-light)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--accent)] hover:bg-[var(--accent)]/5 transition-colors text-sm font-medium"
+              className="w-full mt-3 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-[var(--border-light)] text-[var(--text-muted)] hover:dark:text-text-primary-dark light:text-text-primary-light hover:border-[var(--accent)] hover:bg-[var(--accent)]/5 transition-colors text-sm font-medium"
             >
               <Plus className="w-4 h-4" /> Add {meta.name}
             </button>
@@ -1279,7 +1280,7 @@ function InlineStrategyCard({
             <div className="space-y-2">
               <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-medium">Saved Strategies</p>
               {[1, 2].map((i) => (
-                <div key={i} className="bg-[var(--app-bg)] rounded-xl border border-[var(--border)] p-3 animate-pulse">
+                <div key={i} className="dark:bg-bg-input-dark light:bg-bg-input-light rounded-xl border dark:border-border-mid-dark light:border-border-mid-light p-3 animate-pulse">
                   <div className="h-3 bg-[var(--hover-bg)] rounded w-32 mb-2" />
                   <div className="h-2 bg-[var(--hover-bg)] rounded w-48" />
                 </div>
@@ -1299,13 +1300,13 @@ function InlineStrategyCard({
             <div className="space-y-2">
               <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-medium">Saved Strategies</p>
               {myStrategies.map((s) => (
-                <div key={s.id} className={`flex items-center justify-between p-3 rounded-xl border ${s.is_active ? 'border-[var(--accent)]/20 bg-[var(--accent)]/5' : 'border-[var(--border)] bg-[var(--app-bg)]'}`}>
+                <div key={s.id} className={`flex items-center justify-between p-3 rounded-xl border ${s.is_active ? 'border-[var(--accent)]/20 bg-[var(--accent)]/5' : 'border-[var(--border)] dark:bg-bg-input-dark light:bg-bg-input-light'}`}>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{s.name}</p>
+                    <p className="text-sm font-semibold dark:text-text-primary-dark light:text-text-primary-light truncate">{s.name}</p>
                     <p className="text-[10px] text-[var(--text-muted)]">{formatParamsSummary(s.type as StrategyType, s.params)} · {s.is_active ? 'Active' : 'Paused'}</p>
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
-                    <button onClick={() => { setEditingId(s.id); setShowForm(true); }} className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition"><Edit3 className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => { setEditingId(s.id); setShowForm(true); }} className="p-2 rounded-lg text-[var(--text-muted)] hover:dark:text-text-primary-dark light:text-text-primary-light hover:bg-[var(--hover-bg)] transition"><Edit3 className="w-3.5 h-3.5" /></button>
                     {confirmDelete === s.id ? (
                       <div className="flex items-center gap-1">
                         <button onClick={() => { onDelete(s.id); setConfirmDelete(null); }} className="p-2 rounded-lg text-[var(--red)] hover:bg-[var(--red)]/10 transition"><Check className="w-3.5 h-3.5" /></button>
@@ -1314,7 +1315,7 @@ function InlineStrategyCard({
                     ) : (
                       <button onClick={() => setConfirmDelete(s.id)} className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--red)] hover:bg-[var(--red)]/10 transition"><Trash2 className="w-3.5 h-3.5" /></button>
                     )}
-                    <button onClick={() => onUpdate(s.id, { is_active: !s.is_active })} className={`px-2 py-1 rounded-lg text-[10px] font-bold transition ${s.is_active ? 'bg-[var(--accent)]/10 text-[var(--accent)] hover:bg-[var(--accent)]/20' : 'bg-[var(--app-bg)] text-[var(--text-muted)] hover:bg-[var(--hover-bg)]'}`}>{s.is_active ? 'ON' : 'OFF'}</button>
+                    <button onClick={() => onUpdate(s.id, { is_active: !s.is_active })} className={`px-2 py-1 rounded-lg text-[10px] font-bold transition ${s.is_active ? 'bg-[var(--accent)]/10 text-[var(--accent)] hover:bg-[var(--accent)]/20' : 'dark:bg-bg-input-dark light:bg-bg-input-light text-[var(--text-muted)] hover:bg-[var(--hover-bg)]'}`}>{s.is_active ? 'ON' : 'OFF'}</button>
                   </div>
                 </div>
               ))}
@@ -1366,14 +1367,14 @@ function StrategyForm({ type, initialData, onSave, onCancel, userId }: { type: S
   };
 
   return (
-    <div className="bg-[var(--app-bg)] rounded-xl border border-[var(--border)] p-4 space-y-3">
+    <div className="dark:bg-bg-input-dark light:bg-bg-input-light rounded-xl border dark:border-border-mid-dark light:border-border-mid-light p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-lg font-semibold text-[var(--text-primary)]">{initialData ? 'Edit' : 'New'} {STRATEGY_META.find((m) => m.id === type)?.name}</p>
+        <p className="text-lg font-semibold dark:text-text-primary-dark light:text-text-primary-light">{initialData ? 'Edit' : 'New'} {STRATEGY_META.find((m) => m.id === type)?.name}</p>
         <button onClick={onCancel} className="p-1 rounded-lg text-[var(--text-muted)] hover:bg-[var(--hover-bg)] transition"><X className="w-4 h-4" /></button>
       </div>
       <div>
-        <label className="text-[11px] font-medium text-[var(--text-secondary)] block mb-1">Strategy Name</label>
-        <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Weekly SPY DCA" className="w-full px-3 py-2 text-sm bg-[var(--surface-bg)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] placeholder-[var(--text-subtle)] focus:outline-none focus:border-[var(--accent)]" />
+        <label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Strategy Name</label>
+        <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Weekly SPY DCA" className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" />
       </div>
       {type === 'dca' && <DCAFormFields params={params} onChange={updateParam} />}
       {type === 'rebalance' && <RebalanceFormFields params={params} onChange={updateParam} />}
@@ -1404,33 +1405,33 @@ function DCAFormFields({ params, onChange }: { params: Record<string, any>; onCh
   return (
     <div className="space-y-3">
       <div>
-        <label className="text-[11px] font-medium text-[var(--text-secondary)] block mb-1">Symbol</label>
+        <label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Symbol</label>
         <SymbolSearch value={params.symbol || ''} onChange={(s) => onChange('symbol', s)} placeholder="Search symbol..." />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-[11px] font-medium text-[var(--text-secondary)] block mb-1">Amount ($)</label>
-          <input type="number" min="1" value={params.amount || 100} onChange={(e) => onChange('amount', Number(e.target.value))} className="w-full px-3 py-2 text-sm bg-[var(--surface-bg)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]" />
+          <label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Amount ($)</label>
+          <input type="number" min="1" value={params.amount || 100} onChange={(e) => onChange('amount', Number(e.target.value))} className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" />
         </div>
         <div>
-          <label className="text-[11px] font-medium text-[var(--text-secondary)] block mb-1">Frequency</label>
-          <select value={params.frequency || 'weekly'} onChange={(e) => onChange('frequency', e.target.value)} className="w-full px-3 py-2 text-sm bg-[var(--surface-bg)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]">
+          <label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Frequency</label>
+          <select value={params.frequency || 'weekly'} onChange={(e) => onChange('frequency', e.target.value)} className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light">
             <option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option>
           </select>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-[11px] font-medium text-[var(--text-secondary)] block mb-1">Start Date</label>
+          <label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Start Date</label>
           <div className="relative">
-            <input type="date" value={params.start_date || new Date().toISOString().split('T')[0]} onChange={(e) => onChange('start_date', e.target.value)} className="w-full px-3 py-2 pr-9 text-sm bg-[var(--surface-bg)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] appearance-none" />
+            <input type="date" value={params.start_date || new Date().toISOString().split('T')[0]} onChange={(e) => onChange('start_date', e.target.value)} className="w-full px-3 py-2 pr-9 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light appearance-none" />
             <Calendar className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] pointer-events-none" />
           </div>
         </div>
         <div>
-          <label className="text-[11px] font-medium text-[var(--text-secondary)] block mb-1">End Date (optional)</label>
+          <label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">End Date (optional)</label>
           <div className="relative">
-            <input type="date" value={params.end_date || ''} onChange={(e) => onChange('end_date', e.target.value || undefined)} className="w-full px-3 py-2 pr-9 text-sm bg-[var(--surface-bg)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] appearance-none" />
+            <input type="date" value={params.end_date || ''} onChange={(e) => onChange('end_date', e.target.value || undefined)} className="w-full px-3 py-2 pr-9 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light appearance-none" />
             <Calendar className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] pointer-events-none" />
           </div>
         </div>
@@ -1450,14 +1451,14 @@ function RebalanceFormFields({ params, onChange }: { params: Record<string, any>
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <label className="text-[11px] font-medium text-[var(--text-secondary)]">Target Allocations</label>
+        <label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light">Target Allocations</label>
         <span className={`text-[11px] font-bold ${Math.abs(totalWeight - 1) < 0.01 ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>{Math.round(totalWeight * 100)}%</span>
       </div>
       <div className="space-y-2">
         {allocations.map((alloc, idx) => (
           <div key={idx} className="flex items-center gap-2">
             <SymbolSearch value={alloc.symbol} onChange={(s) => updateAlloc(idx, { symbol: s })} placeholder="Symbol" />
-            <input type="number" step="0.01" min="0" max="1" value={alloc.weight} onChange={(e) => updateAlloc(idx, { weight: Number(e.target.value) })} className="w-20 px-2 py-2 text-sm bg-[var(--surface-bg)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]" />
+            <input type="number" step="0.01" min="0" max="1" value={alloc.weight} onChange={(e) => updateAlloc(idx, { weight: Number(e.target.value) })} className="w-20 px-2 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" />
             <button onClick={() => onChange('allocations', allocations.filter((_, i) => i !== idx))} className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--red)] hover:bg-[var(--red)]/10 transition"><Trash2 className="w-3.5 h-3.5" /></button>
           </div>
         ))}
@@ -1465,12 +1466,12 @@ function RebalanceFormFields({ params, onChange }: { params: Record<string, any>
       <button onClick={() => onChange('allocations', [...allocations, { symbol: '', weight: 0 }])} className="flex items-center gap-1 text-[11px] text-[var(--accent)] font-medium hover:underline"><Plus className="w-3 h-3" /> Add allocation</button>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-[11px] font-medium text-[var(--text-secondary)] block mb-1">Drift Threshold</label>
-          <input type="number" step="0.01" min="0" max="1" value={params.threshold || 0.05} onChange={(e) => onChange('threshold', Number(e.target.value))} className="w-full px-3 py-2 text-sm bg-[var(--surface-bg)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]" />
+          <label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Drift Threshold</label>
+          <input type="number" step="0.01" min="0" max="1" value={params.threshold || 0.05} onChange={(e) => onChange('threshold', Number(e.target.value))} className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" />
         </div>
         <div>
-          <label className="text-[11px] font-medium text-[var(--text-secondary)] block mb-1">Mode</label>
-          <select value={params.mode || 'full'} onChange={(e) => onChange('mode', e.target.value)} className="w-full px-3 py-2 text-sm bg-[var(--surface-bg)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"><option value="full">Full Rebalance</option><option value="cash-only">Cash Only</option></select>
+          <label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Mode</label>
+          <select value={params.mode || 'full'} onChange={(e) => onChange('mode', e.target.value)} className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light"><option value="full">Full Rebalance</option><option value="cash-only">Cash Only</option></select>
         </div>
       </div>
     </div>
@@ -1482,13 +1483,13 @@ function MomentumFormFields({ params, onChange }: { params: Record<string, any>;
   return (
     <div className="space-y-3">
       <div>
-        <label className="text-[11px] font-medium text-[var(--text-secondary)] block mb-1">Universe (comma-separated)</label>
-        <input type="text" value={universe.join(', ')} placeholder="AAPL, MSFT, GOOGL..." onChange={(e) => onChange('universe', e.target.value.split(/,\s*/).filter(Boolean))} className="w-full px-3 py-2 text-sm bg-[var(--surface-bg)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] placeholder-[var(--text-subtle)] focus:outline-none focus:border-[var(--accent)]" />
+        <label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Universe (comma-separated)</label>
+        <input type="text" value={universe.join(', ')} placeholder="AAPL, MSFT, GOOGL..." onChange={(e) => onChange('universe', e.target.value.split(/,\s*/).filter(Boolean))} className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" />
       </div>
       <div className="grid grid-cols-3 gap-3">
-        <div><label className="text-[11px] font-medium text-[var(--text-secondary)] block mb-1">Lookback</label><input type="number" min="1" value={params.lookback_days || 90} onChange={(e) => onChange('lookback_days', Number(e.target.value))} className="w-full px-3 py-2 text-sm bg-[var(--surface-bg)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]" /></div>
-        <div><label className="text-[11px] font-medium text-[var(--text-secondary)] block mb-1">Top N</label><input type="number" min="1" value={params.top_n || 5} onChange={(e) => onChange('top_n', Number(e.target.value))} className="w-full px-3 py-2 text-sm bg-[var(--surface-bg)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]" /></div>
-        <div><label className="text-[11px] font-medium text-[var(--text-secondary)] block mb-1">Bottom N</label><input type="number" min="0" value={params.bottom_n || 3} onChange={(e) => onChange('bottom_n', Number(e.target.value))} className="w-full px-3 py-2 text-sm bg-[var(--surface-bg)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]" /></div>
+        <div><label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Lookback</label><input type="number" min="1" value={params.lookback_days || 90} onChange={(e) => onChange('lookback_days', Number(e.target.value))} className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" /></div>
+        <div><label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Top N</label><input type="number" min="1" value={params.top_n || 5} onChange={(e) => onChange('top_n', Number(e.target.value))} className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" /></div>
+        <div><label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Bottom N</label><input type="number" min="0" value={params.bottom_n || 3} onChange={(e) => onChange('bottom_n', Number(e.target.value))} className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" /></div>
       </div>
     </div>
   );
@@ -1498,12 +1499,12 @@ function MeanReversionFormFields({ params, onChange }: { params: Record<string, 
   return (
     <div className="space-y-3">
       <div>
-        <label className="text-[11px] font-medium text-[var(--text-secondary)] block mb-1">Symbol</label>
+        <label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Symbol</label>
         <SymbolSearch value={params.symbol || ''} onChange={(s) => onChange('symbol', s)} placeholder="Search symbol..." />
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <div><label className="text-[11px] font-medium text-[var(--text-secondary)] block mb-1">Lookback Period</label><input type="number" min="5" value={params.lookback || 20} onChange={(e) => onChange('lookback', Number(e.target.value))} className="w-full px-3 py-2 text-sm bg-[var(--surface-bg)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]" /></div>
-        <div><label className="text-[11px] font-medium text-[var(--text-secondary)] block mb-1">Z-Score Threshold</label><input type="number" step="0.1" min="0.5" value={params.z_score_threshold || 2.0} onChange={(e) => onChange('z_score_threshold', Number(e.target.value))} className="w-full px-3 py-2 text-sm bg-[var(--surface-bg)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]" /></div>
+        <div><label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Lookback Period</label><input type="number" min="5" value={params.lookback || 20} onChange={(e) => onChange('lookback', Number(e.target.value))} className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" /></div>
+        <div><label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Z-Score Threshold</label><input type="number" step="0.1" min="0.5" value={params.z_score_threshold || 2.0} onChange={(e) => onChange('z_score_threshold', Number(e.target.value))} className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" /></div>
       </div>
     </div>
   );
@@ -1882,7 +1883,7 @@ export default function AdvisorStrategiesTab() {
       {/* Section D — Strategies */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
+          <h3 className="text-lg font-semibold dark:text-text-primary-dark light:text-text-primary-light flex items-center gap-2">
             <Zap className="w-4 h-4 text-[var(--accent)]" /> Strategies
           </h3>
           <span className="text-[11px] text-[var(--text-muted)]">{strategies.filter((s) => s.is_active).length} active</span>
@@ -1891,7 +1892,7 @@ export default function AdvisorStrategiesTab() {
         {stratLoading ? (
           <div className="space-y-3">
             {[1,2,3,4].map((i) => (
-              <div key={i} className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] p-4 animate-pulse">
+              <div key={i} className="bg-[var(--card-bg)] rounded-2xl border dark:border-border-mid-dark light:border-border-mid-light p-4 animate-pulse">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-[var(--hover-bg)]" />
                   <div className="flex-1 space-y-2"><div className="h-3 bg-[var(--hover-bg)] rounded w-32" /><div className="h-2 bg-[var(--hover-bg)] rounded w-48" /></div>

@@ -134,10 +134,10 @@ function TelegramSetup() {
           placeholder="Chat ID"
           value={chatId}
           onChange={(e) => setChatId(e.target.value)}
-          className="flex-1 bg-[var(--input-bg)] border border-[var(--border)] rounded-lg px-3 py-2 text-xs text-[var(--text-primary)] placeholder-[var(--text-subtle)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)]"
+          className="flex-1 dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg px-3 py-2 text-xs dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light font-[family-name:var(--font-mono)]"
         />
         <button onClick={testMessage} disabled={!chatId || status === 'loading'}
-          className="px-3 py-2 bg-[var(--hover-bg)] text-[var(--text-secondary)] text-xs rounded-lg transition disabled:opacity-40">
+          className="px-3 py-2 bg-[var(--hover-bg)] dark:text-text-primary-dark light:text-text-primary-light text-xs rounded-lg transition disabled:opacity-40">
           {status === 'loading' ? '...' : 'Test'}
         </button>
       </div>
@@ -328,11 +328,11 @@ export default function NewsIntelligence({ embedded = false }: { embedded?: bool
       </div>
 
       {/* Sentiment Summary */}
-      <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-4">
+      <div className="bg-[var(--card-bg)] rounded-xl border dark:border-border-mid-dark light:border-border-mid-light p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <BarChart3 className="w-4 h-4 text-amber-400" />
-            <h3 className="text-xs font-bold tracking-wider text-[var(--text-secondary)]">MARKET SENTIMENT</h3>
+            <h3 className="text-xs font-bold tracking-wider dark:text-text-primary-dark light:text-text-primary-light">MARKET SENTIMENT</h3>
           </div>
           <span className={`text-xs font-bold ${
             marketMood === 'Bullish' ? 'text-[var(--green)]' :
@@ -356,7 +356,7 @@ export default function NewsIntelligence({ embedded = false }: { embedded?: bool
         <div className="space-y-3">
           <div className="flex items-center gap-2 mb-1">
             <Newspaper className="w-4 h-4 text-[var(--green)]" />
-            <h3 className="text-xs font-bold tracking-wider text-[var(--text-secondary)]">HEADLINES</h3>
+            <h3 className="text-xs font-bold tracking-wider dark:text-text-primary-dark light:text-text-primary-light">HEADLINES</h3>
             <span className="text-[10px] text-[var(--text-muted)] ml-auto">{news.length}</span>
           </div>
 
@@ -389,7 +389,7 @@ export default function NewsIntelligence({ embedded = false }: { embedded?: bool
                         {item.symbols.length > 0 && (
                           <div className="flex gap-1 mt-1.5 flex-wrap">
                             {item.symbols.slice(0, 4).map(s => (
-                              <span key={s} className="px-1.5 py-0.5 bg-[var(--app-bg)] rounded text-[10px] text-[var(--text-secondary)] font-[family-name:var(--font-mono)]">
+                              <span key={s} className="px-1.5 py-0.5 dark:bg-bg-input-dark light:bg-bg-input-light rounded text-[10px] dark:text-text-primary-dark light:text-text-primary-light font-[family-name:var(--font-mono)]">
                                 {s}
                               </span>
                             ))}
@@ -402,7 +402,7 @@ export default function NewsIntelligence({ embedded = false }: { embedded?: bool
                   {/* Expanded detail */}
                   {isExpanded && (
                     <div className="bg-[var(--card-bg)] border-x border-b border-[var(--border)] rounded-b-xl -mt-2 pt-4 pb-3 px-3">
-                      <p className="text-xs text-[var(--text-secondary)] leading-relaxed mb-3">{item.summary}</p>
+                      <p className="text-xs dark:text-text-primary-dark light:text-text-primary-light leading-relaxed mb-3">{item.summary}</p>
                       
                       {/* FinBERT Analysis (AI-powered) */}
                       {item.openRouterAnalysis && item.openRouterAnalysis.tradingImplications && (
@@ -412,14 +412,14 @@ export default function NewsIntelligence({ embedded = false }: { embedded?: bool
                             <span className="text-[10px] font-bold text-[#8b5cf6]">AI Analysis</span>
                           </div>
                           <div className="bg-[#8b5cfug]/5 border border-[#8b5cfug]/20 rounded-lg p-2">
-                            <p className="text-[10px] text-[var(--text-primary)] font-medium mb-1.5">Trading Implications:</p>
-                            <p className="text-[10px] text-[var(--text-secondary)] leading-relaxed">{item.openRouterAnalysis.tradingImplications}</p>
+                            <p className="text-[10px] dark:text-text-primary-dark light:text-text-primary-light font-medium mb-1.5">Trading Implications:</p>
+                            <p className="text-[10px] dark:text-text-primary-dark light:text-text-primary-light leading-relaxed">{item.openRouterAnalysis.tradingImplications}</p>
                             {item.openRouterAnalysis.keyTakeaways.length > 0 && (
                               <div className="mt-2">
-                                <span className="text-[10px] text-[var(--text-secondary)] font-medium">Key Takeaways:</span>
+                                <span className="text-[10px] dark:text-text-primary-dark light:text-text-primary-light font-medium">Key Takeaways:</span>
                                 <ul className="list-disc list-inside mt-1">
                                   {item.openRouterAnalysis.keyTakeaways.map((kt, i) => (
-                                    <li key={i} className="text-[10px] text-[var(--text-secondary)]">{kt}</li>
+                                    <li key={i} className="text-[10px] dark:text-text-primary-dark light:text-text-primary-light">{kt}</li>
                                   ))}
                                 </ul>
                               </div>
@@ -436,7 +436,7 @@ export default function NewsIntelligence({ embedded = false }: { embedded?: bool
                       <div className="flex items-center justify-between">
                         <div className="flex gap-1 flex-wrap">
                           {item.symbols.map(s => (
-                            <span key={s} className="px-1.5 py-0.5 bg-[var(--app-bg)] rounded text-[10px] text-[var(--text-secondary)] font-[family-name:var(--font-mono)]">
+                            <span key={s} className="px-1.5 py-0.5 dark:bg-bg-input-dark light:bg-bg-input-light rounded text-[10px] dark:text-text-primary-dark light:text-text-primary-light font-[family-name:var(--font-mono)]">
                               {s}
                             </span>
                           ))}
@@ -462,13 +462,13 @@ export default function NewsIntelligence({ embedded = false }: { embedded?: bool
         <div className="space-y-3">
           <div className="flex items-center gap-2 mb-1">
             <Calendar className="w-4 h-4 text-[#3b82f6]" />
-            <h3 className="text-xs font-bold tracking-wider text-[var(--text-secondary)]">MACRO CALENDAR</h3>
+            <h3 className="text-xs font-bold tracking-wider dark:text-text-primary-dark light:text-text-primary-light">MACRO CALENDAR</h3>
             <span className="text-[10px] text-[var(--text-muted)] ml-auto">{events.length} events</span>
           </div>
 
           <div className="space-y-2 max-h-[600px] overflow-y-auto">
             {events.map((event) => (
-              <div key={event.id} className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-3">
+              <div key={event.id} className="bg-[var(--card-bg)] rounded-xl border dark:border-border-mid-dark light:border-border-mid-light p-3">
                 <div className="flex items-start gap-2">
                   <div className={`w-1 h-full min-h-[40px] rounded-full flex-shrink-0 ${
                     event.impact === 'high' ? 'bg-[var(--red)]' :
@@ -484,7 +484,7 @@ export default function NewsIntelligence({ embedded = false }: { embedded?: bool
                     <p className="text-xs font-medium">{event.title}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <Clock className="w-3 h-3 text-[var(--text-muted)]" />
-                      <span className="text-[10px] text-[var(--text-secondary)]">{event.date} {event.time || ''}</span>
+                      <span className="text-[10px] dark:text-text-primary-dark light:text-text-primary-light">{event.date} {event.time || ''}</span>
                     </div>
                     {event.description && (
                       <p className="text-[10px] text-[var(--text-muted)] mt-1 line-clamp-2">{event.description}</p>
@@ -506,10 +506,10 @@ export default function NewsIntelligence({ embedded = false }: { embedded?: bool
         <div className="space-y-3">
           {/* Insider */}
           {insider && insider.transactions.length > 0 && (
-            <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-3">
+            <div className="bg-[var(--card-bg)] rounded-xl border dark:border-border-mid-dark light:border-border-mid-light p-3">
               <div className="flex items-center gap-2 mb-2">
                 <Activity className="w-3.5 h-3.5 text-[#8b5cf6]" />
-                <h3 className="text-[10px] font-bold tracking-wider text-[var(--text-secondary)]">INSIDER ACTIVITY (7D)</h3>
+                <h3 className="text-[10px] font-bold tracking-wider dark:text-text-primary-dark light:text-text-primary-light">INSIDER ACTIVITY (7D)</h3>
               </div>
               <div className="flex gap-3 mb-2 text-center">
                 <div className="flex-1">
@@ -527,7 +527,7 @@ export default function NewsIntelligence({ embedded = false }: { embedded?: bool
           {/* Polymarket */}
           <div className="flex items-center gap-2 mb-1">
             <Binary className="w-4 h-4 text-[#a855f7]" />
-            <h3 className="text-xs font-bold tracking-wider text-[var(--text-secondary)]">PREDICTION MARKETS</h3>
+            <h3 className="text-xs font-bold tracking-wider dark:text-text-primary-dark light:text-text-primary-light">PREDICTION MARKETS</h3>
           </div>
           <div className="space-y-2">
             {polyEvents.slice(0, 4).map((event) => {
@@ -536,19 +536,19 @@ export default function NewsIntelligence({ embedded = false }: { embedded?: bool
               const yesPrice = mainMarket.outcomePrices[0] || 0;
               const yesPct = Math.round(yesPrice * 100);
               return (
-                <div key={event.id} className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-3">
+                <div key={event.id} className="bg-[var(--card-bg)] rounded-xl border dark:border-border-mid-dark light:border-border-mid-light p-3">
                   <p className="text-xs font-medium mb-2 line-clamp-2">{event.title}</p>
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] text-[var(--green)] w-8">YES</span>
-                      <div className="flex-1 h-2 bg-[var(--app-bg)] rounded-full overflow-hidden">
+                      <div className="flex-1 h-2 dark:bg-bg-input-dark light:bg-bg-input-light rounded-full overflow-hidden">
                         <div className="h-full bg-[var(--green)] rounded-full" style={{ width: `${yesPct}%` }} />
                       </div>
                       <span className="text-[10px] font-bold text-[var(--green)] w-8 text-right font-[family-name:var(--font-mono)]">{yesPct}%</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] text-[var(--red)] w-8">NO</span>
-                      <div className="flex-1 h-2 bg-[var(--app-bg)] rounded-full overflow-hidden">
+                      <div className="flex-1 h-2 dark:bg-bg-input-dark light:bg-bg-input-light rounded-full overflow-hidden">
                         <div className="h-full bg-[var(--red)] rounded-full" style={{ width: `${100 - yesPct}%` }} />
                       </div>
                       <span className="text-[10px] font-bold text-[var(--red)] w-8 text-right font-[family-name:var(--font-mono)]">{100 - yesPct}%</span>
@@ -569,19 +569,19 @@ export default function NewsIntelligence({ embedded = false }: { embedded?: bool
       {/* Alert Modal */}
       {showAlertModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] w-full max-w-md p-4">
+          <div className="bg-[var(--card-bg)] rounded-xl border dark:border-border-mid-dark light:border-border-mid-light w-full max-w-md p-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-[var(--text-primary)]">Create News Alert</h3>
-              <button onClick={() => setShowAlertModal(false)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+              <h3 className="text-sm font-bold dark:text-text-primary-dark light:text-text-primary-light">Create News Alert</h3>
+              <button onClick={() => setShowAlertModal(false)} className="text-[var(--text-muted)] hover:dark:text-text-primary-dark light:text-text-primary-light">
                 ✕
               </button>
             </div>
             <div className="space-y-3">
               <SymbolSearch value={alertSymbol} onChange={(s) => setAlertSymbol(s)} placeholder="AAPL" />
               <input type="text" placeholder="earnings, guidance, upgrade" value={alertKeywords} onChange={(e) => setAlertKeywords(e.target.value)}
-                className="w-full bg-[var(--input-bg)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-subtle)] focus:outline-none" />
+                className="w-full dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg px-3 py-2 text-sm dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" />
               <select value={alertSentiment} onChange={(e) => setAlertSentiment(e.target.value as 'any' | 'bullish' | 'bearish')}
-                className="w-full bg-[var(--input-bg)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-secondary)] focus:outline-none">
+                className="w-full dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg px-3 py-2 text-sm dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light">
                 <option value="any">Any sentiment</option>
                 <option value="bullish">Bullish only</option>
                 <option value="bearish">Bearish only</option>
@@ -602,9 +602,9 @@ export default function NewsIntelligence({ embedded = false }: { embedded?: bool
                 <h4 className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-2">Active Alerts</h4>
                 <div className="space-y-1.5">
                   {alerts.map((alert) => (
-                    <div key={alert.id} className="flex items-center justify-between bg-[var(--app-bg)] rounded-lg px-3 py-2">
+                    <div key={alert.id} className="flex items-center justify-between dark:bg-bg-input-dark light:bg-bg-input-light rounded-lg px-3 py-2">
                       <div>
-                        <span className="text-xs font-bold text-[var(--text-primary)] font-[family-name:var(--font-mono)]">{alert.symbol}</span>
+                        <span className="text-xs font-bold dark:text-text-primary-dark light:text-text-primary-light font-[family-name:var(--font-mono)]">{alert.symbol}</span>
                         <span className="text-[10px] text-[var(--text-muted)] ml-2">{alert.keywords.join(', ')}</span>
                       </div>
                       <button onClick={() => deleteAlert(alert.id)} className="text-[var(--text-muted)] hover:text-[var(--red)] transition">✕</button>

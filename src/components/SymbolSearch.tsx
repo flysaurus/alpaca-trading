@@ -109,7 +109,7 @@ export default function SymbolSearch({ value, onChange, onSelect, placeholder = 
           }}
           onFocus={() => setShowDropdown(true)}
           onKeyDown={handleKeyDown}
-          className="w-full bg-[var(--app-bg)] border border-[#1e232b] rounded-lg pl-9 pr-3 py-2.5 text-[15px] text-[var(--text-primary)] placeholder-[var(--text-subtle)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)] uppercase tracking-wider"
+          className="w-full dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg pl-9 pr-3 py-2.5 text-[15px] dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light font-[family-name:var(--font-mono)] uppercase tracking-wider"
           autoFocus={autoFocus}
         />
         {loading && (
@@ -118,7 +118,7 @@ export default function SymbolSearch({ value, onChange, onSelect, placeholder = 
       </div>
 
       {showDropdown && suggestions.length > 0 && (
-        <div className="absolute z-20 left-0 right-0 mt-1 bg-[var(--card-bg)] border border-[#1e232b] rounded-xl shadow-xl overflow-hidden max-h-64 overflow-y-auto">
+        <div className="absolute z-20 left-0 right-0 mt-1 bg-[var(--card-bg)] border dark:border-border-mid-dark light:border-border-mid-light rounded-xl shadow-xl overflow-hidden max-h-64 overflow-y-auto">
           {suggestions.map((asset, i) => (
             <button
               key={asset.symbol}
@@ -127,11 +127,11 @@ export default function SymbolSearch({ value, onChange, onSelect, placeholder = 
                 i === selectedIndex ? 'bg-[var(--hover-bg)]' : 'hover:bg-[var(--hover-bg)]/50'
               }`}
             >
-              <div className="w-8 h-8 rounded-lg bg-[var(--app-bg)] flex items-center justify-center flex-shrink-0">
+              <div className="w-8 h-8 rounded-lg dark:bg-bg-input-dark light:bg-bg-input-light flex items-center justify-center flex-shrink-0">
                 <TrendingUp className="w-3.5 h-3.5 text-[var(--text-muted)]" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-[var(--text-primary)] font-[family-name:var(--font-mono)]">{asset.symbol}</p>
+                <p className="text-sm font-bold dark:text-text-primary-dark light:text-text-primary-light font-[family-name:var(--font-mono)]">{asset.symbol}</p>
                 <p className="text-xs text-[var(--text-muted)] truncate">{asset.name}</p>
               </div>
               <span className="text-[10px] text-[var(--text-subtle)] flex-shrink-0">{asset.exchange}</span>
