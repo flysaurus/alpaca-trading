@@ -297,9 +297,10 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
             <Download className="w-3 h-3" />
             CSV
           </button>
-          <span className="text-xs text-[var(--text-muted)] dark:bg-bg-input-dark light:bg-bg-input-light px-2 py-0.5 rounded border dark:border-border-mid-dark light:border-border-mid-light">
-            {positions.length} positions · ${fmtUSD(totalEquity)}
-          </span>
+          <div className="flex items-center justify-between dark:bg-[#1e293b] light:bg-[#f8fafc] rounded-xl px-4 py-2">
+            <span className="dark:text-[#f9fafb] light:text-[#0f172a] font-bold text-xl">{positions.length} Positions</span>
+            <span className="dark:text-[#f9fafb] light:text-[#0f172a] font-bold text-xl font-[family-name:var(--font-mono)]">${fmtUSD(totalValue)}</span>
+          </div>
         </div>
       </div>
 
