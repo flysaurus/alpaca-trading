@@ -347,6 +347,13 @@ function SellSignals({ portfolioContext, onAnalyze }: { portfolioContext: Portfo
   const [signals, setSignals] = useState<SellSignal[]>([]);
   const [loading, setLoading] = useState(true);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const [sellTicket, setSellTicket] = useState<string | null>(null);
+  const [sellType, setSellType] = useState<'market' | 'limit' | 'stop' | 'stop_limit'>('market');
+  const [sellQty, setSellQty] = useState<number>(0);
+  const [sellLimitPrice, setSellLimitPrice] = useState<number>(0);
+  const [sellStopPrice, setSellStopPrice] = useState<number>(0);
+  const [sellTimeInForce, setSellTimeInForce] = useState<'day' | 'gtc' | 'ioc'>('day');
+  const [sellSubmitting, setSellSubmitting] = useState(false);
 
   useEffect(() => {
     if (!portfolioContext?.positions?.length) {
@@ -373,6 +380,12 @@ function SellSignals({ portfolioContext, onAnalyze }: { portfolioContext: Portfo
 
         const allSignals = await analyzeAllPositions(positions);
         if (cancelled) return;
+
+        // Attach qty to each signal from positions
+        const qtyMap = new Map(portfolioContext!.positions.map(p => [p.symbol, p.qty]));
+        for (const sig of allSignals) {
+          (sig as any)._qty = qtyMap.get(sig.symbol) || 1;
+        }
 
         // Merge with LLM recommendation (keep LLM sell if also technically triggered)
         const results = await Promise.all(
@@ -435,6 +448,55 @@ function SellSignals({ portfolioContext, onAnalyze }: { portfolioContext: Portfo
     fetchSellSignals();
     return () => { cancelled = true; };
   }, [portfolioContext]);
+
+  // ── Sell order handlers ──────────────────────────────────────
+  const handleSellClick = (s: SellSignal) => {
+    const qty = (s as any)._qty || 1;
+    setSellTicket(`${s.symbol}-${s.signal_type}`);
+    setSellType('market');
+    setSellQty(qty);
+    setSellLimitPrice(s.current_price);
+    setSellStopPrice(Number((s.current_price * 0.97).toFixed(2)));
+    setSellTimeInForce('day');
+  };
+
+  const handleConfirmSell = async (s: SellSignal) => {
+    if (!sellQty || sellQty <= 0) {
+      alert('Please enter a valid share quantity.');
+      return;
+    }
+    setSellSubmitting(true);
+    try {
+      const orderPayload = {
+        symbol: s.symbol,
+        side: 'sell',
+        type: sellType.toLowerCase(),
+        qty: Number(sellQty),
+        estimatedPrice: sellLimitPrice || s.current_price,
+        timeInForce: sellTimeInForce.toLowerCase(),
+        ...(sellLimitPrice && sellType !== 'market' ? { limitPrice: Number(sellLimitPrice) } : {}),
+        ...(sellStopPrice && (sellType === 'stop' || sellType === 'stop_limit') ? { stopPrice: Number(sellStopPrice) } : {}),
+      };
+      console.log('Sell order payload:', JSON.stringify(orderPayload));
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderPayload),
+      });
+      if (!res.ok) throw new Error(`Order failed: ${res.status}`);
+      alert(`${s.symbol} sell order placed successfully`);
+      setSellTicket(null);
+      setDismissed((prev) => new Set([...prev, `${s.symbol}-${s.signal_type}`]));
+    } catch (err: any) {
+      alert(`Failed to place sell order: ${err.message}`);
+    } finally {
+      setSellSubmitting(false);
+    }
+  };
+
+  const handleCancelSell = () => {
+    setSellTicket(null);
+  };
 
   const visibleSignals = signals.filter((s) => !dismissed.has(`${s.symbol}-${s.signal_type}`));
 
@@ -534,31 +596,122 @@ function SellSignals({ portfolioContext, onAnalyze }: { portfolioContext: Portfo
           )}
 
           {/* Actions */}
-          <div className="flex gap-2">
-            <button
-              onClick={() => {
-                console.log('Sell signal action:', s.symbol, s.signal_type);
-              }}
-              className="flex-1 py-2 rounded-xl bg-red-600 text-white text-[11px] font-bold hover:bg-red-500 transition"
-            >
-              {s.signal_type === 'TAKE_PROFIT_TARGET' ? 'Take Profit' : 'Sell'}
-            </button>
-            <button
-              onClick={() => {
-                const prompt = `Analyze my ${s.symbol} position at $${s.current_price.toFixed(2)}. Signal: ${s.signal_type.replace(/_/g, ' ')}. ${s.reason}. Should I act on this signal?`;
-                onAnalyze(s.symbol, prompt);
-              }}
-              className="flex-1 py-2 rounded-xl border dark:border-[#0d9488]/40 light:border-[#0d9488]/40 dark:text-[#0d9488] light:text-[#0d9488] text-[11px] font-bold hover:dark:bg-[#0d9488]/10 hover:light:bg-[#0d9488]/5 transition"
-            >
-              Analyze
-            </button>
-            <button
-              onClick={() => setDismissed((prev) => new Set([...prev, `${s.symbol}-${s.signal_type}`]))}
-              className="px-3 py-2 rounded-xl border dark:border-[#334155] light:border-[#e2e8f0] dark:text-text-tertiary-dark light:text-text-tertiary-light text-[11px] font-medium hover:dark:bg-bg-hover-dark hover:light:bg-bg-hover-light transition"
-            >
-              Hold
-            </button>
-          </div>
+          {sellTicket === `${s.symbol}-${s.signal_type}` ? (
+            <>
+              {/* Inline Sell Order Ticket */}
+              <div className="rounded-xl p-3 space-y-3 dark:bg-[rgba(0,0,0,0.25)] light:bg-[rgba(0,0,0,0.04)] border dark:border-[#ef4444]/30 light:border-[#ef4444]/30">
+                {/* Order Type */}
+                <div>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide dark:text-text-secondary-dark light:text-text-secondary-light block mb-1">Order Type</label>
+                  <div className="grid grid-cols-4 gap-1">
+                    {(['market', 'limit', 'stop', 'stop_limit'] as const).map((t) => (
+                      <button
+                        key={t}
+                        onClick={() => setSellType(t)}
+                        className={`py-1.5 rounded-lg text-[10px] font-bold uppercase transition ${
+                          sellType === t
+                            ? 'bg-red-600 text-white'
+                            : 'dark:bg-bg-hover-dark light:bg-bg-hover-light dark:text-text-secondary-dark light:text-text-secondary-light hover:dark:bg-[#ef4444]/20 hover:text-red-400'
+                        }`}
+                      >
+                        {t.replace(/_/g, ' ')}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* QTY */}
+                <div>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide dark:text-text-secondary-dark light:text-text-secondary-light block mb-1">Shares</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={sellQty || ''}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (/^\d*$/.test(v)) setSellQty(v ? Number(v) : 0);
+                    }}
+                    className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155] light:border-[#e2e8f0] rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-red-500/50 light:ring-red-500/50 focus:border-red-500"
+                  />
+                </div>
+
+                {/* Limit Price */}
+                {(sellType === 'limit' || sellType === 'stop_limit') && (
+                  <div>
+                    <label className="text-[11px] font-semibold uppercase tracking-wide dark:text-text-secondary-dark light:text-text-secondary-light block mb-1">Limit Price $</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={sellLimitPrice}
+                      onChange={(e) => setSellLimitPrice(Number(e.target.value))}
+                      className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155] light:border-[#e2e8f0] rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-red-500/50 light:ring-red-500/50 focus:border-red-500"
+                    />
+                  </div>
+                )}
+
+                {/* Stop Price */}
+                {(sellType === 'stop' || sellType === 'stop_limit') && (
+                  <div>
+                    <label className="text-[11px] font-semibold uppercase tracking-wide dark:text-text-secondary-dark light:text-text-secondary-light block mb-1">Stop Price $</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={sellStopPrice}
+                      onChange={(e) => setSellStopPrice(Number(e.target.value))}
+                      className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155] light:border-[#e2e8f0] rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-red-500/50 light:ring-red-500/50 focus:border-red-500"
+                    />
+                  </div>
+                )}
+
+                {/* Estimated Value */}
+                <p className="text-[10px] dark:text-text-muted-dark light:text-text-muted-light">
+                  Est. value: ${((sellType === 'limit' && sellLimitPrice > 0 ? sellLimitPrice : s.current_price) * sellQty).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+
+                {/* Confirm / Cancel */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleConfirmSell(s)}
+                    disabled={sellSubmitting}
+                    className="flex-1 py-2 rounded-xl bg-red-600 text-white text-[11px] font-bold hover:bg-red-500 transition disabled:opacity-50"
+                  >
+                    {sellSubmitting ? 'Submitting…' : 'Confirm Sell'}
+                  </button>
+                  <button
+                    onClick={handleCancelSell}
+                    className="px-3 py-2 rounded-xl border dark:border-[#334155] light:border-[#e2e8f0] dark:text-text-tertiary-dark light:text-text-tertiary-light text-[11px] font-medium hover:dark:bg-bg-hover-dark hover:light:bg-bg-hover-light transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleSellClick(s)}
+                className="flex-1 py-2 rounded-xl bg-red-600 text-white text-[11px] font-bold hover:bg-red-500 transition"
+              >
+                {s.signal_type === 'TAKE_PROFIT_TARGET' ? 'Take Profit' : 'Sell'}
+              </button>
+              <button
+                onClick={() => {
+                  const prompt = `Analyze my ${s.symbol} position at $${s.current_price.toFixed(2)}. Signal: ${s.signal_type.replace(/_/g, ' ')}. ${s.reason}. Should I act on this signal?`;
+                  onAnalyze(s.symbol, prompt);
+                }}
+                className="flex-1 py-2 rounded-xl border dark:border-[#0d9488]/40 light:border-[#0d9488]/40 dark:text-[#0d9488] light:text-[#0d9488] text-[11px] font-bold hover:dark:bg-[#0d9488]/10 hover:light:bg-[#0d9488]/5 transition"
+              >
+                Analyze
+              </button>
+              <button
+                onClick={() => setDismissed((prev) => new Set([...prev, `${s.symbol}-${s.signal_type}`]))}
+                className="px-3 py-2 rounded-xl border dark:border-[#334155] light:border-[#e2e8f0] dark:text-text-tertiary-dark light:text-text-tertiary-light text-[11px] font-medium hover:dark:bg-bg-hover-dark hover:light:bg-bg-hover-light transition"
+              >
+                Hold
+              </button>
+            </div>
+          )}
         </div>
       )})}
     </div>
