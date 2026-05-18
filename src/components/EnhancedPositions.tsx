@@ -56,7 +56,7 @@ function YearRangeBar({ low, high, current }: YearRangeProps) {
         <div className="absolute inset-0 rounded-full" style={{ background: `linear-gradient(to right, #ef4444 0%, #22c55e 100%)` }} />
         {/* Triangle indicator above the bar */}
         <div 
-          className="absolute -top-1 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-b-[6px] border-b-white"
+          className="absolute -top-1 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-b-[6px] dark:border-b-[#f9fafb] light:border-b-[#0f172a]"
           style={{ left: `${pct}%`, transform: 'translateX(-50%)' }}
         />
       </div>

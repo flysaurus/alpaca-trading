@@ -652,7 +652,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
             <>
               {/* Order Ticket */}
               <div className="px-4 pb-2">
-                <div className="rounded-xl p-3 space-y-3" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <div className="rounded-xl p-3 space-y-3 dark:bg-[rgba(0,0,0,0.25)] light:bg-[rgba(0,0,0,0.04)] border dark:border-[#334155] light:border-[#e2e8f0]">
                   {/* QTY */}
                   <div>
                     <label className="text-[11px] font-semibold uppercase tracking-wide dark:text-text-secondary-dark light:text-text-secondary-light block mb-1">Shares</label>
