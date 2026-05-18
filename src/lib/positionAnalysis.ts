@@ -41,10 +41,15 @@ Return ONLY valid JSON — no markdown, no explanation:
 
   const response = await callLLM(prompt);
 
-  // Strip markdown JSON fences if present
+  // Strip markdown JSON fences and extract clean JSON object
   let cleaned = response.trim();
-  if (cleaned.startsWith('```')) {
-    cleaned = cleaned.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '');
+  // Remove ```json / ``` wrappers
+  cleaned = cleaned.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '');
+  // Extract first JSON object if there's extra text
+  const jsonStart = cleaned.indexOf('{');
+  const jsonEnd = cleaned.lastIndexOf('}');
+  if (jsonStart !== -1 && jsonEnd > jsonStart) {
+    cleaned = cleaned.slice(jsonStart, jsonEnd + 1);
   }
 
   return JSON.parse(cleaned);
