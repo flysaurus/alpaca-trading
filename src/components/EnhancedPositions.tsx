@@ -91,6 +91,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
   const [chatOpen, setChatOpen] = useState(false);
   const [expandedSymbol, setExpandedSymbol] = useState<string | null>(null);
   const [recLoading, setRecLoading] = useState(false);
+  const [loadingRecs, setLoadingRecs] = useState<Set<string>>(new Set());
   const recCache = useRef<Map<string, { data: RecData; fetchedAt: number }>>(new Map());
   const REC_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -294,6 +295,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
     }
 
     setRecLoading(true);
+    setLoadingRecs((prev) => new Set(prev).add(key));
     try {
       const params = new URLSearchParams({
         symbol: key,
@@ -322,6 +324,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
       return null;
     } finally {
       setRecLoading(false);
+      setLoadingRecs((prev) => { const next = new Set(prev); next.delete(key); return next; });
     }
   };
 
@@ -452,6 +455,8 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
               const recAction = rec?.action || 'hold';
               const actionBadge = recAction === 'buy' ? 'dark:bg-[#10b981]/15 light:bg-[#10b981]/15 text-[#10b981]' : recAction === 'sell' ? 'dark:bg-[#ef4444]/15 light:bg-[#ef4444]/15 text-[#ef4444]' : 'dark:bg-[#f59e0b]/15 light:bg-[#f59e0b]/15 text-[#f59e0b]';
               const actionDot = recAction === 'buy' ? 'bg-[#10b981]' : recAction === 'sell' ? 'bg-[#ef4444]' : 'bg-[#f59e0b]';
+              const recKey = p.symbol.toUpperCase();
+              const isLoadingRec = loadingRecs.has(recKey);
 
               return (
                 <React.Fragment key={p.symbol}>
@@ -470,11 +475,18 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
                   <td className="px-3 py-2.5">
                     <div className="flex items-center gap-2">
                       <p className="text-base font-semibold dark:text-text-primary-dark light:text-text-primary-light">{p.symbol}</p>
-                      {rec && (
-                        <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold uppercase ${actionBadge}`}>
+                      {isLoadingRec ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold dark:bg-bg-input-dark light:bg-bg-input-light animate-pulse">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[var(--text-muted)]" />
+                          <span className="w-8 h-3 bg-[var(--text-muted)]/30 rounded" />
+                        </span>
+                      ) : rec ? (
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold uppercase ${actionBadge}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${actionDot}`} />
                           {recAction}
                         </span>
+                      ) : (
+                        <span className="text-[10px] text-[var(--text-muted)]">—</span>
                       )}
                     </div>
                   </td>
