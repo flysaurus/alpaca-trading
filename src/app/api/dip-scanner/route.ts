@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { scanForQualityDips, DipCandidate } from '@/lib/dipScanner';
-import { classifyDipReason, isDipSafe, DipReason } from '@/lib/dipNews';
+import { classifyDipReason, isDipSafe, DipReason, DipClassifierContext } from '@/lib/dipNews';
 
 // Simple in-memory cache for the entire response
 interface CachedResponse {
@@ -89,8 +89,19 @@ export async function GET(request: NextRequest) {
         .filter(Boolean);
     }
 
-    // 4b. Call classifyDipReason
-    const dipReason = await classifyDipReason(candidate.symbol, headlines);
+    // 4b. Call classifyDipReason with full context
+    const priceYesterday = candidate.current_price / (1 + candidate.change_pct / 100);
+    const classifyCtx: DipClassifierContext = {
+      symbol: candidate.symbol,
+      changePercent: candidate.change_pct,
+      priceYesterday,
+      priceToday: candidate.current_price,
+      headlines,
+      rsi: candidate.rsi,
+      marketState: marketState.state,
+      volRatio: candidate.volume_ratio,
+    };
+    const dipReason = await classifyDipReason(classifyCtx);
 
     // 4c. Filter out unsafe dips
     const safeToBuy = isDipSafe(dipReason);

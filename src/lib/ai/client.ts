@@ -6,7 +6,7 @@
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
 
-export async function callLLM(prompt: string): Promise<string> {
+export async function callLLM(prompt: string, opts?: { temperature?: number; max_tokens?: number }): Promise<string> {
   const openAIKey = process.env.OPENAI_API_KEY;
   const openRouterKey = process.env.OPENROUTER_API_KEY;
 
@@ -31,8 +31,8 @@ export async function callLLM(prompt: string): Promise<string> {
       const body: Record<string, unknown> = {
         model: provider.model,
         messages: [{ role: 'user', content: prompt }],
-        temperature: 0.1,
-        max_tokens: 500,
+        temperature: opts?.temperature ?? 0.1,
+        max_tokens: opts?.max_tokens ?? 500,
       };
 
       if (provider.isOpenRouter) {
