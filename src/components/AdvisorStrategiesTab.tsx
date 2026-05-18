@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import {
   Brain,
-  BrainCircuit,
   Zap,
   DollarSign,
   Layers,
@@ -39,7 +38,7 @@ import {
 } from 'recharts';
 import SymbolSearch from '@/components/SymbolSearch';
 import MorningRecommendationsList from '@/components/MorningRecommendationsList';
-import ChatModal from '@/components/ChatModal';
+import ChatCard from '@/components/ChatCard';
 import { useChatStore } from '@/stores/chat';
 import { useAdvisorStore } from '@/stores/advisorStore';
 import {
@@ -1370,7 +1369,7 @@ export default function AdvisorStrategiesTab() {
   const [riskScoreLoading, setRiskScoreLoading] = useState(true);
   const setStorePortfolioContext = useAdvisorStore((s) => s.setPortfolioContext);
   const userId = getUserId();
-  const [chatOpen, setChatOpen] = useState(false);
+  const [chatExpanded, setChatExpanded] = useState(false);
 
   // Fetch portfolio context on mount
   useEffect(() => {
@@ -1478,7 +1477,7 @@ export default function AdvisorStrategiesTab() {
 
   const handleAnalyzeDip = (symbol: string, prompt: string) => {
     useChatStore.getState().setPendingMessage(prompt);
-    setChatOpen(true);
+    setChatExpanded(true);
   };
 
   return (
@@ -1500,15 +1499,10 @@ export default function AdvisorStrategiesTab() {
       {/* Section A¾ — Opportunity Scanner */}
       <MarketScanner onAnalyze={handleAnalyzeDip} />
 
-      {/* Floating Chat Button + Modal */}
-      <ChatModal isOpen={chatOpen} onClose={() => setChatOpen(false)} alpacaAccountId={alpacaAccountId} />
-      <button
-        onClick={() => setChatOpen(true)}
-        className="fixed bottom-28 right-4 w-12 h-12 rounded-full bg-[var(--accent)] dark:bg-accent-primary-dark light:bg-accent-primary-light flex items-center justify-center shadow-lg hover:scale-110 transition z-40"
-        title="AI Advisor"
-      >
-        <BrainCircuit size={22} />
-      </button>
+      {/* Inline Chat Card */}
+      <div className="pt-4">
+        <ChatCard isExpanded={chatExpanded} setExpanded={setChatExpanded} alpacaAccountId={alpacaAccountId} />
+      </div>
 
       {/* Section D — Strategies */}
       <div className="space-y-3">

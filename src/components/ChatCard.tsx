@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Brain, Send, Loader2, X } from 'lucide-react';
+import { Brain, Send, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAdvisorStore } from '@/stores/advisorStore';
 import { useChatStore } from '@/stores/chat';
 import { fetchAiSuggestions, createAiSuggestion } from '@/lib/supabase';
@@ -19,13 +19,13 @@ function getUserId(): string {
   return id;
 }
 
-interface ChatModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+interface ChatCardProps {
+  isExpanded: boolean;
+  setExpanded: (v: boolean) => void;
   alpacaAccountId: string | null;
 }
 
-export default function ChatModal({ isOpen, onClose, alpacaAccountId }: ChatModalProps) {
+export default function ChatCard({ isExpanded, setExpanded, alpacaAccountId }: ChatCardProps) {
   const messages = useAdvisorStore((s) => s.messages);
   const setMessages = useAdvisorStore((s) => s.setMessages);
   const addMessage = useAdvisorStore((s) => s.addMessage);
@@ -37,7 +37,6 @@ export default function ChatModal({ isOpen, onClose, alpacaAccountId }: ChatModa
 
   const [input, setInput] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const userId = getUserId();
@@ -49,15 +48,15 @@ export default function ChatModal({ isOpen, onClose, alpacaAccountId }: ChatModa
     }
   }, [messages, isLoading]);
 
-  // Pre-fill input from Zustand store when modal opens
+  // Pre-fill input from Zustand store when expanded
   useEffect(() => {
     const { pendingMessage } = useChatStore.getState();
-    if (isOpen && pendingMessage) {
+    if (isExpanded && pendingMessage) {
       setInput(pendingMessage);
       useChatStore.getState().clearPendingMessage();
       setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [isOpen]);
+  }, [isExpanded]);
 
   // Listen for position analysis requests from Positions tab
   useEffect(() => {
@@ -76,9 +75,9 @@ export default function ChatModal({ isOpen, onClose, alpacaAccountId }: ChatModa
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Load cross-session history on first mount
+  // Load cross-session history on first expand
   useEffect(() => {
-    if (historyLoaded || !isOpen) return;
+    if (historyLoaded || !isExpanded) return;
 
     async function loadHistory() {
       try {
@@ -119,7 +118,7 @@ export default function ChatModal({ isOpen, onClose, alpacaAccountId }: ChatModa
     }
 
     loadHistory();
-  }, [historyLoaded, isOpen, userId, setMessages]);
+  }, [historyLoaded, isExpanded, userId, setMessages]);
 
   const saveToSupabase = async (prompt: string, response: string) => {
     if (!alpacaAccountId) return;
@@ -240,116 +239,88 @@ export default function ChatModal({ isOpen, onClose, alpacaAccountId }: ChatModa
     sendMessage(input);
   };
 
-  const handleClear = () => {
-    setMessages([
-      {
-        id: 'welcome',
-        role: 'ai',
-        content: 'Your portfolio is loaded. Ask me anything about your positions, strategies, or market conditions.',
-        timestamp: new Date(),
-      },
-    ]);
-    setShowClearConfirm(false);
-  };
-
   const firstNewIndex = messages.findIndex((m) => !m.fromHistory && m.id !== 'welcome');
 
-  // Block scroll on body when open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
-  }, [isOpen]);
-
-  if (!isOpen) return null;
-
   return (
-    <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
-        onClick={onClose}
-      />
-
-      {/* Modal */}
-      <div
-        className="fixed z-50
-          bottom-[80px] right-3 w-[90vw] max-w-[360px] h-[50vh] max-h-[420px]
-          md:w-[380px] md:h-[500px] md:bottom-8 md:right-6 md:max-h-[500px]
-          animate-in slide-in-from-bottom duration-300 md:slide-in-from-bottom-0 md:zoom-in-95
-          rounded-2xl"
-        onClick={(e) => e.stopPropagation()}
+    <div
+      className="rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] overflow-hidden transition-all duration-200 ease-in-out dark:bg-[#1e293b] light:bg-[#f8fafc]"
+      style={{ maxHeight: isExpanded ? 320 : 44 }}
+    >
+      {/* Header — always visible */}
+      <button
+        onClick={() => setExpanded(!isExpanded)}
+        className="w-full flex items-center justify-between px-3 h-[44px] dark:bg-[#1e293b] light:bg-[#f8fafc]"
       >
-        <div className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-[#334155]/70 light:border-[#e2e8f0] overflow-hidden flex flex-col shadow-2xl h-full">
-          {/* Top gradient bar */}
-          <div className="h-[3px] w-full bg-gradient-to-r from-[#00d4aa] to-[#7c6aff] rounded-t-2xl flex-shrink-0" />
+        <div className="flex items-center gap-2">
+          <Brain className="w-4 h-4 text-[#00d4aa]" />
+          <h3 className="text-base font-bold text-[#00d4aa] tracking-wider">AI ADVISOR</h3>
+        </div>
+        <div className="flex items-center gap-1.5 text-[10px] dark:text-text-tertiary-dark light:text-text-tertiary-light">
+          {isExpanded ? 'Close' : 'Open'}
+          {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+        </div>
+      </button>
 
-          {/* Header */}
-          <div className="flex items-center justify-between py-2 px-3 border-b dark:border-[#334155]/70 light:border-[#e2e8f0] flex-shrink-0">
-            <div className="flex items-center gap-2">
-              <Brain className="w-4 h-4 text-[#00d4aa]" />
-              <h3 className="text-base font-bold text-[#00d4aa] tracking-wider">AI ADVISOR</h3>
-            </div>
-            <div className="flex items-center gap-2">
-              {isLoading && <Loader2 className="w-4 h-4 text-[var(--accent)] animate-spin" />}
-              <button
-                onClick={onClose}
-                className="p-1.5 rounded-lg hover:dark:bg-bg-hover-dark hover:light:bg-bg-hover-light transition"
-              >
-                <X className="w-5 h-5 dark:text-text-secondary-dark light:text-text-secondary-light" />
-              </button>
-            </div>
-          </div>
+      {/* Expanded content */}
+      {isExpanded && (
+        <div className="flex flex-col" style={{ height: 320 - 44 }}>
+          {/* Top gradient bar */}
+          <div className="h-[3px] w-full bg-gradient-to-r from-[#00d4aa] to-[#7c6aff] flex-shrink-0" />
 
           {/* Messages */}
-          <div ref={scrollRef} className="overflow-y-auto flex-1 min-h-[120px] py-2 px-3 space-y-3">
-            {messages.filter((m) => m.id !== 'welcome').map((msg, idx) => (
-              <div key={msg.id}>
-                {idx === firstNewIndex && firstNewIndex > 0 && (
-                  <div className="flex items-center gap-3 my-3">
-                    <div className="flex-1 h-px dark:bg-border-light-dark light:bg-border-light-light" />
-                    <span className="text-[10px] dark:text-text-tertiary-dark light:text-text-tertiary-light whitespace-nowrap">— Previous session —</span>
-                    <div className="flex-1 h-px dark:bg-border-light-dark light:bg-border-light-light" />
-                  </div>
-                )}
-                <div className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div
-                    className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm leading-relaxed ${
-                      msg.role === 'user'
-                        ? 'border dark:border-[#334155]/70 light:border-[#e2e8f0] dark:bg-bg-hover-dark light:bg-bg-hover-light dark:text-text-primary-dark light:text-text-primary-light rounded-br-md'
-                        : 'border dark:border-[#334155]/70 light:border-[#e2e8f0] dark:bg-[#0d9488]/10 light:bg-[#0d9488]/5 dark:text-text-primary-dark light:text-text-primary-light rounded-bl-md prose dark:prose-invert prose-sm max-w-none'
-                    }`}
-                  >
-                    {msg.role === 'user' ? (
-                      msg.content
-                    ) : (
-                      <ReactMarkdown
-                        components={{
-                          h1: ({ children }) => <h1 className="text-xl font-semibold text-[#00d4aa] mb-1">{children}</h1>,
-                          h2: ({ children }) => <h2 className="text-xl font-semibold text-[#00d4aa] mt-2 mb-1">{children}</h2>,
-                          h3: ({ children }) => <h3 className="text-xl font-semibold text-[#00d4aa] mt-2 mb-1">{children}</h3>,
-                          p: ({ children }) => <p className="text-sm !text-[#2563eb] dark:!text-[#60a5fa] leading-relaxed mb-1">{children}</p>,
-                          ul: ({ children }) => <ul className="text-sm !text-[#2563eb] dark:!text-[#60a5fa] leading-relaxed pl-4 mb-1">{children}</ul>,
-                          li: ({ children }) => <li className="!text-[#2563eb] dark:!text-[#60a5fa] mb-0">{children}</li>,
-                          strong: ({ children }) => <strong className="!text-[#000000] dark:!text-white font-bold">{children}</strong>,
-                          em: ({ children }) => <em className="!text-[#374151] dark:!text-[#a0b4c8]">{children}</em>,
-                          hr: () => <hr className="border-t border-[#e5e7eb] dark:border-[#1a2a45] my-1.5" />,
-                        }}
-                      >
-                        {msg.content}
-                      </ReactMarkdown>
-                    )}
+          <div ref={scrollRef} className="overflow-y-auto flex-1 min-h-0 py-2 px-3 space-y-2">
+            {messages.filter((m) => m.id !== 'welcome').length === 0 && !isLoading && (
+              <p className="text-xs dark:text-text-tertiary-dark light:text-text-tertiary-light text-center py-4">
+                Your portfolio is loaded. Ask me anything about your positions, strategies, or market conditions.
+              </p>
+            )}
+            {messages.filter((m) => m.id !== 'welcome').map((msg, idx) => {
+              const globalIdx = messages.findIndex((m) => m.id === msg.id);
+              return (
+                <div key={msg.id}>
+                  {globalIdx === firstNewIndex && firstNewIndex > 0 && (
+                    <div className="flex items-center gap-3 my-2">
+                      <div className="flex-1 h-px dark:bg-border-light-dark light:bg-border-light-light" />
+                      <span className="text-[9px] dark:text-text-tertiary-dark light:text-text-tertiary-light whitespace-nowrap">— Previous session —</span>
+                      <div className="flex-1 h-px dark:bg-border-light-dark light:bg-border-light-light" />
+                    </div>
+                  )}
+                  <div className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div
+                      className={`max-w-[85%] px-2.5 py-1.5 rounded-2xl text-xs leading-relaxed ${
+                        msg.role === 'user'
+                          ? 'border dark:border-[#334155]/70 light:border-[#e2e8f0] dark:bg-bg-hover-dark light:bg-bg-hover-light dark:text-text-primary-dark light:text-text-primary-light rounded-br-md'
+                          : 'border dark:border-[#334155]/70 light:border-[#e2e8f0] dark:bg-[#0d9488]/10 light:bg-[#0d9488]/5 dark:text-text-primary-dark light:text-text-primary-light rounded-bl-md prose dark:prose-invert prose-sm max-w-none'
+                      }`}
+                    >
+                      {msg.role === 'user' ? (
+                        msg.content
+                      ) : (
+                        <ReactMarkdown
+                          components={{
+                            h1: ({ children }) => <h1 className="text-base font-semibold text-[#00d4aa] mb-0.5">{children}</h1>,
+                            h2: ({ children }) => <h2 className="text-base font-semibold text-[#00d4aa] mt-1.5 mb-0.5">{children}</h2>,
+                            h3: ({ children }) => <h3 className="text-base font-semibold text-[#00d4aa] mt-1.5 mb-0.5">{children}</h3>,
+                            p: ({ children }) => <p className="text-xs !text-[#2563eb] dark:!text-[#60a5fa] leading-relaxed mb-0.5">{children}</p>,
+                            ul: ({ children }) => <ul className="text-xs !text-[#2563eb] dark:!text-[#60a5fa] leading-relaxed pl-3 mb-0.5">{children}</ul>,
+                            li: ({ children }) => <li className="!text-[#2563eb] dark:!text-[#60a5fa] mb-0">{children}</li>,
+                            strong: ({ children }) => <strong className="!text-[#000000] dark:!text-white font-bold">{children}</strong>,
+                            em: ({ children }) => <em className="!text-[#374151] dark:!text-[#a0b4c8]">{children}</em>,
+                            hr: () => <hr className="border-t border-[#e5e7eb] dark:border-[#1a2a45] my-1" />,
+                          }}
+                        >
+                          {msg.content}
+                        </ReactMarkdown>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {isLoading && messages[messages.length - 1]?.role === 'user' && (
               <div className="flex justify-start">
-                <div className="border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-2xl rounded-bl-md px-3 py-2">
+                <div className="border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-2xl rounded-bl-md px-2.5 py-1.5">
                   <div className="flex gap-1">
                     <span className="w-1.5 h-1.5 dark:bg-text-tertiary-dark light:bg-text-tertiary-light rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                     <span className="w-1.5 h-1.5 dark:bg-text-tertiary-dark light:bg-text-tertiary-light rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -360,15 +331,15 @@ export default function ChatModal({ isOpen, onClose, alpacaAccountId }: ChatModa
             )}
 
             {error && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-2 text-[11px] text-red-400 text-center">
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-1.5 text-[10px] text-red-400 text-center">
                 {error}
               </div>
             )}
           </div>
 
           {/* Quick Action Chips */}
-          <div className="px-3 py-1.5 border-t dark:border-[#334155]/70 light:border-[#e2e8f0] flex-shrink-0">
-            <div className="flex gap-2 overflow-x-auto pb-1">
+          <div className="px-3 py-1 border-t dark:border-[#334155]/70 light:border-[#e2e8f0] flex-shrink-0">
+            <div className="flex gap-1.5 overflow-x-auto">
               {[
                 'Latest brief',
                 'Summarize my portfolio',
@@ -379,7 +350,7 @@ export default function ChatModal({ isOpen, onClose, alpacaAccountId }: ChatModa
                   key={chip}
                   onClick={() => handleChipClick(chip)}
                   disabled={isLoading}
-                  className="flex-shrink-0 px-2.5 py-1 text-[11px] font-bold dark:bg-bg-input-dark light:bg-bg-input-light border border-[#1e3a5f] dark:border-[#00d4aa]/40 rounded-full text-[#1e3a5f] dark:text-[#00d4aa] hover:text-[#1e3a5f] dark:hover:text-[#00d4aa] hover:border-[#1e3a5f] dark:hover:border-[#00d4aa] transition whitespace-nowrap"
+                  className="flex-shrink-0 px-2 py-0.5 text-[10px] font-bold dark:bg-bg-input-dark light:bg-bg-input-light border border-[#1e3a5f] dark:border-[#00d4aa]/40 rounded-full text-[#1e3a5f] dark:text-[#00d4aa] hover:text-[#1e3a5f] dark:hover:text-[#00d4aa] hover:border-[#1e3a5f] dark:hover:border-[#00d4aa] transition whitespace-nowrap"
                 >
                   {chip}
                 </button>
@@ -388,8 +359,8 @@ export default function ChatModal({ isOpen, onClose, alpacaAccountId }: ChatModa
           </div>
 
           {/* Input */}
-          <form onSubmit={handleSubmit} className="px-3 py-2 border-t dark:border-[#334155]/70 light:border-[#e2e8f0] flex-shrink-0">
-            <div className="flex items-center gap-2">
+          <form onSubmit={handleSubmit} className="px-3 py-1.5 border-t dark:border-[#334155]/70 light:border-[#e2e8f0] flex-shrink-0">
+            <div className="flex items-center gap-1.5">
               <input
                 ref={inputRef}
                 type="text"
@@ -397,42 +368,27 @@ export default function ChatModal({ isOpen, onClose, alpacaAccountId }: ChatModa
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask your advisor..."
                 disabled={isLoading}
-                className="flex-1 px-3 py-2 text-xs dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-xl dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:focus:ring-accent-primary-dark light:focus:ring-accent-primary-light"
-                autoFocus
+                className="flex-1 px-2.5 py-1.5 text-[11px] dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:focus:ring-accent-primary-dark light:focus:ring-accent-primary-light"
               />
               <button
                 type="submit"
                 disabled={!input.trim() || isLoading}
-                className="p-2 rounded-xl bg-[var(--accent)] text-black disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[var(--accent)]/90 transition"
+                className="p-1.5 rounded-lg bg-[var(--accent)] text-black disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[var(--accent)]/90 transition"
               >
-                <Send className="w-4 h-4" />
+                <Send className="w-3.5 h-3.5" />
               </button>
             </div>
           </form>
 
           {/* Footer */}
-          <div className="flex items-center justify-between px-4 py-2 border-t dark:border-[#334155]/70 light:border-[#e2e8f0] flex-shrink-0">
-            <span className="text-[10px] dark:text-text-tertiary-dark light:text-text-tertiary-light">
+          <div className="flex items-center justify-between px-3 py-1 border-t dark:border-[#334155]/70 light:border-[#e2e8f0] flex-shrink-0">
+            <span className="text-[9px] dark:text-text-tertiary-dark light:text-text-tertiary-light">
               {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
             </span>
-            <div className="flex items-center gap-2">
-              {showClearConfirm ? (
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] dark:text-text-tertiary-dark light:text-text-tertiary-light">Clear?</span>
-                  <button onClick={handleClear} className="px-2 py-0.5 text-[10px] font-bold bg-[var(--red)]/10 text-[var(--red)] rounded hover:bg-[var(--red)]/20 transition">Clear</button>
-                  <button onClick={() => setShowClearConfirm(false)} className="px-2 py-0.5 text-[10px] dark:bg-bg-input-dark light:bg-bg-input-light dark:text-text-tertiary-dark light:text-text-tertiary-light rounded hover:dark:bg-bg-hover-dark hover:light:bg-bg-hover-light transition">Cancel</button>
-                </div>
-              ) : (
-                messages.length > 1 && (
-                  <button onClick={() => setShowClearConfirm(true)} className="text-[10px] dark:text-text-tertiary-dark light:text-text-tertiary-light hover:dark:text-text-primary-dark hover:light:text-text-primary-light transition px-2 py-0.5 rounded hover:dark:bg-bg-hover-dark hover:light:bg-bg-hover-light">
-                    Clear history
-                  </button>
-                )
-              )}
-            </div>
+            {isLoading && <Loader2 className="w-3 h-3 text-[var(--accent)] animate-spin" />}
           </div>
         </div>
-      </div>
-    </>
+      )}
+    </div>
   );
 }

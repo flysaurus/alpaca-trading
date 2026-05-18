@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { BarChart3, ChevronUp, ChevronDown, Trash2, X, Download, Loader2 } from 'lucide-react';
-import ChatModal from '@/components/ChatModal';
+import ChatCard from '@/components/ChatCard';
 import { useChatStore } from '@/stores/chat';
 
 interface Position {
@@ -88,7 +88,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
   const [bulkResults, setBulkResults] = useState<Array<{ symbol: string; ok: boolean; error?: string }>>([]);
   const [showBulkPanel, setShowBulkPanel] = useState(false);
-  const [chatOpen, setChatOpen] = useState(false);
+  const [chatExpanded, setChatExpanded] = useState(false);
   const [expandedSymbol, setExpandedSymbol] = useState<string | null>(null);
   const [recLoading, setRecLoading] = useState(false);
   const [loadingRecs, setLoadingRecs] = useState<Set<string>>(new Set());
@@ -641,7 +641,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
                                   e.stopPropagation();
                                   const prompt = `Analyze my ${p.symbol} position. I bought at $${p.avgEntryPrice.toFixed(2)}, currently at $${p.currentPrice.toFixed(2)}, P&L is $${p.unrealizedPL.toFixed(2)}.`;
                                   useChatStore.getState().setPendingMessage(prompt);
-                                  setChatOpen(true);
+                                  setChatExpanded(true);
                                 }}
                                 className="text-[10px] font-bold px-2.5 py-1 rounded dark:bg-[var(--accent)]/10 light:bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/20 hover:bg-[var(--accent)]/20 transition"
                               >
@@ -773,8 +773,10 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
         </div>
       )}
 
-      {/* AI Chat Modal (shared with Advisor tab) */}
-      <ChatModal isOpen={chatOpen} onClose={() => setChatOpen(false)} alpacaAccountId={null} />
+      {/* Inline AI Chat Card */}
+      <div className="px-4 pb-4">
+        <ChatCard isExpanded={chatExpanded} setExpanded={setChatExpanded} alpacaAccountId={null} />
+      </div>
     </div>
   );
 }
