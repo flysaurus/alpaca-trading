@@ -96,18 +96,40 @@ export function formatOrderAlert(params: {
 }): string {
   const emoji = params.side === 'buy' ? '🟢' : '🔴';
   const fillPct = params.filledQty ? Math.round((params.filledQty / params.qty) * 100) : 0;
+  const total = params.qty * params.price;
   const now = new Date();
-  const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' });
-  const timeStr = now.toLocaleTimeString('en-US', { timeZone: 'America/New_York' });
+  const dateStr = now.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'America/New_York',
+  });
+  const timeStr = now.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: 'America/New_York',
+  });
 
-  return `${emoji} <b>ORDER ${params.status.toUpperCase()}</b>
-📅 ${dateStr} | 🕐 ${timeStr} ET
+  const statusLabel = params.status.toUpperCase();
+  const lines: string[] = [
+    `${emoji} <b>Order Status: ${statusLabel}</b>`,
+    ``,
+    `<b>Symbol:</b> ${params.symbol}`,
+    `<b>Side:</b> ${params.side.toUpperCase()}`,
+    `<b>Qty:</b> ${params.qty}`,
+    `<b>Price:</b> $${params.price.toFixed(2)}`,
+    `<b>Total:</b> $${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+  ];
 
-Symbol: <code>${params.symbol}</code>
-Side: ${params.side.toUpperCase()}
-Qty: ${params.qty}
-Price: $${params.price.toFixed(2)}
-${params.filledQty !== undefined ? `Fill: ${fillPct}% (${params.filledQty}/${params.qty})` : ''}`;
+  if (params.filledQty !== undefined && params.status.toLowerCase() === 'filled') {
+    lines.push(`<b>Filled:</b> ${fillPct}% (${params.filledQty}/${params.qty})`);
+  }
+
+  lines.push(
+    `<b>Date &amp; Time:</b> ${dateStr}, ${timeStr} ET`
+  );
+
+  return lines.join('\n');
 }
 
 export function formatNewsAlert(params: {
