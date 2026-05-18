@@ -3,7 +3,7 @@ import { getOrders, placeOrder, AlpacaError } from '@/lib/alpaca';
 import { validateOrder } from '@/lib/safety';
 import { checkRateLimit, getClientIP, rateLimitHeaders } from '@/lib/ratelimit';
 import { checkRiskLimits, DEFAULT_RISK } from '@/lib/risk';
-import { sendTelegramMessage } from '@/lib/telegram';
+import { sendTelegramMessage, wasNotificationSent, recordNotificationSent, NotificationMessageType } from '@/lib/telegram';
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', {
@@ -109,6 +109,15 @@ export async function POST(request: Request) {
       getPositions(),
     ]);
 
+    // Resolve Supabase user ID from Alpaca account for idempotency
+    let userId: string | null = null;
+    try {
+      const { ensureUserByAlpacaId } = await import('@/lib/supabase');
+      userId = await ensureUserByAlpacaId(account.id);
+    } catch (err: any) {
+      console.warn('[API /orders] Could not resolve userId:', err.message);
+    }
+
     const portfolioValue = Number(account.portfolio_value);
     const estimatedPrice = limitPrice || body.estimatedPrice || 100;
     const notional = qty * estimatedPrice;
@@ -151,6 +160,26 @@ export async function POST(request: Request) {
     console.log('[API /orders] Telegram config:', { hasToken: !!botToken, hasChatId: !!chatId, tokenPrefix: botToken?.slice(0, 10) });
 
     if (chatId && botToken) {
+      // Map Alpaca status to notification message type
+      const orderId = alpacaResponse.id;
+      const orderStatus = alpacaResponse.status;
+      let messageType: NotificationMessageType;
+      if (orderStatus === 'filled') messageType = 'filled';
+      else if (orderStatus === 'canceled' || orderStatus === 'pending_cancel' || orderStatus === 'rejected') messageType = 'cancelled';
+      else if (orderStatus === 'accepted' || orderStatus === 'accepted_for_bidding') messageType = 'accepted';
+      else messageType = 'placed';
+
+      // Idempotency: skip if this notification was already sent
+      if (userId) {
+        const alreadySent = await wasNotificationSent(userId, orderId, messageType);
+        if (alreadySent) {
+          console.log(`[API /orders] ⏭️ Notification already sent, skipping — order=${orderId} type=${messageType}`);
+          telegramResult = { ok: true };
+        }
+      }
+
+      // Send Telegram if not already sent
+      if (!telegramResult) {
       const filledPrice = alpacaResponse.filled_avg_price
         ? Number(alpacaResponse.filled_avg_price)
         : (limitPrice || body.estimatedPrice || 0);
@@ -225,13 +254,15 @@ ${alpacaResponse.side === 'buy' ? '🟢' : '🔴'} <b>Side:</b> ${alpacaResponse
         chatId,
         text: text.trim(),
         parseMode: 'HTML',
-        idempotencyKey: {
-          orderId: alpacaResponse.id,
-          messageType: alpacaResponse.status, // 'filled', 'pending_new', 'canceled', etc.
-        },
       });
 
       console.log('[API /orders] Telegram result:', JSON.stringify(telegramResult));
+
+      // Record that this notification was sent
+      if (userId && telegramResult.ok) {
+        await recordNotificationSent(userId, orderId, messageType);
+      }
+      } // closes if (!telegramResult)
     } else {
       console.warn('[API /orders] Telegram not configured — skipping notification');
     }

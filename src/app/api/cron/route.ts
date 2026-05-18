@@ -464,6 +464,36 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: `Snapshot failed: ${err.message}` }, { status: 500 });
       }
     }
+
+    case 'cleanup': {
+      try {
+        // Delete notifications older than 7 days
+        const { getClient } = await import('@/lib/supabase');
+        const supabase = getClient();
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+        const { error, count } = await supabase
+          .from('recent_notifications')
+          .delete({ count: 'exact' })
+          .lt('sent_at', sevenDaysAgo);
+
+        if (error) {
+          console.error('[Cron] Notification cleanup failed:', error.message);
+          return NextResponse.json({ error: `Cleanup failed: ${error.message}` }, { status: 500 });
+        }
+
+        console.log(`[Cron] Cleaned up ${count || 0} old notifications (>7d)`);
+        return NextResponse.json({
+          action: 'cleanup',
+          deleted: count || 0,
+          timestamp: new Date().toISOString(),
+        });
+      } catch (err: any) {
+        console.error('[Cron] Cleanup failed:', err.message);
+        return NextResponse.json({ error: `Cleanup failed: ${err.message}` }, { status: 500 });
+      }
+    }
+
     default:
       return NextResponse.json({ error: 'Unknown cron type' }, { status: 400 });
   }
