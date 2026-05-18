@@ -60,8 +60,8 @@ export default function MarketIndicesBar() {
           return (
             <div key={sym} className="flex-shrink-0 rounded-xl px-3 py-2.5 min-w-[150px] bg-[var(--card-bg)] border dark:border-[#334155]/70 light:border-[#e2e8f0]">
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-bold text-[var(--text-secondary)] tracking-wide">{LABELS[sym]}</span>
-                <span className="text-[10px] font-bold text-[var(--text-muted)] tracking-wide">—</span>
+                <span className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">{LABELS[sym]}</span>
+                <span className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">—</span>
               </div>
               <div className="h-5 w-24 bg-[var(--app-bg)] rounded animate-pulse mt-1" />
               <div className="h-3.5 w-16 bg-[var(--app-bg)] rounded animate-pulse mt-1.5" />
@@ -78,17 +78,17 @@ export default function MarketIndicesBar() {
             }`}
           >
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-bold text-[var(--text-secondary)] tracking-wide">{d.shortName}</span>
-              <span className="text-[10px] font-bold text-[var(--text-muted)] tracking-wide">{d.etfSymbol}</span>
+              <span className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">{d.shortName}</span>
+              <span className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">{d.etfSymbol}</span>
             </div>
-            <p className="text-lg font-bold font-[family-name:var(--font-mono)] text-[var(--text-primary)] tabular-nums leading-none">
+            <p className="text-base font-semibold font-[family-name:var(--font-mono)] text-[var(--text-primary)] tabular-nums leading-none">
               {fmtBig(d.value)}
             </p>
             <div className={`flex items-center gap-2 mt-1.5 ${up ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
-              <span className="text-[11px] font-bold font-[family-name:var(--font-mono)]">
+              <span className="text-sm font-medium font-[family-name:var(--font-mono)]">
                 {d.change >= 0 ? '+' : ''}{d.change.toFixed(2)}
               </span>
-              <span className="text-[10px] font-bold font-[family-name:var(--font-mono)] px-1.5 py-0.5 rounded bg-[var(--app-bg)]/60">
+              <span className="text-xs font-medium font-[family-name:var(--font-mono)] px-1.5 py-0.5 rounded bg-[var(--app-bg)]/60">
                 {d.changePercent >= 0 ? '▲' : '▼'} {d.changePercent >= 0 ? '+' : ''}{d.changePercent.toFixed(2)}%
               </span>
             </div>

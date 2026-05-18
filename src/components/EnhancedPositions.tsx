@@ -379,8 +379,11 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
             CSV
           </button>
           <div className="flex items-center justify-between dark:bg-[#1e293b] light:bg-[#f8fafc] rounded-xl py-2 px-3">
-            <span className="dark:text-[#f9fafb] light:text-[#0f172a] font-semibold text-base">{positions.length} Positions</span>
-            <span className="dark:text-[#f9fafb] light:text-[#0f172a] font-bold text-lg font-[family-name:var(--font-mono)]">${fmtUSD(totalValue)}</span>
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">Positions</p>
+              <span className="dark:text-[#f9fafb] light:text-[#0f172a] font-semibold text-base">{positions.length} Positions</span>
+            </div>
+            <span className="dark:text-[#f9fafb] light:text-[#0f172a] font-semibold text-base font-[family-name:var(--font-mono)]">${fmtUSD(totalValue)}</span>
           </div>
         </div>
       </div>
@@ -462,7 +465,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
                       )}
                     </div>
                   </td>
-                  <td className="px-3 py-2.5 text-right font-[family-name:var(--font-mono)] text-base font-semibold dark:text-text-primary-dark light:text-text-primary-light tabular-nums whitespace-nowrap">
+                  <td className="px-3 py-2.5 text-right font-[family-name:var(--font-mono)] text-sm font-medium dark:text-text-primary-dark light:text-text-primary-light tabular-nums whitespace-nowrap">
                     ${fmtUSD(p.currentPrice)}
                   </td>
                   <td className="px-3 py-2.5 text-right whitespace-nowrap">

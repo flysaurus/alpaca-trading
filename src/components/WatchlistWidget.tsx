@@ -331,15 +331,15 @@ export default function WatchlistWidget() {
                 >
                   <X className="w-3 h-3" />
                 </button>
-                <p className="text-[10px] font-bold dark:text-text-primary-dark light:text-text-primary-light tracking-wider">{q.symbol}</p>
-                <p className="text-sm font-bold font-[family-name:var(--font-mono)] dark:text-text-primary-dark light:text-text-primary-light tabular-nums leading-none mt-0.5">
+                <p className="text-base font-semibold dark:text-text-primary-dark light:text-text-primary-light">{q.symbol}</p>
+                <p className="text-sm font-medium font-[family-name:var(--font-mono)] dark:text-text-primary-dark light:text-text-primary-light tabular-nums leading-none mt-0.5">
                   ${q.price.toFixed(2)}
                 </p>
                 <div className={`flex items-center gap-1.5 mt-1 ${isUp ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
-                  <span className="text-[10px] font-bold font-[family-name:var(--font-mono)]">
+                  <span className="text-xs font-medium font-[family-name:var(--font-mono)]">
                     {isUp ? '+' : ''}{q.change.toFixed(2)}
                   </span>
-                  <span className="text-[9px] font-bold font-[family-name:var(--font-mono)] px-1 py-0.5 rounded dark:bg-bg-input-dark light:bg-bg-input-light/60">
+                  <span className="text-xs font-medium font-[family-name:var(--font-mono)] px-1 py-0.5 rounded dark:bg-bg-input-dark light:bg-bg-input-light/60">
                     {isUp ? '▲' : '▼'} {q.changePercent >= 0 ? '+' : ''}{q.changePercent.toFixed(2)}%
                   </span>
                 </div>

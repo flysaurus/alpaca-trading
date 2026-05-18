@@ -276,7 +276,7 @@ function TopBar({ account, marketOpen }: { account: AccountData | null; marketOp
         <div className="flex-shrink-0">
           <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">Portfolio</p>
           <div className="flex items-center gap-2">
-            <p className="text-xl font-bold font-[family-name:var(--font-mono)] text-[var(--text-primary)] tabular-nums">
+            <p className="text-base font-semibold font-[family-name:var(--font-mono)] text-[var(--text-primary)] tabular-nums">
               ${fmtUSD(portfolioValue)}
             </p>
             {marketOpen && (
@@ -294,7 +294,7 @@ function TopBar({ account, marketOpen }: { account: AccountData | null; marketOp
             ) : (
               <TrendingDown className="w-3 h-3 text-[var(--red)]" />
             )}
-            <p className={`text-lg font-bold font-[family-name:var(--font-mono)] tabular-nums ${isProfitable ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
+            <p className={`text-sm font-medium font-[family-name:var(--font-mono)] tabular-nums ${isProfitable ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
               {isProfitable ? '+' : ''}{fmtUSD(unrealizedPL)}
             </p>
           </div>
@@ -312,7 +312,7 @@ function TopBar({ account, marketOpen }: { account: AccountData | null; marketOp
             ) : (
               <TrendingDown className="w-3 h-3 text-[var(--red)]" />
             )}
-            <p className={`text-lg font-bold font-[family-name:var(--font-mono)] tabular-nums ${isDayProfitable ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
+            <p className={`text-sm font-medium font-[family-name:var(--font-mono)] tabular-nums ${isDayProfitable ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
               {isDayProfitable ? '+' : ''}{fmtUSD(dayPnL)}
             </p>
           </div>
@@ -325,7 +325,7 @@ function TopBar({ account, marketOpen }: { account: AccountData | null; marketOp
         <div className="hidden xs:flex flex-shrink-0 min-w-[80px]">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">BP</p>
-            <p className="text-lg font-bold font-[family-name:var(--font-mono)] text-[var(--text-primary)] tabular-nums">
+            <p className="text-sm font-medium font-[family-name:var(--font-mono)] text-[var(--text-primary)] tabular-nums">$
               ${fmtInt(bp)}
             </p>
           </div>
@@ -335,7 +335,7 @@ function TopBar({ account, marketOpen }: { account: AccountData | null; marketOp
         <div className="hidden xs:flex flex-shrink-0 min-w-[60px]">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">Cash</p>
-            <p className="text-lg font-bold font-[family-name:var(--font-mono)] text-[var(--text-secondary)] tabular-nums">
+            <p className="text-sm font-medium font-[family-name:var(--font-mono)] text-[var(--text-secondary)] tabular-nums">$
               ${fmtInt(cash)}
             </p>
           </div>
