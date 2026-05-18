@@ -12,7 +12,6 @@ import {
   TrendingDown,
   Activity,
   BarChart3,
-  History,
   ChevronDown,
   Plus,
   Trash2,
@@ -46,14 +45,12 @@ import {
   type DbStrategy,
   type DbAccountSnapshot,
   type DbAiSuggestion,
-  type DbTradeHistory,
   fetchStrategies,
   createStrategy,
   updateStrategy,
   deleteStrategy,
   fetchSnapshots,
   fetchAiSuggestions,
-  fetchTradeHistory,
   createAiSuggestion,
 } from '@/lib/supabase';
 
@@ -542,7 +539,6 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
   const [loading, setLoading] = useState(true);
   console.log('Opportunity Scanner colors applied');
   console.log('Order ticket colors applied');
-  console.log('History card colors applied');
   console.log('Chat colors applied');
   console.log('Input fields updated in: [AdvisorStrategiesTab, SymbolSearch, WatchlistWidget, OrderFilters, NewsIntelligence, EnhancedPositions]');
   console.log('Card borders added to X components');
@@ -1350,208 +1346,6 @@ function stripMarkdown(text: string): string {
     .trim();
 }
 
-/* ── Section E — History ───────────────────────────────────────── */
-
-function HistorySection({ userId }: { userId: string }) {
-  const [snapshots, setSnapshots] = useState<DbAccountSnapshot[]>([]);
-  const [suggestions, setSuggestions] = useState<DbAiSuggestion[]>([]);
-  const [trades, setTrades] = useState<DbTradeHistory[]>([]);
-  const [tradeFilter, setTradeFilter] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [activeSubtab, setActiveSubtab] = useState<'charts'|'suggestions'|'trades'>('charts');
-  const [chartPeriod, setChartPeriod] = useState<'1W'|'1M'|'3M'>('1M');
-  const [expandedSuggestion, setExpandedSuggestion] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const [snaps, suggs, trds] = await Promise.all([
-          fetchSnapshots(userId, 90), fetchAiSuggestions(userId, 50), fetchTradeHistory(userId, { limit: 100 }),
-        ]);
-        setSnapshots(snaps); setSuggestions(suggs); setTrades(trds);
-      } catch (err) { console.error('History load error:', err); }
-      finally { setLoading(false); }
-    }
-    load();
-  }, [userId]);
-
-  // Filter snapshots by selected period
-  const filteredSnapshots = useMemo(() => {
-    const now = new Date();
-    const daysMap = { '1W': 7, '1M': 30, '3M': 90 };
-    const cutoff = new Date(now.getTime() - daysMap[chartPeriod] * 24 * 60 * 60 * 1000);
-    return snapshots.filter((s) => new Date(s.date) >= cutoff);
-  }, [snapshots, chartPeriod]);
-
-  const chartData = filteredSnapshots.map((s) => ({
-    date: new Date(s.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    equity: Number(s.equity),
-    dayPnl: Number(s.day_pnl),
-  }));
-
-  const filteredTrades = tradeFilter ? trades.filter((t) => t.symbol.toLowerCase().includes(tradeFilter.toLowerCase())) : trades;
-
-  if (loading) {
-    return (
-      <div className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-border-light-dark light:border-border-light-light p-6 text-center">
-        <BarChart3 className="w-8 h-8 dark:text-text-tertiary-dark light:text-text-tertiary-light mx-auto mb-2 animate-pulse" />
-        <p className="text-sm dark:text-text-tertiary-dark light:text-text-tertiary-light">Loading history...</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-border-light-dark light:border-border-light-light overflow-hidden">
-      <div className="flex items-center gap-2 p-4 border-b dark:border-border-light-dark light:border-border-light-light">
-        <History className="w-4 h-4 text-[var(--accent)]" />
-        <h3 className="text-lg font-semibold dark:text-text-primary-dark light:text-text-primary-light">History</h3>
-      </div>
-      <div className="flex border-b dark:border-border-light-dark light:border-border-light-light">
-        {[{id:'charts',label:'Charts'},{id:'suggestions',label:'AI Suggestions'},{id:'trades',label:'Trades'}].map((t) => (
-          <button key={t.id} onClick={() => setActiveSubtab(t.id as any)} className={`flex-1 py-2.5 text-[11px] font-semibold transition ${activeSubtab === t.id ? 'text-[var(--accent)] border-b-2 border-[var(--accent)]' : 'dark:text-text-tertiary-dark light:text-text-tertiary-light'}`}>{t.label}</button>
-        ))}
-      </div>
-      <div className="p-4">
-        {activeSubtab === 'charts' && (
-          <div className="space-y-6">
-            {/* Period toggle */}
-            <div className="flex gap-1">
-              {(['1W','1M','3M'] as const).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setChartPeriod(p)}
-                  className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition ${
-                    chartPeriod === p
-                      ? 'bg-[var(--accent)] text-black'
-                      : 'dark:bg-bg-hover-dark light:bg-bg-hover-light dark:text-text-tertiary-dark light:text-text-tertiary-light hover:dark:bg-bg-hover-dark light:bg-bg-hover-light'
-                  }`}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-
-            {/* Equity Chart */}
-            {chartData.length > 0 ? (
-              <div>
-                <p className="text-[11px] font-medium dark:text-text-secondary-dark light:text-text-secondary-light mb-2">Equity</p>
-                <div className="h-48 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                      <XAxis dataKey="date" tick={{fontSize:10,fill:'var(--text-muted)'}} interval="preserveStartEnd" />
-                      <YAxis tick={{fontSize:10,fill:'var(--text-muted)'}} tickFormatter={(v) => `$${(v/1000).toFixed(1)}k`} width={50} />
-                      <Tooltip
-                        contentStyle={{backgroundColor:'var(--surface-bg)',border:'1px solid var(--border)',borderRadius:'8px',fontSize:'12px'}}
-                        formatter={(value: any) => [`$${Number(value||0).toLocaleString()}`, 'Equity']}
-                      />
-                      <Line type="monotone" dataKey="equity" stroke="#00d4aa" strokeWidth={2} dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            ) : (
-              <EmptyState message="No history yet. Data builds daily after market close." />
-            )}
-
-            {/* P&L Chart */}
-            {chartData.length > 0 && (
-              <div>
-                <p className="text-[11px] font-medium dark:text-text-secondary-dark light:text-text-secondary-light mb-2">Daily P&L</p>
-                <div className="h-48 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                      <XAxis dataKey="date" tick={{fontSize:10,fill:'var(--text-muted)'}} interval="preserveStartEnd" />
-                      <YAxis tick={{fontSize:10,fill:'var(--text-muted)'}} tickFormatter={(v) => `$${(v/1000).toFixed(1)}k`} width={50} />
-                      <Tooltip
-                        contentStyle={{backgroundColor:'var(--surface-bg)',border:'1px solid var(--border)',borderRadius:'8px',fontSize:'12px'}}
-                        formatter={(value: any) => [`$${Number(value||0).toLocaleString()}`, 'Day P&L']}
-                      />
-                      <ReferenceLine y={0} stroke="var(--border-light)" />
-                      <Bar dataKey="dayPnl" radius={[2,2,0,0]}>
-                        {chartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.dayPnl >= 0 ? '#00d4aa' : '#ef4444'} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeSubtab === 'suggestions' && (
-          <div className="space-y-2">
-            {suggestions.length === 0 ? <EmptyState message="No AI suggestions yet." /> : suggestions.map((s) => {
-              const isExpanded = expandedSuggestion === s.id;
-              return (
-                <div
-                  key={s.id}
-                  onClick={() => setExpandedSuggestion(isExpanded ? null : s.id)}
-                  className="dark:bg-bg-hover-dark light:bg-bg-hover-light rounded-xl p-3 border dark:border-border-light-dark light:border-border-light-light cursor-pointer transition hover:dark:border-border-mid-dark hover:light:border-border-mid-light"
-                >
-                  <p className="text-[10px] dark:text-text-tertiary-dark light:text-text-tertiary-light">
-                    {new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                  </p>
-                  <p className="text-xs font-semibold dark:text-text-primary-dark light:text-text-primary-light mt-1">{s.prompt}</p>
-                  <p className={`text-[11px] dark:text-text-secondary-dark light:text-text-secondary-light mt-1 ${isExpanded ? '' : 'line-clamp-2'}`}>
-                    {isExpanded ? s.response : stripMarkdown(s.response).slice(0, 120) + '...'}
-                  </p>
-                  {!isExpanded && s.response.length > 100 && (
-                    <p className="text-[10px] text-[var(--accent)] mt-1">Tap to expand</p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {activeSubtab === 'trades' && (
-          <div className="space-y-3">
-            <SymbolSearch
-              value={tradeFilter}
-              onChange={(s) => setTradeFilter(s)}
-              onSelect={(s) => setTradeFilter(s)}
-              placeholder="Filter by symbol..."
-            />
-            {filteredTrades.length === 0 ? <EmptyState message={tradeFilter ? 'No trades match.' : 'No trade history yet.'} /> : (
-              <div className="space-y-1.5 max-h-80 overflow-y-auto no-scrollbar">
-                {filteredTrades.map((t) => (
-                  <div key={t.id} className="flex items-center justify-between p-2.5 dark:bg-bg-hover-dark light:bg-bg-hover-light rounded-lg border dark:border-border-light-dark light:border-border-light-light">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold dark:text-text-primary-dark light:text-text-primary-light">{t.symbol}</span>
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${t.side === 'buy' ? 'bg-[#00d4aa]/10 text-[#00d4aa]' : 'bg-[#ef4444]/10 text-[#ef4444]'}`}>
-                        {t.side.toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[11px] dark:text-text-primary-dark light:text-text-primary-light font-mono">{t.qty} @ ${Number(t.filled_price).toFixed(2)}</p>
-                      <p className="text-[10px] dark:text-text-tertiary-dark light:text-text-tertiary-light">
-                        {new Date(t.filled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function EmptyState({ message }: { message: string }) {
-  return (
-    <div className="py-8 text-center">
-      <BarChart3 className="w-8 h-8 text-[var(--border-light)] mx-auto mb-2" />
-      <p className="text-xs text-[var(--text-muted)]">{message}</p>
-    </div>
-  );
-}
-
 /* ── Helpers ───────────────────────────────────────────────────── */
 
 function fmtUSD(n: number) {
@@ -1744,8 +1538,6 @@ export default function AdvisorStrategiesTab() {
         )}
       </div>
 
-      {/* Section E — History */}
-      <HistorySection userId={userId} />
     </div>
   );
 }
