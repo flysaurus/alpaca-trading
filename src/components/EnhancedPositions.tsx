@@ -371,34 +371,28 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
 
   return (
     <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] overflow-hidden relative">
-      <div className="px-4 py-3 border-b dark:border-[#334155]/70 light:border-[#e2e8f0] flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h3 className="text-sm font-bold dark:text-text-primary-dark light:text-text-primary-light tracking-wider">POSITIONS</h3>
+      <div className="px-4 py-3 border-b dark:border-[#334155]/70 light:border-[#e2e8f0] flex items-start justify-between">
+        <div className="flex flex-col gap-1">
+          <span className="text-base font-semibold dark:text-[#f9fafb] light:text-[#0f172a]">{positions.length} Positions</span>
           {selected.size > 0 && (
             <button
               onClick={() => setShowBulkPanel(true)}
-              className="text-xs font-bold px-2 py-1 rounded bg-[var(--red-soft)]/20 text-[var(--red)] border border-[var(--red-soft)]/30 hover:bg-[var(--red-soft)]/30 transition"
+              className="text-xs font-medium px-2 py-0.5 rounded bg-[var(--red-soft)]/20 text-[var(--red)] border border-[var(--red-soft)]/30 hover:bg-[var(--red-soft)]/30 transition self-start"
             >
               Sell {selected.size} selected
             </button>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col items-end gap-1">
+          <span className="text-base font-semibold font-[family-name:var(--font-mono)] dark:text-[#f9fafb] light:text-[#0f172a]">${fmtUSD(totalValue)}</span>
           <button
             onClick={handleDownloadCSV}
-            className="flex items-center gap-1 text-xs font-bold dark:text-text-primary-dark light:text-text-primary-light dark:bg-bg-input-dark light:bg-bg-input-light px-2 py-0.5 rounded border dark:border-[#334155]/70 light:border-[#e2e8f0] hover:dark:text-text-primary-dark light:text-text-primary-light hover:border-[var(--text-muted)] transition"
+            className="flex items-center gap-1 text-xs font-medium dark:text-text-primary-dark light:text-text-primary-light dark:bg-bg-input-dark light:bg-bg-input-light px-2 py-0.5 rounded border dark:border-[#334155]/70 light:border-[#e2e8f0] hover:dark:text-text-primary-dark light:text-text-primary-light hover:border-[var(--text-muted)] transition"
             title="Download positions as CSV"
           >
             <Download className="w-3 h-3" />
             CSV
           </button>
-          <div className="flex items-center justify-between dark:bg-[#1e293b] light:bg-[#f8fafc] rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] py-2 px-3">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">Positions</p>
-              <span className="dark:text-[#f9fafb] light:text-[#0f172a] font-semibold text-base">{positions.length} Positions</span>
-            </div>
-            <span className="dark:text-[#f9fafb] light:text-[#0f172a] font-semibold text-base font-[family-name:var(--font-mono)]">${fmtUSD(totalValue)}</span>
-          </div>
         </div>
       </div>
 
