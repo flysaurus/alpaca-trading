@@ -40,6 +40,7 @@ import {
 import SymbolSearch from '@/components/SymbolSearch';
 import MorningRecommendationsList from '@/components/MorningRecommendationsList';
 import ChatModal from '@/components/ChatModal';
+import { useChatStore } from '@/stores/chat';
 import { useAdvisorStore } from '@/stores/advisorStore';
 import {
   type DbStrategy,
@@ -1370,7 +1371,6 @@ export default function AdvisorStrategiesTab() {
   const setStorePortfolioContext = useAdvisorStore((s) => s.setPortfolioContext);
   const userId = getUserId();
   const [chatOpen, setChatOpen] = useState(false);
-  const [pendingAnalysis, setPendingAnalysis] = useState<string | null>(null);
 
   // Fetch portfolio context on mount
   useEffect(() => {
@@ -1477,7 +1477,7 @@ export default function AdvisorStrategiesTab() {
   };
 
   const handleAnalyzeDip = (symbol: string, prompt: string) => {
-    setPendingAnalysis(prompt);
+    useChatStore.getState().setPendingMessage(prompt);
     setChatOpen(true);
   };
 
@@ -1501,7 +1501,7 @@ export default function AdvisorStrategiesTab() {
       <MarketScanner onAnalyze={handleAnalyzeDip} />
 
       {/* Floating Chat Button + Modal */}
-      <ChatModal isOpen={chatOpen} onClose={() => setChatOpen(false)} alpacaAccountId={alpacaAccountId} pendingMessage={pendingAnalysis} onMessageConsumed={() => setPendingAnalysis(null)} />
+      <ChatModal isOpen={chatOpen} onClose={() => setChatOpen(false)} alpacaAccountId={alpacaAccountId} />
       <button
         onClick={() => setChatOpen(true)}
         className="fixed bottom-28 right-4 w-12 h-12 rounded-full bg-[var(--accent)] dark:bg-accent-primary-dark light:bg-accent-primary-light flex items-center justify-center shadow-lg hover:scale-110 transition z-40"

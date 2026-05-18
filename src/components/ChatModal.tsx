@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Brain, Send, Loader2, X } from 'lucide-react';
 import { useAdvisorStore } from '@/stores/advisorStore';
+import { useChatStore } from '@/stores/chat';
 import { fetchAiSuggestions, createAiSuggestion } from '@/lib/supabase';
 
 /* ── Stable anonymous user ID ──────────────────────────────────── */
@@ -22,11 +23,9 @@ interface ChatModalProps {
   isOpen: boolean;
   onClose: () => void;
   alpacaAccountId: string | null;
-  pendingMessage?: string | null;
-  onMessageConsumed?: () => void;
 }
 
-export default function ChatModal({ isOpen, onClose, alpacaAccountId, pendingMessage, onMessageConsumed }: ChatModalProps) {
+export default function ChatModal({ isOpen, onClose, alpacaAccountId }: ChatModalProps) {
   const messages = useAdvisorStore((s) => s.messages);
   const setMessages = useAdvisorStore((s) => s.setMessages);
   const addMessage = useAdvisorStore((s) => s.addMessage);
@@ -50,15 +49,15 @@ export default function ChatModal({ isOpen, onClose, alpacaAccountId, pendingMes
     }
   }, [messages, isLoading]);
 
-  // Pre-fill input when parent provides a pending message
+  // Pre-fill input from Zustand store when modal opens
   useEffect(() => {
+    const { pendingMessage } = useChatStore.getState();
     if (isOpen && pendingMessage) {
       setInput(pendingMessage);
-      onMessageConsumed?.();
-      // Focus input after render
+      useChatStore.getState().clearPendingMessage();
       setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [isOpen, pendingMessage]);
+  }, [isOpen]);
 
   // Listen for position analysis requests from Positions tab
   useEffect(() => {

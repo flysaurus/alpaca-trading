@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { BarChart3, ChevronUp, ChevronDown, Trash2, X, Download, Loader2 } from 'lucide-react';
 import ChatModal from '@/components/ChatModal';
+import { useChatStore } from '@/stores/chat';
 
 interface Position {
   symbol: string;
@@ -611,7 +612,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   const prompt = `Analyze my ${p.symbol} position. I bought at $${p.avgEntryPrice.toFixed(2)}, currently at $${p.currentPrice.toFixed(2)}, P&L is $${p.unrealizedPL.toFixed(2)}.`;
-                                  window.dispatchEvent(new CustomEvent('ai-analyze-position', { detail: { prompt } }));
+                                  useChatStore.getState().setPendingMessage(prompt);
                                   setChatOpen(true);
                                 }}
                                 className="text-[10px] font-bold px-2.5 py-1 rounded dark:bg-[var(--accent)]/10 light:bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/20 hover:bg-[var(--accent)]/20 transition"
