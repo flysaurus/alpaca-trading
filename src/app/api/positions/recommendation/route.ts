@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getPositionRecommendation, PositionRecommendation } from '@/lib/positionAnalysis';
 import { getAlpacaNews, NewsItem } from '@/lib/news';
+import { getEarningsData, getInsiderTrading, getNewsSentiment, getSectorMomentum } from '@/lib/stockAnalysis';
 
 // In-memory cache: 24 hours per symbol
 const cache = new Map<string, { data: PositionRecommendation; expiresAt: number }>();
@@ -37,6 +38,25 @@ export async function GET(req: Request) {
       console.warn(`[PosRec] News fetch failed for ${cacheKey}:`, err.message);
     }
 
+    // Fetch stock analysis data (non-blocking — null on failure)
+    let stockAnalysis: any = {};
+    try {
+      const [earnings, insider, sentiment, sector] = await Promise.all([
+        getEarningsData(cacheKey),
+        getInsiderTrading(cacheKey),
+        getNewsSentiment(cacheKey),
+        getSectorMomentum(cacheKey),
+      ]);
+      stockAnalysis = {
+        earnings: earnings || undefined,
+        insider: insider || undefined,
+        sentiment: sentiment || undefined,
+        sector: sector || undefined,
+      };
+    } catch (err: any) {
+      console.warn(`[PosRec] Stock analysis fetch failed for ${cacheKey}:`, err.message);
+    }
+
     // Stub position + portfolio (caller provides real data via query params)
     const position = {
       symbol: cacheKey,
@@ -60,11 +80,11 @@ export async function GET(req: Request) {
 
     // Cache for 24 hours
     cache.set(cacheKey, {
-      data: recommendation,
+      data: { ...recommendation, stockAnalysis },
       expiresAt: Date.now() + CACHE_TTL,
     });
 
-    return NextResponse.json({ ...recommendation, cached: false });
+    return NextResponse.json({ ...recommendation, stockAnalysis, cached: false });
   } catch (err: any) {
     console.error('[PosRec] Recommendation failed:', err.message);
     return NextResponse.json(

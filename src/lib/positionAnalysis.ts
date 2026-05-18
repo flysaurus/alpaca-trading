@@ -5,6 +5,7 @@ export interface PositionRecommendation {
   target_price: number;
   reasoning: string;
   confidence: number; // 1-10
+  stockAnalysis?: Record<string, any>;
 }
 
 /**
