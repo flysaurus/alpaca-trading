@@ -58,7 +58,7 @@ export default function MarketIndicesBar() {
         const d = data.find((x) => x.symbol === sym);
         if (!d) {
           return (
-            <div key={sym} className="flex-shrink-0 rounded-xl px-3 py-2.5 min-w-[150px] bg-[var(--card-bg)] border border-[var(--border)]">
+            <div key={sym} className="flex-shrink-0 rounded-xl px-3 py-2.5 min-w-[150px] bg-[var(--card-bg)] border dark:border-[#334155]/70 light:border-[#e2e8f0]">
               <div className="flex items-center gap-1.5">
                 <span className="text-[10px] font-bold text-[var(--text-secondary)] tracking-wide">{LABELS[sym]}</span>
                 <span className="text-[10px] font-bold text-[var(--text-muted)] tracking-wide">—</span>

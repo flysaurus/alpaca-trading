@@ -109,7 +109,7 @@ export default function SymbolSearch({ value, onChange, onSelect, placeholder = 
           }}
           onFocus={() => setShowDropdown(true)}
           onKeyDown={handleKeyDown}
-          className="w-full dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg pl-9 pr-3 py-2.5 text-[15px] dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light font-[family-name:var(--font-mono)] uppercase tracking-wider"
+          className="w-full dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg pl-9 pr-3 py-2.5 text-[15px] dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light font-[family-name:var(--font-mono)] uppercase tracking-wider"
           autoFocus={autoFocus}
         />
         {loading && (
@@ -118,7 +118,7 @@ export default function SymbolSearch({ value, onChange, onSelect, placeholder = 
       </div>
 
       {showDropdown && suggestions.length > 0 && (
-        <div className="absolute z-20 left-0 right-0 mt-1 bg-[var(--card-bg)] border dark:border-border-mid-dark light:border-border-mid-light rounded-xl shadow-xl overflow-hidden max-h-64 overflow-y-auto">
+        <div className="absolute z-20 left-0 right-0 mt-1 bg-[var(--card-bg)] border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-xl shadow-xl overflow-hidden max-h-64 overflow-y-auto">
           {suggestions.map((asset, i) => (
             <button
               key={asset.symbol}

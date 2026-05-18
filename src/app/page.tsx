@@ -123,7 +123,7 @@ function RiskThresholdSelector() {
   };
 
   return (
-    <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-3">
+    <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] p-3">
       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
         <span className="text-xs text-[var(--text-secondary)] uppercase tracking-wide font-extrabold whitespace-nowrap">Risk Threshold</span>
         <div className="flex gap-1.5 sm:gap-2">
@@ -343,7 +343,7 @@ function TopBar({ account, marketOpen }: { account: AccountData | null; marketOp
 
         {/* Market Status */}
         <div className="flex-shrink-0 ml-auto flex items-center gap-2">
-          <div className="flex items-center gap-1.5 bg-[var(--card-bg)] px-2 py-1 rounded-full border border-[var(--border)]">
+          <div className="flex items-center gap-1.5 bg-[var(--card-bg)] px-2 py-1 rounded-full border dark:border-[#334155]/70 light:border-[#e2e8f0]">
             <div className={`w-1.5 h-1.5 rounded-full ${marketOpen ? 'bg-[var(--green)] animate-pulse' : 'bg-[var(--red)]'}`} />
             <span className="text-[9px] uppercase tracking-wider text-[var(--text-muted)] font-medium hidden sm:inline">
               {marketOpen ? 'Open' : 'Closed'}

@@ -347,7 +347,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
 
   if (positions.length === 0 && cash <= 0) {
     return (
-      <div className="bg-[var(--card-bg)] rounded-xl border dark:border-border-mid-dark light:border-border-mid-light p-6 text-center">
+      <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] p-6 text-center">
         <BarChart3 className="w-8 h-8 text-[var(--hover-bg)] mx-auto mb-2" />
         <p className="text-sm text-[var(--text-muted)]">No open positions</p>
       </div>
@@ -355,8 +355,8 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
   }
 
   return (
-    <div className="bg-[var(--card-bg)] rounded-xl border dark:border-border-mid-dark light:border-border-mid-light overflow-hidden relative">
-      <div className="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between">
+    <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] overflow-hidden relative">
+      <div className="px-4 py-3 border-b dark:border-[#334155]/70 light:border-[#e2e8f0] flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h3 className="text-sm font-bold dark:text-text-primary-dark light:text-text-primary-light tracking-wider">POSITIONS</h3>
           {selected.size > 0 && (
@@ -371,7 +371,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
         <div className="flex items-center gap-2">
           <button
             onClick={handleDownloadCSV}
-            className="flex items-center gap-1 text-xs font-bold dark:text-text-primary-dark light:text-text-primary-light dark:bg-bg-input-dark light:bg-bg-input-light px-2 py-0.5 rounded border dark:border-border-mid-dark light:border-border-mid-light hover:dark:text-text-primary-dark light:text-text-primary-light hover:border-[var(--text-muted)] transition"
+            className="flex items-center gap-1 text-xs font-bold dark:text-text-primary-dark light:text-text-primary-light dark:bg-bg-input-dark light:bg-bg-input-light px-2 py-0.5 rounded border dark:border-[#334155]/70 light:border-[#e2e8f0] hover:dark:text-text-primary-dark light:text-text-primary-light hover:border-[var(--text-muted)] transition"
             title="Download positions as CSV"
           >
             <Download className="w-3 h-3" />
@@ -387,7 +387,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
       <div className="overflow-x-auto">
         <table className="w-full text-sm min-w-[950px]">
           <thead>
-            <tr className="border-b border-[var(--border)] dark:bg-bg-input-dark light:bg-bg-input-light/40">
+            <tr className="border-b dark:border-[#334155]/70 light:border-[#e2e8f0] dark:bg-bg-input-dark light:bg-bg-input-light/40">
               <th className="px-3 py-2 text-left">
                 <input
                   type="checkbox"
@@ -410,7 +410,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
           <tbody>
             {/* Cash row */}
             {cash > 0 && (
-              <tr className="border-b border-[var(--border)]/50 hover:bg-[var(--hover-bg)]/20">
+              <tr className="border-b dark:border-[#334155]/50 light:border-[#e2e8f0] hover:bg-[var(--hover-bg)]/20">
                 <td className="px-3 py-2.5" />
                 <td className="px-3 py-2.5">
                   <p className="font-semibold dark:text-text-primary-dark light:text-text-primary-light">Cash</p>
@@ -440,7 +440,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
               return (
                 <React.Fragment key={p.symbol}>
                 <tr
-                  className={`border-b border-[var(--border)]/50 hover:bg-[var(--hover-bg)]/20 transition cursor-pointer ${isSelected ? 'bg-amber-500/5' : ''} ${isExpanded ? 'dark:bg-[#1e293b]/50 light:bg-[#f8fafc]' : ''}`}
+                  className={`border-b dark:border-[#334155]/50 light:border-[#e2e8f0] hover:bg-[var(--hover-bg)]/20 transition cursor-pointer ${isSelected ? 'bg-amber-500/5' : ''} ${isExpanded ? 'dark:bg-[#1e293b]/50 light:bg-[#f8fafc]' : ''}`}
                   onClick={() => toggleExpand(p.symbol)}
                 >
                   <td className="px-3 py-2.5">
@@ -514,7 +514,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
                 {/* Expanded Recommendation Panel */}
                 {isExpanded && (
                   <tr key={`${p.symbol}-exp`}>
-                    <td colSpan={10} className="px-4 py-3 dark:bg-[#0f172a]/60 light:bg-[#f8fafc] border-b border-[var(--border)]/50">
+                    <td colSpan={10} className="px-4 py-3 dark:bg-[#0f172a]/60 light:bg-[#f8fafc] border-b dark:border-[#334155]/50 light:border-[#e2e8f0]">
                       {(() => {
                         const cachedRec = recCache.current.get(p.symbol.toUpperCase())?.data;
                         const isLoading = recLoading && !cachedRec;
@@ -631,7 +631,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
             })}
 
             {/* Total row */}
-            <tr className="dark:bg-bg-input-dark light:bg-bg-input-light/60 border-t-2 border-[var(--border)]">
+            <tr className="dark:bg-bg-input-dark light:bg-bg-input-light/60 border-t-2 dark:border-[#334155]/70 light:border-[#e2e8f0]">
               <td className="px-3 py-3" />
               <td className="px-3 py-3 text-sm font-bold dark:text-text-primary-dark light:text-text-primary-light">TOTAL</td>
               <td className="px-3 py-3" />
@@ -663,7 +663,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
 
       {/* Bulk Sell Panel */}
       {showBulkPanel && selected.size > 0 && (
-        <div className="border-t border-[var(--border)] dark:bg-bg-input-dark light:bg-bg-input-light/80 p-4 space-y-3">
+        <div className="border-t dark:border-[#334155]/70 light:border-[#e2e8f0] dark:bg-bg-input-dark light:bg-bg-input-light/80 p-4 space-y-3">
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-bold dark:text-text-primary-dark light:text-text-primary-light">Bulk Sell — {selected.size} position{selected.size > 1 ? 's' : ''}</h4>
             <button onClick={() => { setShowBulkPanel(false); setBulkResults([]); }} className="text-[var(--text-muted)] hover:dark:text-text-primary-dark light:text-text-primary-light">
@@ -678,7 +678,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
               const result = bulkResults.find((r) => r.symbol === symbol);
 
               return (
-                <div key={symbol} className="flex items-center gap-2 bg-[var(--card-bg)] rounded-lg px-3 py-2 border dark:border-border-mid-dark light:border-border-mid-light">
+                <div key={symbol} className="flex items-center gap-2 bg-[var(--card-bg)] rounded-lg px-3 py-2 border dark:border-[#334155]/70 light:border-[#e2e8f0]">
                   <div className="w-16">
                     <p className="text-sm font-bold dark:text-text-primary-dark light:text-text-primary-light">{symbol}</p>
                     <p className="text-xs text-[var(--text-muted)]">@{pos?.currentPrice.toFixed(2)}</p>
@@ -688,14 +688,14 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
                     type="number"
                     value={cfg.qty}
                     onChange={(e) => updateSellConfig(symbol, { qty: e.target.value })}
-                    className="w-20 dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded px-2 py-1 text-sm dark:text-text-primary-dark light:text-text-primary-light font-[family-name:var(--font-mono)] focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light"
+                    className="w-20 dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded px-2 py-1 text-sm dark:text-text-primary-dark light:text-text-primary-light font-[family-name:var(--font-mono)] focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light"
                     placeholder="Qty"
                   />
 
                   <select
                     value={cfg.type}
                     onChange={(e) => updateSellConfig(symbol, { type: e.target.value as 'market' | 'limit' })}
-                    className="dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded px-2 py-1 text-sm dark:text-text-primary-dark light:text-text-primary-light font-[family-name:var(--font-mono)] focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light"
+                    className="dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded px-2 py-1 text-sm dark:text-text-primary-dark light:text-text-primary-light font-[family-name:var(--font-mono)] focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light"
                   >
                     <option value="market">MKT</option>
                     <option value="limit">LMT</option>
@@ -707,13 +707,13 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
                         type="number"
                         value={cfg.limitPrice}
                         onChange={(e) => updateSellConfig(symbol, { limitPrice: e.target.value })}
-                        className="w-24 dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded px-2 py-1 text-sm dark:text-text-primary-dark light:text-text-primary-light font-[family-name:var(--font-mono)] focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light"
+                        className="w-24 dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded px-2 py-1 text-sm dark:text-text-primary-dark light:text-text-primary-light font-[family-name:var(--font-mono)] focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light"
                         placeholder="Limit $"
                       />
                       <select
                         value={cfg.timeInForce}
                         onChange={(e) => updateSellConfig(symbol, { timeInForce: e.target.value as 'day' | 'gtc' | 'opg' })}
-                        className="dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded px-2 py-1 text-sm dark:text-text-primary-dark light:text-text-primary-light font-[family-name:var(--font-mono)] focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light"
+                        className="dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded px-2 py-1 text-sm dark:text-text-primary-dark light:text-text-primary-light font-[family-name:var(--font-mono)] focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light"
                       >
                         <option value="day">DAY</option>
                         <option value="gtc">GTC</option>

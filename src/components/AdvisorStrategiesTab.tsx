@@ -164,7 +164,7 @@ async function fetchMarketData() {
 function PortfolioPulse({ context, loading }: { context: PortfolioContext | null; loading: boolean }) {
   if (loading || !context) {
     return (
-      <div className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-border-light-dark light:border-border-light-light p-4">
+      <div className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-[#334155]/70 light:border-[#e2e8f0] p-4">
         <div className="grid grid-cols-3 gap-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="space-y-2 animate-pulse">
@@ -182,7 +182,7 @@ function PortfolioPulse({ context, loading }: { context: PortfolioContext | null
   const isDayPositive = dayPL >= 0;
 
   return (
-    <div className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-border-light-dark light:border-border-light-light p-4">
+    <div className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-[#334155]/70 light:border-[#e2e8f0] p-4">
       <div className="grid grid-cols-3 gap-3">
         <div className="text-center">
           <p className="text-[11px] font-medium uppercase tracking-wide text-[#6b7280] mb-1">Equity</p>
@@ -226,7 +226,7 @@ function RiskScoreWidget({ data, loading }: { data: RiskScoreData | null; loadin
 
   if (loading || !data) {
     return (
-      <div className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-border-light-dark light:border-border-light-light overflow-hidden">
+      <div className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-[#334155]/70 light:border-[#e2e8f0] overflow-hidden">
         <div className="h-[3px] w-full bg-gradient-to-r from-[#00d4aa] to-[#7c6aff]" />
         <div className="p-4 animate-pulse">
           <div className="flex items-center gap-4">
@@ -266,7 +266,7 @@ function RiskScoreWidget({ data, loading }: { data: RiskScoreData | null; loadin
 
   return (
     <div
-      className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-border-light-dark light:border-border-light-light overflow-hidden cursor-pointer transition hover:dark:border-border-mid-dark hover:light:border-border-mid-light"
+      className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-[#334155]/70 light:border-[#e2e8f0] overflow-hidden cursor-pointer transition hover:dark:border-[#475569] light:hover:border-[#cbd5e1]"
       onClick={() => setExpanded(!expanded)}
     >
       <div className="h-[3px] w-full bg-gradient-to-r from-[#00d4aa] to-[#7c6aff]" />
@@ -312,7 +312,7 @@ function RiskScoreWidget({ data, loading }: { data: RiskScoreData | null; loadin
 
         {/* Expanded detail */}
         {expanded && (
-          <div className="mt-3 pt-3 border-t dark:border-border-light-dark light:border-border-light-light space-y-2">
+          <div className="mt-3 pt-3 border-t dark:border-[#334155]/70 light:border-[#e2e8f0] space-y-2">
             {factors.map(({ key, label }) => {
               const factor = data.factors[key as keyof typeof data.factors];
               return (
@@ -417,12 +417,12 @@ function SellSignals({ portfolioContext, onAnalyze }: { portfolioContext: Portfo
   // Loading skeleton
   if (loading) {
     return (
-      <div className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-border-light-dark light:border-border-light-light p-4 space-y-3">
+      <div className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-[#334155]/70 light:border-[#e2e8f0] p-4 space-y-3">
         <div className="flex items-center gap-2">
           <div className="h-5 dark:bg-bg-hover-dark light:bg-bg-hover-light rounded w-28 animate-pulse" />
         </div>
         {[1, 2].map((i) => (
-          <div key={i} className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-xl border dark:border-border-light-dark light:border-border-light-light p-3 animate-pulse">
+          <div key={i} className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] p-3 animate-pulse">
             <div className="h-5 dark:bg-bg-hover-dark light:bg-bg-hover-light rounded w-32 mb-2" />
             <div className="h-4 dark:bg-bg-hover-dark light:bg-bg-hover-light rounded w-48 mb-2" />
             <div className="h-3 dark:bg-bg-hover-dark light:bg-bg-hover-light rounded w-full" />
@@ -502,7 +502,7 @@ function SellSignals({ portfolioContext, onAnalyze }: { portfolioContext: Portfo
             </button>
             <button
               onClick={() => setDismissed((prev) => new Set(prev).add(s.symbol))}
-              className="px-3 py-2 rounded-xl border dark:border-border-light-dark light:border-border-light-light dark:text-text-tertiary-dark light:text-text-tertiary-light text-[11px] font-medium hover:dark:bg-bg-hover-dark hover:light:bg-bg-hover-light transition"
+              className="px-3 py-2 rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] dark:text-text-tertiary-dark light:text-text-tertiary-light text-[11px] font-medium hover:dark:bg-bg-hover-dark hover:light:bg-bg-hover-light transition"
             >
               Hold
             </button>
@@ -721,7 +721,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
         {[1, 2, 3].map((i) => (
           <div
             key={i}
-            className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-border-light-dark light:border-border-light-light p-4 animate-pulse"
+            className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-[#334155]/70 light:border-[#e2e8f0] p-4 animate-pulse"
           >
             <div className="flex items-center gap-3 mb-3">
               <div className="h-6 dark:bg-bg-hover-dark light:bg-bg-hover-light rounded w-24" />
@@ -742,7 +742,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
 
   if (candidates.length === 0) {
     return (
-      <div className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-border-light-dark light:border-border-light-light p-6 text-center">
+      <div className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-[#334155]/70 light:border-[#e2e8f0] p-6 text-center">
         <div className="flex items-center gap-2 mb-3 justify-center">
           <Search className="w-4 h-4 text-[#6366f1]" />
           <h3 className="text-lg font-semibold dark:text-text-primary-dark light:text-text-primary-light">Opportunity Scanner</h3>
@@ -775,7 +775,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
       {candidates.map((c) => (
         <div
           key={c.symbol}
-          className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-border-light-dark light:border-border-light-light overflow-hidden transition hover:dark:border-border-mid-dark hover:light:border-border-mid-light"
+          className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-[#334155]/70 light:border-[#e2e8f0] overflow-hidden transition hover:dark:border-[#475569] light:hover:border-[#cbd5e1]"
         >
           {/* Header */}
           <div className="px-4 pt-4 pb-2">
@@ -843,14 +843,14 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
                         const raw = e.target.value.replace(/\D/g, '');
                         setOrderQty(raw === '' ? 0 : Number(raw));
                       }}
-                      className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light focus:border-[#6366f1]"
+                      className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light focus:border-[#6366f1]"
                     />
                   </div>
 
                   {/* ORDER TYPE */}
                   <div>
                     <label className="text-[11px] font-semibold uppercase tracking-wide dark:text-text-secondary-dark light:text-text-secondary-light block mb-1">Order Type</label>
-                    <div className="flex rounded-lg overflow-hidden border dark:border-border-light-dark light:border-border-light-light">
+                    <div className="flex rounded-lg overflow-hidden border dark:border-[#334155]/70 light:border-[#e2e8f0]">
                       {(['market', 'limit', 'stop', 'stop_limit'] as const).map((type) => (
                         <button
                           key={type}
@@ -876,7 +876,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
                         step="0.01"
                         value={limitPrice}
                         onChange={(e) => setLimitPrice(Number(e.target.value))}
-                        className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light focus:border-[#6366f1]"
+                        className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light focus:border-[#6366f1]"
                       />
                     </div>
                   )}
@@ -890,7 +890,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
                         step="0.01"
                         value={stopPrice}
                         onChange={(e) => setStopPrice(Number(e.target.value))}
-                        className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light focus:border-[#6366f1]"
+                        className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light focus:border-[#6366f1]"
                       />
                     </div>
                   )}
@@ -898,7 +898,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
                   {/* TIME IN FORCE */}
                   <div>
                     <label className="text-[11px] font-semibold uppercase tracking-wide dark:text-text-secondary-dark light:text-text-secondary-light block mb-1">Time in Force</label>
-                    <div className="flex rounded-lg overflow-hidden border dark:border-border-light-dark light:border-border-light-light">
+                    <div className="flex rounded-lg overflow-hidden border dark:border-[#334155]/70 light:border-[#e2e8f0]">
                       {(['day', 'gtc', 'ioc'] as const).map((tif) => (
                         <button
                           key={tif}
@@ -918,7 +918,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
                   {/* ESTIMATED TOTAL */}
                   <div>
                     <label className="text-[11px] font-semibold uppercase tracking-wide dark:text-text-secondary-dark light:text-text-secondary-light block mb-1">Est. Total</label>
-                    <div className="px-3 py-2 text-sm dark:bg-bg-hover-dark light:bg-bg-hover-light border dark:border-border-light-dark light:border-border-light-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light font-mono">
+                    <div className="px-3 py-2 text-sm dark:bg-bg-hover-dark light:bg-bg-hover-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg dark:text-text-primary-dark light:text-text-primary-light font-mono">
                       ${(orderQty * (limitPrice || c.current_price)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                   </div>
@@ -942,7 +942,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
                 <button
                   onClick={handleCancelOrder}
                   disabled={orderSubmitting}
-                  className="px-4 py-2 rounded-xl border dark:border-border-light-dark light:border-border-light-light dark:text-text-tertiary-dark light:text-text-tertiary-light text-[11px] font-bold hover:dark:bg-bg-hover-dark light:bg-bg-hover-light transition disabled:opacity-40"
+                  className="px-4 py-2 rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] dark:text-text-tertiary-dark light:text-text-tertiary-light text-[11px] font-bold hover:dark:bg-bg-hover-dark light:bg-bg-hover-light transition disabled:opacity-40"
                 >
                   Cancel
                 </button>
@@ -966,7 +966,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
               </button>
               <button
                 onClick={() => handleSkip(c.symbol)}
-                className="px-3 py-2 rounded-xl border dark:border-border-light-dark light:border-border-light-light dark:text-text-tertiary-dark light:text-text-tertiary-light text-[11px] font-bold hover:dark:bg-bg-hover-dark light:bg-bg-hover-light transition"
+                className="px-3 py-2 rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] dark:text-text-tertiary-dark light:text-text-tertiary-light text-[11px] font-bold hover:dark:bg-bg-hover-dark light:bg-bg-hover-light transition"
               >
                 Skip
               </button>
@@ -1044,7 +1044,7 @@ function InlineStrategyCard({
   }, [expanded, meta.id, userId]);
 
   return (
-    <div className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-border-light-dark light:border-border-light-light overflow-hidden transition-all">
+    <div className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-[#334155]/70 light:border-[#e2e8f0] overflow-hidden transition-all">
       <button
         onClick={() => setExpanded((v) => !v)}
         className="w-full flex items-center justify-between p-4 text-left hover:bg-[var(--hover-bg)]/30 transition-colors"
@@ -1094,7 +1094,7 @@ function InlineStrategyCard({
             <div className="space-y-2">
               <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-medium">Saved Strategies</p>
               {[1, 2].map((i) => (
-                <div key={i} className="dark:bg-bg-input-dark light:bg-bg-input-light rounded-xl border dark:border-border-mid-dark light:border-border-mid-light p-3 animate-pulse">
+                <div key={i} className="dark:bg-bg-input-dark light:bg-bg-input-light rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] p-3 animate-pulse">
                   <div className="h-3 bg-[var(--hover-bg)] rounded w-32 mb-2" />
                   <div className="h-2 bg-[var(--hover-bg)] rounded w-48" />
                 </div>
@@ -1181,14 +1181,14 @@ function StrategyForm({ type, initialData, onSave, onCancel, userId }: { type: S
   };
 
   return (
-    <div className="dark:bg-bg-input-dark light:bg-bg-input-light rounded-xl border dark:border-border-mid-dark light:border-border-mid-light p-4 space-y-3">
+    <div className="dark:bg-bg-input-dark light:bg-bg-input-light rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] p-4 space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-lg font-semibold dark:text-text-primary-dark light:text-text-primary-light">{initialData ? 'Edit' : 'New'} {STRATEGY_META.find((m) => m.id === type)?.name}</p>
         <button onClick={onCancel} className="p-1 rounded-lg text-[var(--text-muted)] hover:bg-[var(--hover-bg)] transition"><X className="w-4 h-4" /></button>
       </div>
       <div>
         <label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Strategy Name</label>
-        <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Weekly SPY DCA" className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" />
+        <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Weekly SPY DCA" className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" />
       </div>
       {type === 'dca' && <DCAFormFields params={params} onChange={updateParam} />}
       {type === 'rebalance' && <RebalanceFormFields params={params} onChange={updateParam} />}
@@ -1225,11 +1225,11 @@ function DCAFormFields({ params, onChange }: { params: Record<string, any>; onCh
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Amount ($)</label>
-          <input type="number" min="1" value={params.amount || 100} onChange={(e) => onChange('amount', Number(e.target.value))} className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" />
+          <input type="number" min="1" value={params.amount || 100} onChange={(e) => onChange('amount', Number(e.target.value))} className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" />
         </div>
         <div>
           <label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Frequency</label>
-          <select value={params.frequency || 'weekly'} onChange={(e) => onChange('frequency', e.target.value)} className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light">
+          <select value={params.frequency || 'weekly'} onChange={(e) => onChange('frequency', e.target.value)} className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light">
             <option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option>
           </select>
         </div>
@@ -1238,14 +1238,14 @@ function DCAFormFields({ params, onChange }: { params: Record<string, any>; onCh
         <div>
           <label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Start Date</label>
           <div className="relative">
-            <input type="date" value={params.start_date || new Date().toISOString().split('T')[0]} onChange={(e) => onChange('start_date', e.target.value)} className="w-full px-3 py-2 pr-9 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light appearance-none" />
+            <input type="date" value={params.start_date || new Date().toISOString().split('T')[0]} onChange={(e) => onChange('start_date', e.target.value)} className="w-full px-3 py-2 pr-9 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light appearance-none" />
             <Calendar className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] pointer-events-none" />
           </div>
         </div>
         <div>
           <label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">End Date (optional)</label>
           <div className="relative">
-            <input type="date" value={params.end_date || ''} onChange={(e) => onChange('end_date', e.target.value || undefined)} className="w-full px-3 py-2 pr-9 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light appearance-none" />
+            <input type="date" value={params.end_date || ''} onChange={(e) => onChange('end_date', e.target.value || undefined)} className="w-full px-3 py-2 pr-9 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light appearance-none" />
             <Calendar className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] pointer-events-none" />
           </div>
         </div>
@@ -1272,7 +1272,7 @@ function RebalanceFormFields({ params, onChange }: { params: Record<string, any>
         {allocations.map((alloc, idx) => (
           <div key={idx} className="flex items-center gap-2">
             <SymbolSearch value={alloc.symbol} onChange={(s) => updateAlloc(idx, { symbol: s })} placeholder="Symbol" />
-            <input type="number" step="0.01" min="0" max="1" value={alloc.weight} onChange={(e) => updateAlloc(idx, { weight: Number(e.target.value) })} className="w-20 px-2 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" />
+            <input type="number" step="0.01" min="0" max="1" value={alloc.weight} onChange={(e) => updateAlloc(idx, { weight: Number(e.target.value) })} className="w-20 px-2 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" />
             <button onClick={() => onChange('allocations', allocations.filter((_, i) => i !== idx))} className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--red)] hover:bg-[var(--red)]/10 transition"><Trash2 className="w-3.5 h-3.5" /></button>
           </div>
         ))}
@@ -1281,11 +1281,11 @@ function RebalanceFormFields({ params, onChange }: { params: Record<string, any>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Drift Threshold</label>
-          <input type="number" step="0.01" min="0" max="1" value={params.threshold || 0.05} onChange={(e) => onChange('threshold', Number(e.target.value))} className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" />
+          <input type="number" step="0.01" min="0" max="1" value={params.threshold || 0.05} onChange={(e) => onChange('threshold', Number(e.target.value))} className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" />
         </div>
         <div>
           <label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Mode</label>
-          <select value={params.mode || 'full'} onChange={(e) => onChange('mode', e.target.value)} className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light"><option value="full">Full Rebalance</option><option value="cash-only">Cash Only</option></select>
+          <select value={params.mode || 'full'} onChange={(e) => onChange('mode', e.target.value)} className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light"><option value="full">Full Rebalance</option><option value="cash-only">Cash Only</option></select>
         </div>
       </div>
     </div>
@@ -1298,12 +1298,12 @@ function MomentumFormFields({ params, onChange }: { params: Record<string, any>;
     <div className="space-y-3">
       <div>
         <label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Universe (comma-separated)</label>
-        <input type="text" value={universe.join(', ')} placeholder="AAPL, MSFT, GOOGL..." onChange={(e) => onChange('universe', e.target.value.split(/,\s*/).filter(Boolean))} className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" />
+        <input type="text" value={universe.join(', ')} placeholder="AAPL, MSFT, GOOGL..." onChange={(e) => onChange('universe', e.target.value.split(/,\s*/).filter(Boolean))} className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" />
       </div>
       <div className="grid grid-cols-3 gap-3">
-        <div><label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Lookback</label><input type="number" min="1" value={params.lookback_days || 90} onChange={(e) => onChange('lookback_days', Number(e.target.value))} className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" /></div>
-        <div><label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Top N</label><input type="number" min="1" value={params.top_n || 5} onChange={(e) => onChange('top_n', Number(e.target.value))} className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" /></div>
-        <div><label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Bottom N</label><input type="number" min="0" value={params.bottom_n || 3} onChange={(e) => onChange('bottom_n', Number(e.target.value))} className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" /></div>
+        <div><label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Lookback</label><input type="number" min="1" value={params.lookback_days || 90} onChange={(e) => onChange('lookback_days', Number(e.target.value))} className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" /></div>
+        <div><label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Top N</label><input type="number" min="1" value={params.top_n || 5} onChange={(e) => onChange('top_n', Number(e.target.value))} className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" /></div>
+        <div><label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Bottom N</label><input type="number" min="0" value={params.bottom_n || 3} onChange={(e) => onChange('bottom_n', Number(e.target.value))} className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" /></div>
       </div>
     </div>
   );
@@ -1317,8 +1317,8 @@ function MeanReversionFormFields({ params, onChange }: { params: Record<string, 
         <SymbolSearch value={params.symbol || ''} onChange={(s) => onChange('symbol', s)} placeholder="Search symbol..." />
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <div><label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Lookback Period</label><input type="number" min="5" value={params.lookback || 20} onChange={(e) => onChange('lookback', Number(e.target.value))} className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" /></div>
-        <div><label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Z-Score Threshold</label><input type="number" step="0.1" min="0.5" value={params.z_score_threshold || 2.0} onChange={(e) => onChange('z_score_threshold', Number(e.target.value))} className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" /></div>
+        <div><label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Lookback Period</label><input type="number" min="5" value={params.lookback || 20} onChange={(e) => onChange('lookback', Number(e.target.value))} className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" /></div>
+        <div><label className="text-[11px] font-medium dark:text-text-primary-dark light:text-text-primary-light block mb-1">Z-Score Threshold</label><input type="number" step="0.1" min="0.5" value={params.z_score_threshold || 2.0} onChange={(e) => onChange('z_score_threshold', Number(e.target.value))} className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" /></div>
       </div>
     </div>
   );
@@ -1523,7 +1523,7 @@ export default function AdvisorStrategiesTab() {
         {stratLoading ? (
           <div className="space-y-3">
             {[1,2,3,4].map((i) => (
-              <div key={i} className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-border-light-dark light:border-border-light-light p-4 animate-pulse">
+              <div key={i} className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-[#334155]/70 light:border-[#e2e8f0] p-4 animate-pulse">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-[var(--hover-bg)]" />
                   <div className="flex-1 space-y-2"><div className="h-3 bg-[var(--hover-bg)] rounded w-32" /><div className="h-2 bg-[var(--hover-bg)] rounded w-48" /></div>

@@ -165,7 +165,7 @@ export default function WatchlistWidget() {
   const displaySymbols = activeList?.symbols || [];
 
   return (
-    <div className="bg-[var(--card-bg)] rounded-xl border dark:border-border-mid-dark light:border-border-mid-light">
+    <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0]">
       {/* Header */}
       <div className="px-4 py-2 border-b border-[#1e232b] flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -176,7 +176,7 @@ export default function WatchlistWidget() {
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setShowDropdown(!showDropdown)}
-              className="flex items-center gap-1 text-sm dark:text-text-primary-dark light:text-text-primary-light hover:dark:text-text-primary-dark light:text-text-primary-light dark:bg-bg-input-dark light:bg-bg-input-light px-2 py-1 rounded border dark:border-border-mid-dark light:border-border-mid-light transition"
+              className="flex items-center gap-1 text-sm dark:text-text-primary-dark light:text-text-primary-light hover:dark:text-text-primary-dark light:text-text-primary-light dark:bg-bg-input-dark light:bg-bg-input-light px-2 py-1 rounded border dark:border-[#334155]/70 light:border-[#e2e8f0] transition"
             >
               {activeList?.name || 'Select'}
               <ChevronDown className={`w-3 h-3 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
@@ -250,7 +250,7 @@ export default function WatchlistWidget() {
               value={newListName}
               onChange={(e) => setNewListName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && createList()}
-              className="flex-1 dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg px-3 py-1.5 text-xs dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light"
+              className="flex-1 dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg px-3 py-1.5 text-xs dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light"
               autoFocus
             />
             <button
@@ -293,7 +293,7 @@ export default function WatchlistWidget() {
               return (
                 <div
                   key={sym}
-                  className={`flex-shrink-0 dark:bg-bg-input-dark light:bg-bg-input-light rounded-lg px-3 py-2 min-w-[90px] border dark:border-border-mid-dark light:border-border-mid-light/50 relative transition-opacity ${isRemoving ? 'opacity-0' : 'opacity-100'} ${isSpecial ? 'border-amber-500/30' : ''}`}
+                  className={`flex-shrink-0 dark:bg-bg-input-dark light:bg-bg-input-light rounded-lg px-3 py-2 min-w-[90px] border dark:border-[#334155]/70 light:border-[#e2e8f0]/50 relative transition-opacity ${isRemoving ? 'opacity-0' : 'opacity-100'} ${isSpecial ? 'border-amber-500/30' : ''}`}
                 >
                   {isSpecial && (
                     <div className="absolute -top-1.5 -right-1.5 w-5 h-5">

@@ -270,12 +270,12 @@ export default function ChatModal({ isOpen, onClose, alpacaAccountId }: ChatModa
           rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-border-light-dark light:border-border-light-light overflow-hidden flex flex-col shadow-2xl h-full">
+        <div className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-[#334155]/70 light:border-[#e2e8f0] overflow-hidden flex flex-col shadow-2xl h-full">
           {/* Top gradient bar */}
           <div className="h-[3px] w-full bg-gradient-to-r from-[#00d4aa] to-[#7c6aff] rounded-t-2xl flex-shrink-0" />
 
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b dark:border-border-light-dark light:border-border-light-light flex-shrink-0">
+          <div className="flex items-center justify-between px-4 py-3 border-b dark:border-[#334155]/70 light:border-[#e2e8f0] flex-shrink-0">
             <div className="flex items-center gap-2">
               <Brain className="w-5 h-5 text-[#00d4aa]" />
               <h3 className="text-lg font-bold text-[#00d4aa] tracking-wider">AI ADVISOR</h3>
@@ -306,8 +306,8 @@ export default function ChatModal({ isOpen, onClose, alpacaAccountId }: ChatModa
                   <div
                     className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm leading-relaxed ${
                       msg.role === 'user'
-                        ? 'border dark:border-border-light-dark light:border-border-light-light dark:bg-bg-hover-dark light:bg-bg-hover-light dark:text-text-primary-dark light:text-text-primary-light rounded-br-md'
-                        : 'border dark:border-border-light-dark light:border-border-light-light dark:bg-[#0d9488]/10 light:bg-[#0d9488]/5 dark:text-text-primary-dark light:text-text-primary-light rounded-bl-md prose dark:prose-invert prose-sm max-w-none'
+                        ? 'border dark:border-[#334155]/70 light:border-[#e2e8f0] dark:bg-bg-hover-dark light:bg-bg-hover-light dark:text-text-primary-dark light:text-text-primary-light rounded-br-md'
+                        : 'border dark:border-[#334155]/70 light:border-[#e2e8f0] dark:bg-[#0d9488]/10 light:bg-[#0d9488]/5 dark:text-text-primary-dark light:text-text-primary-light rounded-bl-md prose dark:prose-invert prose-sm max-w-none'
                     }`}
                   >
                     {msg.role === 'user' ? (
@@ -336,7 +336,7 @@ export default function ChatModal({ isOpen, onClose, alpacaAccountId }: ChatModa
 
             {isLoading && messages[messages.length - 1]?.role === 'user' && (
               <div className="flex justify-start">
-                <div className="border dark:border-border-light-dark light:border-border-light-light rounded-2xl rounded-bl-md px-3 py-2">
+                <div className="border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-2xl rounded-bl-md px-3 py-2">
                   <div className="flex gap-1">
                     <span className="w-1.5 h-1.5 dark:bg-text-tertiary-dark light:bg-text-tertiary-light rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                     <span className="w-1.5 h-1.5 dark:bg-text-tertiary-dark light:bg-text-tertiary-light rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -354,7 +354,7 @@ export default function ChatModal({ isOpen, onClose, alpacaAccountId }: ChatModa
           </div>
 
           {/* Quick Action Chips */}
-          <div className="px-3 py-1.5 border-t dark:border-border-light-dark light:border-border-light-light flex-shrink-0">
+          <div className="px-3 py-1.5 border-t dark:border-[#334155]/70 light:border-[#e2e8f0] flex-shrink-0">
             <div className="flex gap-2 overflow-x-auto pb-1">
               {[
                 'Latest brief',
@@ -375,7 +375,7 @@ export default function ChatModal({ isOpen, onClose, alpacaAccountId }: ChatModa
           </div>
 
           {/* Input */}
-          <form onSubmit={handleSubmit} className="px-3 py-2 border-t dark:border-border-light-dark light:border-border-light-light flex-shrink-0">
+          <form onSubmit={handleSubmit} className="px-3 py-2 border-t dark:border-[#334155]/70 light:border-[#e2e8f0] flex-shrink-0">
             <div className="flex items-center gap-2">
               <input
                 type="text"
@@ -383,7 +383,7 @@ export default function ChatModal({ isOpen, onClose, alpacaAccountId }: ChatModa
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask your advisor..."
                 disabled={isLoading}
-                className="flex-1 px-3 py-2 text-xs dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-light-dark light:border-border-light-light rounded-xl dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:focus:ring-accent-primary-dark light:focus:ring-accent-primary-light"
+                className="flex-1 px-3 py-2 text-xs dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-xl dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:focus:ring-accent-primary-dark light:focus:ring-accent-primary-light"
                 autoFocus
               />
               <button
@@ -397,7 +397,7 @@ export default function ChatModal({ isOpen, onClose, alpacaAccountId }: ChatModa
           </form>
 
           {/* Footer */}
-          <div className="flex items-center justify-between px-4 py-2 border-t dark:border-border-light-dark light:border-border-light-light flex-shrink-0">
+          <div className="flex items-center justify-between px-4 py-2 border-t dark:border-[#334155]/70 light:border-[#e2e8f0] flex-shrink-0">
             <span className="text-[10px] dark:text-text-tertiary-dark light:text-text-tertiary-light">
               {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
             </span>

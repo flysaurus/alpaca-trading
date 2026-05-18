@@ -134,7 +134,7 @@ function TelegramSetup() {
           placeholder="Chat ID"
           value={chatId}
           onChange={(e) => setChatId(e.target.value)}
-          className="flex-1 dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg px-3 py-2 text-xs dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light font-[family-name:var(--font-mono)]"
+          className="flex-1 dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg px-3 py-2 text-xs dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light font-[family-name:var(--font-mono)]"
         />
         <button onClick={testMessage} disabled={!chatId || status === 'loading'}
           className="px-3 py-2 bg-[var(--hover-bg)] dark:text-text-primary-dark light:text-text-primary-light text-xs rounded-lg transition disabled:opacity-40">
@@ -328,7 +328,7 @@ export default function NewsIntelligence({ embedded = false }: { embedded?: bool
       </div>
 
       {/* Sentiment Summary */}
-      <div className="bg-[var(--card-bg)] rounded-xl border dark:border-border-mid-dark light:border-border-mid-light p-4">
+      <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <BarChart3 className="w-4 h-4 text-amber-400" />
@@ -369,7 +369,7 @@ export default function NewsIntelligence({ embedded = false }: { embedded?: bool
                   <div
                     onClick={() => toggleExpand(item.id)}
                     className={`bg-[var(--card-bg)] rounded-xl border p-3 cursor-pointer transition hover:border-[var(--border-light)] ${
-                      isExpanded ? 'border-amber-500/50' : 'border-[var(--border)]'
+                      isExpanded ? 'border-amber-500/50' : 'dark:border-[#334155]/70 light:border-[#e2e8f0]'
                     }`}
                   >
                     <div className="flex items-start gap-2">
@@ -401,7 +401,7 @@ export default function NewsIntelligence({ embedded = false }: { embedded?: bool
 
                   {/* Expanded detail */}
                   {isExpanded && (
-                    <div className="bg-[var(--card-bg)] border-x border-b border-[var(--border)] rounded-b-xl -mt-2 pt-4 pb-3 px-3">
+                    <div className="bg-[var(--card-bg)] border-x border-b dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-b-xl -mt-2 pt-4 pb-3 px-3">
                       <p className="text-xs dark:text-text-primary-dark light:text-text-primary-light leading-relaxed mb-3">{item.summary}</p>
                       
                       {/* FinBERT Analysis (AI-powered) */}
@@ -468,7 +468,7 @@ export default function NewsIntelligence({ embedded = false }: { embedded?: bool
 
           <div className="space-y-2 max-h-[600px] overflow-y-auto">
             {events.map((event) => (
-              <div key={event.id} className="bg-[var(--card-bg)] rounded-xl border dark:border-border-mid-dark light:border-border-mid-light p-3">
+              <div key={event.id} className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] p-3">
                 <div className="flex items-start gap-2">
                   <div className={`w-1 h-full min-h-[40px] rounded-full flex-shrink-0 ${
                     event.impact === 'high' ? 'bg-[var(--red)]' :
@@ -506,7 +506,7 @@ export default function NewsIntelligence({ embedded = false }: { embedded?: bool
         <div className="space-y-3">
           {/* Insider */}
           {insider && insider.transactions.length > 0 && (
-            <div className="bg-[var(--card-bg)] rounded-xl border dark:border-border-mid-dark light:border-border-mid-light p-3">
+            <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] p-3">
               <div className="flex items-center gap-2 mb-2">
                 <Activity className="w-3.5 h-3.5 text-[#8b5cf6]" />
                 <h3 className="text-[10px] font-bold tracking-wider dark:text-text-primary-dark light:text-text-primary-light">INSIDER ACTIVITY (7D)</h3>
@@ -536,7 +536,7 @@ export default function NewsIntelligence({ embedded = false }: { embedded?: bool
               const yesPrice = mainMarket.outcomePrices[0] || 0;
               const yesPct = Math.round(yesPrice * 100);
               return (
-                <div key={event.id} className="bg-[var(--card-bg)] rounded-xl border dark:border-border-mid-dark light:border-border-mid-light p-3">
+                <div key={event.id} className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] p-3">
                   <p className="text-xs font-medium mb-2 line-clamp-2">{event.title}</p>
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2">
@@ -569,7 +569,7 @@ export default function NewsIntelligence({ embedded = false }: { embedded?: bool
       {/* Alert Modal */}
       {showAlertModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[var(--card-bg)] rounded-xl border dark:border-border-mid-dark light:border-border-mid-light w-full max-w-md p-4">
+          <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] w-full max-w-md p-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold dark:text-text-primary-dark light:text-text-primary-light">Create News Alert</h3>
               <button onClick={() => setShowAlertModal(false)} className="text-[var(--text-muted)] hover:dark:text-text-primary-dark light:text-text-primary-light">
@@ -579,9 +579,9 @@ export default function NewsIntelligence({ embedded = false }: { embedded?: bool
             <div className="space-y-3">
               <SymbolSearch value={alertSymbol} onChange={(s) => setAlertSymbol(s)} placeholder="AAPL" />
               <input type="text" placeholder="earnings, guidance, upgrade" value={alertKeywords} onChange={(e) => setAlertKeywords(e.target.value)}
-                className="w-full dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg px-3 py-2 text-sm dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" />
+                className="w-full dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg px-3 py-2 text-sm dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light" />
               <select value={alertSentiment} onChange={(e) => setAlertSentiment(e.target.value as 'any' | 'bullish' | 'bearish')}
-                className="w-full dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg px-3 py-2 text-sm dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light">
+                className="w-full dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg px-3 py-2 text-sm dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:ring-2 dark:ring-accent-primary-dark light:ring-accent-primary-light">
                 <option value="any">Any sentiment</option>
                 <option value="bullish">Bullish only</option>
                 <option value="bearish">Bearish only</option>
