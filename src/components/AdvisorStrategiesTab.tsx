@@ -357,6 +357,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
   const [candidates, setCandidates] = useState<EnrichedDipCandidate[]>([]);
   const [loading, setLoading] = useState(true);
   console.log('Market Scanner colors applied');
+  console.log('Order ticket colors applied');
   const [marketLabel, setMarketLabel] = useState('Unknown');
   const [executing, setExecuting] = useState<string | null>(null);
   const [orderTicket, setOrderTicket] = useState<string | null>(null);
@@ -648,7 +649,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
                 <div className="rounded-xl p-3 space-y-3" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)' }}>
                   {/* QTY */}
                   <div>
-                    <label className="text-[11px] font-medium uppercase tracking-wide dark:text-text-tertiary-dark light:text-text-tertiary-light block mb-1">Shares</label>
+                    <label className="text-[11px] font-semibold uppercase tracking-wide dark:text-text-secondary-dark light:text-text-secondary-light block mb-1">Shares</label>
                     <input
                       type="text"
                       inputMode="numeric"
@@ -658,13 +659,13 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
                         const raw = e.target.value.replace(/\D/g, '');
                         setOrderQty(raw === '' ? 0 : Number(raw));
                       }}
-                      className="w-full px-3 py-2 text-sm dark:bg-bg-base-dark light:bg-bg-base-light border dark:border-border-light-dark light:border-border-light-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:border-[#6366f1]"
+                      className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:border-[#6366f1]"
                     />
                   </div>
 
                   {/* ORDER TYPE */}
                   <div>
-                    <label className="text-[11px] font-medium uppercase tracking-wide dark:text-text-tertiary-dark light:text-text-tertiary-light block mb-1">Order Type</label>
+                    <label className="text-[11px] font-semibold uppercase tracking-wide dark:text-text-secondary-dark light:text-text-secondary-light block mb-1">Order Type</label>
                     <div className="flex rounded-lg overflow-hidden border dark:border-border-light-dark light:border-border-light-light">
                       {(['market', 'limit', 'stop', 'stop_limit'] as const).map((type) => (
                         <button
@@ -685,13 +686,13 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
                   {/* LIMIT PRICE */}
                   {(orderType === 'limit' || orderType === 'stop_limit') && (
                     <div>
-                      <label className="text-[11px] font-medium uppercase tracking-wide dark:text-text-tertiary-dark light:text-text-tertiary-light block mb-1">Limit Price $</label>
+                      <label className="text-[11px] font-semibold uppercase tracking-wide dark:text-text-secondary-dark light:text-text-secondary-light block mb-1">Limit Price $</label>
                       <input
                         type="number"
                         step="0.01"
                         value={limitPrice}
                         onChange={(e) => setLimitPrice(Number(e.target.value))}
-                        className="w-full px-3 py-2 text-sm dark:bg-bg-base-dark light:bg-bg-base-light border dark:border-border-light-dark light:border-border-light-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:border-[#6366f1]"
+                        className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:border-[#6366f1]"
                       />
                     </div>
                   )}
@@ -699,20 +700,20 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
                   {/* STOP PRICE */}
                   {(orderType === 'stop' || orderType === 'stop_limit') && (
                     <div>
-                      <label className="text-[11px] font-medium uppercase tracking-wide dark:text-text-tertiary-dark light:text-text-tertiary-light block mb-1">Stop Price $</label>
+                      <label className="text-[11px] font-semibold uppercase tracking-wide dark:text-text-secondary-dark light:text-text-secondary-light block mb-1">Stop Price $</label>
                       <input
                         type="number"
                         step="0.01"
                         value={stopPrice}
                         onChange={(e) => setStopPrice(Number(e.target.value))}
-                        className="w-full px-3 py-2 text-sm dark:bg-bg-base-dark light:bg-bg-base-light border dark:border-border-light-dark light:border-border-light-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light focus:outline-none focus:border-[#6366f1]"
+                        className="w-full px-3 py-2 text-sm dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-mid-dark light:border-border-mid-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:border-[#6366f1]"
                       />
                     </div>
                   )}
 
                   {/* TIME IN FORCE */}
                   <div>
-                    <label className="text-[11px] font-medium uppercase tracking-wide dark:text-text-tertiary-dark light:text-text-tertiary-light block mb-1">Time in Force</label>
+                    <label className="text-[11px] font-semibold uppercase tracking-wide dark:text-text-secondary-dark light:text-text-secondary-light block mb-1">Time in Force</label>
                     <div className="flex rounded-lg overflow-hidden border dark:border-border-light-dark light:border-border-light-light">
                       {(['day', 'gtc', 'ioc'] as const).map((tif) => (
                         <button
@@ -732,8 +733,8 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
 
                   {/* ESTIMATED TOTAL */}
                   <div>
-                    <label className="text-[11px] font-medium uppercase tracking-wide dark:text-text-tertiary-dark light:text-text-tertiary-light block mb-1">Est. Total</label>
-                    <div className="px-3 py-2 text-sm dark:bg-bg-base-dark light:bg-bg-base-light border dark:border-border-light-dark light:border-border-light-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light font-mono">
+                    <label className="text-[11px] font-semibold uppercase tracking-wide dark:text-text-secondary-dark light:text-text-secondary-light block mb-1">Est. Total</label>
+                    <div className="px-3 py-2 text-sm dark:bg-bg-hover-dark light:bg-bg-hover-light border dark:border-border-light-dark light:border-border-light-light rounded-lg dark:text-text-primary-dark light:text-text-primary-light font-mono">
                       ${(orderQty * (limitPrice || c.current_price)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                   </div>
