@@ -775,10 +775,10 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
               <button
                 onClick={() => handleExecute(c)}
                 disabled={!c.safe_to_buy}
-                className="flex-1 py-2 rounded-xl bg-[#6366f1] dark:text-text-primary-dark light:text-text-primary-light text-[11px] font-bold hover:bg-[#5558e0] transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                className="flex-1 py-2 rounded-xl bg-teal-600 dark:text-text-primary-dark light:text-text-primary-light text-[11px] font-bold hover:bg-teal-500 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
               >
                 <DollarSign className="w-3 h-3" />
-                Execute {Math.max(1, Math.floor((c.suggested_amount || 500) / c.current_price))} share(s) ~${c.suggested_amount || 500}
+                $ Buy {Math.max(1, Math.floor((c.suggested_amount || 500) / c.current_price))} share(s) ~${c.suggested_amount || 500}
               </button>
               <button
                 onClick={() => handleAnalyze(c)}
