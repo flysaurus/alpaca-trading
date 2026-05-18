@@ -164,7 +164,7 @@ async function fetchMarketData() {
 function PortfolioPulse({ context, loading }: { context: PortfolioContext | null; loading: boolean }) {
   if (loading || !context) {
     return (
-      <div className="bg-[var(--card-bg)] rounded-2xl border dark:border-border-mid-dark light:border-border-mid-light p-4">
+      <div className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-border-light-dark light:border-border-light-light p-4">
         <div className="grid grid-cols-3 gap-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="space-y-2 animate-pulse">
@@ -182,7 +182,7 @@ function PortfolioPulse({ context, loading }: { context: PortfolioContext | null
   const isDayPositive = dayPL >= 0;
 
   return (
-    <div className="bg-[var(--card-bg)] rounded-2xl border dark:border-border-mid-dark light:border-border-mid-light p-4">
+    <div className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-border-light-dark light:border-border-light-light p-4">
       <div className="grid grid-cols-3 gap-3">
         <div className="text-center">
           <p className="text-[11px] font-medium uppercase tracking-wide text-[#6b7280] mb-1">Equity</p>
@@ -361,6 +361,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
   console.log('History card colors applied');
   console.log('Chat colors applied');
   console.log('Input fields updated in: [AdvisorStrategiesTab, SymbolSearch, WatchlistWidget, OrderFilters, NewsIntelligence, EnhancedPositions]');
+  console.log('Card borders added to X components');
   const [marketLabel, setMarketLabel] = useState('Unknown');
   const [executing, setExecuting] = useState<string | null>(null);
   const [orderTicket, setOrderTicket] = useState<string | null>(null);
@@ -540,7 +541,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
         {[1, 2, 3].map((i) => (
           <div
             key={i}
-            className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border border-[#6366f1]/30 p-4 animate-pulse"
+            className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-border-light-dark light:border-border-light-light p-4 animate-pulse"
           >
             <div className="flex items-center gap-3 mb-3">
               <div className="h-6 dark:bg-bg-hover-dark light:bg-bg-hover-light rounded w-24" />
@@ -594,7 +595,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
       {candidates.map((c) => (
         <div
           key={c.symbol}
-          className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border-2 border-[#6366f1]/40 overflow-hidden transition hover:border-[#6366f1]/70"
+          className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-border-light-dark light:border-border-light-light overflow-hidden transition hover:dark:border-border-mid-dark hover:light:border-border-mid-light"
         >
           {/* Header */}
           <div className="px-4 pt-4 pb-2">
@@ -1072,8 +1073,8 @@ function AIChatPanel({ alpacaAccountId }: { alpacaAccountId: string | null }) {
               <div
                 className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm leading-relaxed ${
                   msg.role === 'user'
-                    ? 'dark:bg-bg-hover-dark light:bg-bg-hover-light dark:text-text-primary-dark light:text-text-primary-light rounded-br-md'
-                    : 'dark:bg-[#0d9488]/10 light:bg-[#0d9488]/5 dark:text-text-primary-dark light:text-text-primary-light rounded-bl-md prose dark:prose-invert prose-sm max-w-none ai-bubble'
+                    ? 'border dark:border-border-light-dark light:border-border-light-light dark:bg-bg-hover-dark light:bg-bg-hover-light dark:text-text-primary-dark light:text-text-primary-light rounded-br-md'
+                    : 'border dark:border-border-light-dark light:border-border-light-light dark:bg-[#0d9488]/10 light:bg-[#0d9488]/5 dark:text-text-primary-dark light:text-text-primary-light rounded-bl-md prose dark:prose-invert prose-sm max-w-none ai-bubble'
                 }`}
               >
                 {msg.role === 'user' ? (
@@ -1102,7 +1103,7 @@ function AIChatPanel({ alpacaAccountId }: { alpacaAccountId: string | null }) {
 
         {isLoading && messages[messages.length - 1]?.role === 'user' && (
           <div className="flex justify-start">
-            <div className="card rounded-2xl rounded-bl-md px-3 py-2 dark:text-text-primary-dark light:text-text-primary-light">
+            <div className="card border dark:border-border-light-dark light:border-border-light-light rounded-2xl rounded-bl-md px-3 py-2 dark:text-text-primary-dark light:text-text-primary-light">
               <div className="flex gap-1">
                 <span className="w-1.5 h-1.5 dark:bg-text-tertiary-dark light:bg-text-tertiary-light rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                 <span className="w-1.5 h-1.5 dark:bg-text-tertiary-dark light:bg-text-tertiary-light rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -1230,7 +1231,7 @@ function InlineStrategyCard({
   }, [expanded, meta.id, userId]);
 
   return (
-    <div className="bg-[var(--card-bg)] rounded-2xl border dark:border-border-mid-dark light:border-border-mid-light overflow-hidden transition-all">
+    <div className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-border-light-dark light:border-border-light-light overflow-hidden transition-all">
       <button
         onClick={() => setExpanded((v) => !v)}
         className="w-full flex items-center justify-between p-4 text-left hover:bg-[var(--hover-bg)]/30 transition-colors"
@@ -1892,7 +1893,7 @@ export default function AdvisorStrategiesTab() {
         {stratLoading ? (
           <div className="space-y-3">
             {[1,2,3,4].map((i) => (
-              <div key={i} className="bg-[var(--card-bg)] rounded-2xl border dark:border-border-mid-dark light:border-border-mid-light p-4 animate-pulse">
+              <div key={i} className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-border-light-dark light:border-border-light-light p-4 animate-pulse">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-[var(--hover-bg)]" />
                   <div className="flex-1 space-y-2"><div className="h-3 bg-[var(--hover-bg)] rounded w-32" /><div className="h-2 bg-[var(--hover-bg)] rounded w-48" /></div>

@@ -93,7 +93,7 @@ function CustomTooltip({ active, payload, label }: any) {
   const isPos = d.pnl >= 0;
 
   return (
-    <div className="card rounded-lg px-3 py-2 shadow-2xl">
+    <div className="card border dark:border-border-light-dark light:border-border-light-light rounded-lg px-3 py-2 shadow-2xl">
       <p className="text-[10px] text-[var(--text-muted)] mb-1">{fmtDate(d.date)}</p>
       <div className="space-y-0.5">
         <div className="flex justify-between gap-4 text-xs">
@@ -120,7 +120,7 @@ function CustomTooltip({ active, payload, label }: any) {
 // ── Stat Card ─────────────────────────────────────────────────────
 function StatCard({ label, value, subtext, hint, color }: { label: string; value: string; subtext?: string; hint?: string; color?: string }) {
   return (
-    <div className="card rounded-xl p-3 flex flex-col">
+    <div className="card border dark:border-border-light-dark light:border-border-light-light rounded-xl p-3 flex flex-col">
       <span className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">{label}</span>
       <span className={`text-2xl font-bold mt-1 font-mono ${color || 'text-[var(--text-primary)]'}`}>{value}</span>
       {subtext && <span className="text-[10px] text-[var(--text-muted)] mt-0.5">{subtext}</span>}
@@ -206,7 +206,7 @@ export function PerformanceCard({
 
 
   return (
-    <div className="card p-4">
+    <div className="card border dark:border-border-light-dark light:border-border-light-light p-4">
       {/* Header + Time Range */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
@@ -333,7 +333,7 @@ export function AllocationCard({
   const allocationData = buildAllocationData(portfolioData);
 
   return (
-    <div className="card p-4">
+    <div className="card border dark:border-border-light-dark light:border-border-light-light p-4">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
           <PieChart className="w-4 h-4 text-violet-400" />
