@@ -635,9 +635,20 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  const prompt = `Analyze my ${p.symbol} position. I bought at $${p.avgEntryPrice.toFixed(2)}, currently at $${p.currentPrice.toFixed(2)}, P&L is $${p.unrealizedPL.toFixed(2)}.`;
+                                  const action = rec?.action || 'hold';
+                                  const target = rec?.target_price || 0;
+                                  const reasoning = rec?.reasoning || '';
+                                  const prompt = `Analyze my ${p.symbol} position.
+Bought at $${p.avgEntryPrice.toFixed(2)},
+currently $${p.currentPrice.toFixed(2)},
+P&L $${p.unrealizedPL.toFixed(2)}.
+Recommendation: ${action.toUpperCase()} at $${target.toFixed(2)}.
+${reasoning}`;
                                   useChatStore.getState().setPendingMessage(prompt);
                                   setChatExpanded(true);
+                                  setTimeout(() => {
+                                    document.getElementById('chat-card')?.scrollIntoView({ behavior: 'smooth' });
+                                  }, 100);
                                 }}
                                 className="text-[10px] font-bold px-2.5 py-1 rounded dark:bg-[var(--accent)]/10 light:bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/20 hover:bg-[var(--accent)]/20 transition"
                               >

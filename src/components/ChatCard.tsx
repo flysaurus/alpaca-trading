@@ -243,6 +243,7 @@ export default function ChatCard({ isExpanded, setExpanded, alpacaAccountId }: C
 
   return (
     <div
+      id="chat-card"
       className="rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] overflow-hidden transition-all duration-200 ease-in-out dark:bg-[#1e293b] light:bg-[#f8fafc]"
       style={{ maxHeight: isExpanded ? 320 : 44 }}
     >
