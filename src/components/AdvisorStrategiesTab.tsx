@@ -359,6 +359,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
   console.log('Market Scanner colors applied');
   console.log('Order ticket colors applied');
   console.log('History card colors applied');
+  console.log('Chat colors applied');
   const [marketLabel, setMarketLabel] = useState('Unknown');
   const [executing, setExecuting] = useState<string | null>(null);
   const [orderTicket, setOrderTicket] = useState<string | null>(null);
@@ -1026,11 +1027,11 @@ function AIChatPanel({ alpacaAccountId }: { alpacaAccountId: string | null }) {
   const firstNewIndex = messages.findIndex((m) => !m.fromHistory && m.id !== 'welcome');
 
   return (
-    <div className="bg-white dark:bg-[var(--card-bg)] rounded-2xl border-2 border-[#00d4aa] overflow-hidden flex flex-col shadow-[0_4px_24px_rgba(0,212,170,0.08)] dark:shadow-none">
+    <div className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border-2 border-[#00d4aa] overflow-hidden flex flex-col shadow-[0_4px_24px_rgba(0,212,170,0.08)] dark:shadow-none">
       {/* Top gradient bar */}
       <div className="h-[3px] w-full bg-gradient-to-r from-[#00d4aa] to-[#7c6aff] rounded-t-2xl" />
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2.5 border-b border-[var(--border)]">
+      <div className="flex items-center justify-between px-3 py-2.5 border-b dark:border-border-light-dark light:border-border-light-light">
         <div className="flex items-center gap-2">
           <Brain className="w-4 h-4 text-[#00d4aa]" />
           <h3 className="text-base font-bold text-[#00d4aa] tracking-wider">AI ADVISOR</h3>
@@ -1039,13 +1040,13 @@ function AIChatPanel({ alpacaAccountId }: { alpacaAccountId: string | null }) {
           {isLoading && <Loader2 className="w-3 h-3 text-[var(--accent)] animate-spin" />}
           {showClearConfirm ? (
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] text-[var(--text-muted)]">Clear?</span>
+              <span className="text-[10px] dark:text-text-tertiary-dark light:text-text-tertiary-light">Clear?</span>
               <button onClick={handleClear} className="px-2 py-0.5 text-[10px] font-bold bg-[var(--red)]/10 text-[var(--red)] rounded hover:bg-[var(--red)]/20 transition">Clear</button>
-              <button onClick={() => setShowClearConfirm(false)} className="px-2 py-0.5 text-[10px] font-bold bg-[var(--app-bg)] text-[var(--text-muted)] rounded hover:bg-[var(--hover-bg)] transition">Cancel</button>
+              <button onClick={() => setShowClearConfirm(false)} className="px-2 py-0.5 text-[10px] font-bold dark:bg-bg-input-dark light:bg-bg-input-light dark:text-text-tertiary-dark light:text-text-tertiary-light rounded dark:hover:bg-bg-hover-dark light:hover:bg-bg-hover-light transition">Cancel</button>
             </div>
           ) : (
             messages.length > 1 && (
-              <button onClick={() => setShowClearConfirm(true)} className="text-[10px] text-[#1e3a5f] dark:text-[var(--text-muted)] hover:text-[#1e3a5f] dark:hover:text-[var(--text-primary)] transition px-2 py-0.5 rounded hover:bg-[var(--hover-bg)]">
+              <button onClick={() => setShowClearConfirm(true)} className="text-[10px] text-[#1e3a5f] dark:dark:text-text-tertiary-dark light:text-text-tertiary-light hover:text-[#1e3a5f] dark:hover:dark:text-text-primary-dark light:text-text-primary-light transition px-2 py-0.5 rounded dark:hover:bg-bg-hover-dark light:hover:bg-bg-hover-light">
                 Clear
               </button>
             )
@@ -1061,17 +1062,17 @@ function AIChatPanel({ alpacaAccountId }: { alpacaAccountId: string | null }) {
             {/* Divider between history and new messages */}
             {idx === firstNewIndex && firstNewIndex > 0 && (
               <div className="flex items-center gap-3 my-3">
-                <div className="flex-1 h-px bg-[var(--border-light)]" />
-                <span className="text-[10px] text-[var(--text-muted)] whitespace-nowrap">— Previous session —</span>
-                <div className="flex-1 h-px bg-[var(--border-light)]" />
+                <div className="flex-1 h-px dark:bg-border-light-dark light:bg-border-light-light" />
+                <span className="text-[10px] dark:text-text-tertiary-dark light:text-text-tertiary-light whitespace-nowrap">— Previous session —</span>
+                <div className="flex-1 h-px dark:bg-border-light-dark light:bg-border-light-light" />
               </div>
             )}
             <div className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div
                 className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm leading-relaxed ${
                   msg.role === 'user'
-                    ? 'bg-[#00d4aa] text-[#0a0e1a] rounded-br-md'
-                    : 'card text-[#111827] dark:text-[#e2e8f0] rounded-bl-md prose dark:prose-invert prose-sm max-w-none ai-bubble'
+                    ? 'dark:bg-bg-hover-dark light:bg-bg-hover-light dark:text-text-primary-dark light:text-text-primary-light rounded-br-md'
+                    : 'dark:bg-[#0d9488]/10 light:bg-[#0d9488]/5 dark:text-text-primary-dark light:text-text-primary-light rounded-bl-md prose dark:prose-invert prose-sm max-w-none ai-bubble'
                 }`}
               >
                 {msg.role === 'user' ? (
@@ -1100,11 +1101,11 @@ function AIChatPanel({ alpacaAccountId }: { alpacaAccountId: string | null }) {
 
         {isLoading && messages[messages.length - 1]?.role === 'user' && (
           <div className="flex justify-start">
-            <div className="card rounded-2xl rounded-bl-md px-3 py-2 text-[var(--text-primary)]">
+            <div className="card rounded-2xl rounded-bl-md px-3 py-2 dark:text-text-primary-dark light:text-text-primary-light">
               <div className="flex gap-1">
-                <span className="w-1.5 h-1.5 bg-[var(--text-muted)] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="w-1.5 h-1.5 bg-[var(--text-muted)] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-1.5 h-1.5 bg-[var(--text-muted)] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                <span className="w-1.5 h-1.5 dark:bg-text-tertiary-dark light:bg-text-tertiary-light rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-1.5 h-1.5 dark:bg-text-tertiary-dark light:bg-text-tertiary-light rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-1.5 h-1.5 dark:bg-text-tertiary-dark light:bg-text-tertiary-light rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
             </div>
           </div>
@@ -1118,7 +1119,7 @@ function AIChatPanel({ alpacaAccountId }: { alpacaAccountId: string | null }) {
       </div>
 
       {/* Quick Action Chips */}
-      <div className="px-3 py-1.5 border-t border-[var(--border)]">
+      <div className="px-3 py-1.5 border-t dark:border-border-light-dark light:border-border-light-light">
         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
           {[
             "Latest brief",
@@ -1130,7 +1131,7 @@ function AIChatPanel({ alpacaAccountId }: { alpacaAccountId: string | null }) {
               key={chip}
               onClick={() => handleChipClick(chip)}
               disabled={isLoading}
-              className="flex-shrink-0 px-2.5 py-1 text-[11px] font-bold bg-[var(--app-bg)] border border-[#1e3a5f] dark:border-[#00d4aa]/40 rounded-full text-[#1e3a5f] dark:text-[#00d4aa] hover:text-[#1e3a5f] dark:hover:text-[#00d4aa] hover:border-[#1e3a5f] dark:hover:border-[#00d4aa] transition whitespace-nowrap"
+              className="flex-shrink-0 px-2.5 py-1 text-[11px] font-bold dark:bg-bg-input-dark light:bg-bg-input-light border border-[#1e3a5f] dark:border-[#00d4aa]/40 rounded-full text-[#1e3a5f] dark:text-[#00d4aa] hover:text-[#1e3a5f] dark:hover:text-[#00d4aa] hover:border-[#1e3a5f] dark:hover:border-[#00d4aa] transition whitespace-nowrap"
             >
               {chip}
             </button>
@@ -1139,7 +1140,7 @@ function AIChatPanel({ alpacaAccountId }: { alpacaAccountId: string | null }) {
       </div>
 
       {/* Input */}
-      <form onSubmit={handleSubmit} className="px-3 py-1.5 border-t border-[var(--border)]">
+      <form onSubmit={handleSubmit} className="px-3 py-1.5 border-t dark:border-border-light-dark light:border-border-light-light">
         <div className="flex items-center gap-2">
           <input
             type="text"
@@ -1147,7 +1148,7 @@ function AIChatPanel({ alpacaAccountId }: { alpacaAccountId: string | null }) {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask your advisor..."
             disabled={isLoading}
-            className="flex-1 px-3 py-2 text-xs bg-[var(--app-bg)] border border-[var(--border)] rounded-xl text-[var(--text-primary)] placeholder-[#6b7280] dark:placeholder-[var(--text-subtle)] focus:outline-none focus:border-[var(--accent)]"
+            className="flex-1 px-3 py-2 text-xs dark:bg-bg-input-dark light:bg-bg-input-light border dark:border-border-light-dark light:border-border-light-light rounded-xl dark:text-text-primary-dark light:text-text-primary-light dark:placeholder-text-placeholder-dark light:placeholder-text-placeholder-light focus:outline-none focus:border-[var(--accent)]"
           />
           <button
             type="submit"
