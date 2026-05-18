@@ -266,7 +266,7 @@ function RiskScoreWidget({ data, loading }: { data: RiskScoreData | null; loadin
 
   return (
     <div
-      className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-border-light-dark light:border-border-light-light overflow-hidden cursor-pointer transition hover:border-[var(--border-light)]"
+      className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-border-light-dark light:border-border-light-light overflow-hidden cursor-pointer transition hover:dark:border-border-mid-dark hover:light:border-border-mid-light"
       onClick={() => setExpanded(!expanded)}
     >
       <div className="h-[3px] w-full bg-gradient-to-r from-[#00d4aa] to-[#7c6aff]" />
@@ -358,6 +358,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
   const [loading, setLoading] = useState(true);
   console.log('Market Scanner colors applied');
   console.log('Order ticket colors applied');
+  console.log('History card colors applied');
   const [marketLabel, setMarketLabel] = useState('Unknown');
   const [executing, setExecuting] = useState<string | null>(null);
   const [orderTicket, setOrderTicket] = useState<string | null>(null);
@@ -1572,22 +1573,22 @@ function HistorySection({ userId }: { userId: string }) {
 
   if (loading) {
     return (
-      <div className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] p-6 text-center">
-        <BarChart3 className="w-8 h-8 text-[var(--text-muted)] mx-auto mb-2 animate-pulse" />
-        <p className="text-sm text-[var(--text-muted)]">Loading history...</p>
+      <div className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-border-light-dark light:border-border-light-light p-6 text-center">
+        <BarChart3 className="w-8 h-8 dark:text-text-tertiary-dark light:text-text-tertiary-light mx-auto mb-2 animate-pulse" />
+        <p className="text-sm dark:text-text-tertiary-dark light:text-text-tertiary-light">Loading history...</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] overflow-hidden">
-      <div className="flex items-center gap-2 p-4 border-b border-[var(--border)]">
+    <div className="dark:bg-bg-card-dark light:bg-bg-card-light rounded-2xl border dark:border-border-light-dark light:border-border-light-light overflow-hidden">
+      <div className="flex items-center gap-2 p-4 border-b dark:border-border-light-dark light:border-border-light-light">
         <History className="w-4 h-4 text-[var(--accent)]" />
-        <h3 className="text-lg font-semibold text-[var(--text-primary)]">History</h3>
+        <h3 className="text-lg font-semibold dark:text-text-primary-dark light:text-text-primary-light">History</h3>
       </div>
-      <div className="flex border-b border-[var(--border)]">
+      <div className="flex border-b dark:border-border-light-dark light:border-border-light-light">
         {[{id:'charts',label:'Charts'},{id:'suggestions',label:'AI Suggestions'},{id:'trades',label:'Trades'}].map((t) => (
-          <button key={t.id} onClick={() => setActiveSubtab(t.id as any)} className={`flex-1 py-2.5 text-[11px] font-semibold transition ${activeSubtab === t.id ? 'text-[var(--accent)] border-b-2 border-[var(--accent)]' : 'text-[var(--text-muted)]'}`}>{t.label}</button>
+          <button key={t.id} onClick={() => setActiveSubtab(t.id as any)} className={`flex-1 py-2.5 text-[11px] font-semibold transition ${activeSubtab === t.id ? 'text-[var(--accent)] border-b-2 border-[var(--accent)]' : 'dark:text-text-tertiary-dark light:text-text-tertiary-light'}`}>{t.label}</button>
         ))}
       </div>
       <div className="p-4">
@@ -1602,7 +1603,7 @@ function HistorySection({ userId }: { userId: string }) {
                   className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition ${
                     chartPeriod === p
                       ? 'bg-[var(--accent)] text-black'
-                      : 'bg-[var(--app-bg)] text-[var(--text-muted)] hover:bg-[var(--hover-bg)]'
+                      : 'dark:bg-bg-hover-dark light:bg-bg-hover-light dark:text-text-tertiary-dark light:text-text-tertiary-light hover:dark:bg-bg-hover-dark light:bg-bg-hover-light'
                   }`}
                 >
                   {p}
@@ -1613,7 +1614,7 @@ function HistorySection({ userId }: { userId: string }) {
             {/* Equity Chart */}
             {chartData.length > 0 ? (
               <div>
-                <p className="text-[11px] font-medium text-[var(--text-secondary)] mb-2">Equity</p>
+                <p className="text-[11px] font-medium dark:text-text-secondary-dark light:text-text-secondary-light mb-2">Equity</p>
                 <div className="h-48 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
@@ -1636,7 +1637,7 @@ function HistorySection({ userId }: { userId: string }) {
             {/* P&L Chart */}
             {chartData.length > 0 && (
               <div>
-                <p className="text-[11px] font-medium text-[var(--text-secondary)] mb-2">Daily P&L</p>
+                <p className="text-[11px] font-medium dark:text-text-secondary-dark light:text-text-secondary-light mb-2">Daily P&L</p>
                 <div className="h-48 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData}>
@@ -1669,13 +1670,13 @@ function HistorySection({ userId }: { userId: string }) {
                 <div
                   key={s.id}
                   onClick={() => setExpandedSuggestion(isExpanded ? null : s.id)}
-                  className="bg-[var(--app-bg)] rounded-xl p-3 border border-[var(--border)] cursor-pointer transition hover:border-[var(--border-light)]"
+                  className="dark:bg-bg-hover-dark light:bg-bg-hover-light rounded-xl p-3 border dark:border-border-light-dark light:border-border-light-light cursor-pointer transition hover:dark:border-border-mid-dark hover:light:border-border-mid-light"
                 >
-                  <p className="text-[10px] text-[var(--text-muted)]">
+                  <p className="text-[10px] dark:text-text-tertiary-dark light:text-text-tertiary-light">
                     {new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </p>
-                  <p className="text-xs font-semibold text-[var(--text-primary)] mt-1">{s.prompt}</p>
-                  <p className={`text-[11px] text-[var(--text-secondary)] mt-1 ${isExpanded ? '' : 'line-clamp-2'}`}>
+                  <p className="text-xs font-semibold dark:text-text-primary-dark light:text-text-primary-light mt-1">{s.prompt}</p>
+                  <p className={`text-[11px] dark:text-text-secondary-dark light:text-text-secondary-light mt-1 ${isExpanded ? '' : 'line-clamp-2'}`}>
                     {isExpanded ? s.response : stripMarkdown(s.response).slice(0, 120) + '...'}
                   </p>
                   {!isExpanded && s.response.length > 100 && (
@@ -1698,16 +1699,16 @@ function HistorySection({ userId }: { userId: string }) {
             {filteredTrades.length === 0 ? <EmptyState message={tradeFilter ? 'No trades match.' : 'No trade history yet.'} /> : (
               <div className="space-y-1.5 max-h-80 overflow-y-auto no-scrollbar">
                 {filteredTrades.map((t) => (
-                  <div key={t.id} className="flex items-center justify-between p-2.5 bg-[var(--app-bg)] rounded-lg border border-[var(--border)]">
+                  <div key={t.id} className="flex items-center justify-between p-2.5 dark:bg-bg-hover-dark light:bg-bg-hover-light rounded-lg border dark:border-border-light-dark light:border-border-light-light">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-[var(--text-primary)]">{t.symbol}</span>
+                      <span className="text-xs font-bold dark:text-text-primary-dark light:text-text-primary-light">{t.symbol}</span>
                       <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${t.side === 'buy' ? 'bg-[#00d4aa]/10 text-[#00d4aa]' : 'bg-[#ef4444]/10 text-[#ef4444]'}`}>
                         {t.side.toUpperCase()}
                       </span>
                     </div>
                     <div className="text-right">
-                      <p className="text-[11px] text-[var(--text-primary)] font-mono">{t.qty} @ ${Number(t.filled_price).toFixed(2)}</p>
-                      <p className="text-[10px] text-[var(--text-muted)]">
+                      <p className="text-[11px] dark:text-text-primary-dark light:text-text-primary-light font-mono">{t.qty} @ ${Number(t.filled_price).toFixed(2)}</p>
+                      <p className="text-[10px] dark:text-text-tertiary-dark light:text-text-tertiary-light">
                         {new Date(t.filled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
