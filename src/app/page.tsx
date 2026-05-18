@@ -274,49 +274,52 @@ function TopBar({ account, marketOpen }: { account: AccountData | null; marketOp
       <div className="flex items-center gap-3 px-3 sm:px-4 py-2.5 overflow-x-auto no-scrollbar">
         {/* Portfolio */}
         <div className="flex-shrink-0">
-          <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">Portfolio</p>
+          <p className="text-xs uppercase tracking-wider text-[var(--text-muted)]">Portfolio</p>
           <div className="flex items-center gap-2">
-            <p className="text-base font-semibold font-[family-name:var(--font-mono)] text-[var(--text-primary)] tabular-nums">
+            <p className="text-base font-semibold font-[family-name:var(--font-mono)] text-[var(--text-primary)] tabular-nums dark:[text-shadow:0_0_6px_rgba(249,250,251,0.1)] light:[text-shadow:0_0_6px_rgba(15,23,42,0.1)]">
               ${fmtUSD(portfolioValue)}
             </p>
             {marketOpen && (
               <span className="w-2 h-2 rounded-full bg-[var(--green)] animate-pulse mt-1" title="Market is open" />
             )}
           </div>
+          <p className={`text-sm font-medium tabular-nums ${isProfitable ? 'dark:text-[#10b981] light:text-[#059669]' : 'dark:text-[#ef4444] light:text-[#dc2626]'}`}>
+            {isProfitable ? '+' : ''}{fmtPct(pnlPercent)}
+          </p>
         </div>
 
         {/* Total P&L */}
         <div className="flex-shrink-0 min-w-[80px] sm:min-w-[100px]">
-          <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">Total P&L</p>
+          <p className="text-xs uppercase tracking-wider text-[var(--text-muted)]">Total P&L</p>
           <div className="flex items-center gap-1">
             {isProfitable ? (
-              <TrendingUp className="w-3 h-3 text-[var(--green)]" />
+              <TrendingUp className="w-3 h-3 dark:text-[#10b981] light:text-[#059669]" />
             ) : (
-              <TrendingDown className="w-3 h-3 text-[var(--red)]" />
+              <TrendingDown className="w-3 h-3 dark:text-[#ef4444] light:text-[#dc2626]" />
             )}
-            <p className={`text-sm font-medium font-[family-name:var(--font-mono)] tabular-nums ${isProfitable ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
+            <p className={`text-base font-semibold font-[family-name:var(--font-mono)] tabular-nums ${isProfitable ? 'dark:text-[#10b981] light:text-[#059669] light:[text-shadow:0_0_6px_rgba(5,150,105,0.2)] dark:[text-shadow:0_0_6px_rgba(16,185,129,0.2)]' : 'dark:text-[#ef4444] light:text-[#dc2626] dark:[text-shadow:0_0_6px_rgba(239,68,68,0.2)] light:[text-shadow:0_0_6px_rgba(220,38,38,0.2)]'}`}>
               {isProfitable ? '+' : ''}{fmtUSD(unrealizedPL)}
             </p>
           </div>
-          <p className={`text-[9px] font-[family-name:var(--font-mono)] tabular-nums ${isProfitable ? 'text-[var(--green-soft)]' : 'text-[var(--red-soft)]'}`}>
+          <p className={`text-sm font-medium tabular-nums ${isProfitable ? 'dark:text-[#10b981] light:text-[#059669]' : 'dark:text-[#ef4444] light:text-[#dc2626]'}`}>
             {fmtPct(pnlPercent)}
           </p>
         </div>
 
         {/* Day P&L */}
         <div className="flex-shrink-0 min-w-[80px] sm:min-w-[100px]">
-          <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">Day P&L</p>
+          <p className="text-xs uppercase tracking-wider text-[var(--text-muted)]">Day P&L</p>
           <div className="flex items-center gap-1">
             {isDayProfitable ? (
-              <TrendingUp className="w-3 h-3 text-[var(--green)]" />
+              <TrendingUp className="w-3 h-3 dark:text-[#10b981] light:text-[#059669]" />
             ) : (
-              <TrendingDown className="w-3 h-3 text-[var(--red)]" />
+              <TrendingDown className="w-3 h-3 dark:text-[#ef4444] light:text-[#dc2626]" />
             )}
-            <p className={`text-sm font-medium font-[family-name:var(--font-mono)] tabular-nums ${isDayProfitable ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
+            <p className={`text-base font-semibold font-[family-name:var(--font-mono)] tabular-nums ${isDayProfitable ? 'dark:text-[#10b981] light:text-[#059669] light:[text-shadow:0_0_6px_rgba(5,150,105,0.2)] dark:[text-shadow:0_0_6px_rgba(16,185,129,0.2)]' : 'dark:text-[#ef4444] light:text-[#dc2626] dark:[text-shadow:0_0_6px_rgba(239,68,68,0.2)] light:[text-shadow:0_0_6px_rgba(220,38,38,0.2)]'}`}>
               {isDayProfitable ? '+' : ''}{fmtUSD(dayPnL)}
             </p>
           </div>
-          <p className={`text-[9px] font-[family-name:var(--font-mono)] tabular-nums ${isDayProfitable ? 'text-[var(--green-soft)]' : 'text-[var(--red-soft)]'}`}>
+          <p className={`text-sm font-medium tabular-nums ${isDayProfitable ? 'dark:text-[#10b981] light:text-[#059669]' : 'dark:text-[#ef4444] light:text-[#dc2626]'}`}>
             {fmtPct(dayPnLPercent)}
           </p>
         </div>
@@ -324,7 +327,7 @@ function TopBar({ account, marketOpen }: { account: AccountData | null; marketOp
         {/* Buying Power — hidden on very small screens */}
         <div className="hidden xs:flex flex-shrink-0 min-w-[80px]">
           <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">BP</p>
+            <p className="text-xs uppercase tracking-wider text-[var(--text-muted)]">BP</p>
             <p className="text-sm font-medium font-[family-name:var(--font-mono)] text-[var(--text-primary)] tabular-nums">$
               ${fmtInt(bp)}
             </p>
@@ -334,7 +337,7 @@ function TopBar({ account, marketOpen }: { account: AccountData | null; marketOp
         {/* Cash — hidden on very small screens */}
         <div className="hidden xs:flex flex-shrink-0 min-w-[60px]">
           <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">Cash</p>
+            <p className="text-xs uppercase tracking-wider text-[var(--text-muted)]">Cash</p>
             <p className="text-sm font-medium font-[family-name:var(--font-mono)] text-[var(--text-secondary)] tabular-nums">$
               ${fmtInt(cash)}
             </p>
