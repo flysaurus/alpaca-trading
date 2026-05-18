@@ -378,7 +378,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
             <Download className="w-3 h-3" />
             CSV
           </button>
-          <div className="flex items-center justify-between dark:bg-[#1e293b] light:bg-[#f8fafc] rounded-xl py-2 px-3">
+          <div className="flex items-center justify-between dark:bg-[#1e293b] light:bg-[#f8fafc] rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] py-2 px-3">
             <div>
               <p className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">Positions</p>
               <span className="dark:text-[#f9fafb] light:text-[#0f172a] font-semibold text-base">{positions.length} Positions</span>

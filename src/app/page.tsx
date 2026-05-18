@@ -379,7 +379,7 @@ function TopBar({ account, marketOpen }: { account: AccountData | null; marketOp
 function PositionsWidget({ positions }: { positions: Position[] }) {
   if (positions.length === 0) {
     return (
-      <div className="bg-[var(--card-bg)] rounded-xl border border-[#1e232b] p-6 text-center">
+      <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] p-6 text-center">
         <BarChart3 className="w-8 h-8 text-[#1e232b] mx-auto mb-2" />
         <p className="text-sm text-[var(--text-muted)]">No open positions</p>
       </div>
@@ -387,7 +387,7 @@ function PositionsWidget({ positions }: { positions: Position[] }) {
   }
 
   return (
-    <div className="bg-[var(--card-bg)] rounded-xl border border-[#1e232b] overflow-hidden">
+    <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] overflow-hidden">
       <div className="px-4 py-3 border-b border-[#1e232b] flex items-center justify-between">
         <div className="flex items-center gap-2">
           <CandlestickChart className="w-4 h-4 text-amber-400" />
@@ -444,7 +444,7 @@ function PositionsWidget({ positions }: { positions: Position[] }) {
 function OrdersWidget({ orders, onCancel }: { orders: Order[]; onCancel: (id: string) => void }) {
   if (orders.length === 0) {
     return (
-      <div className="bg-[var(--card-bg)] rounded-xl border border-[#1e232b] p-6 text-center">
+      <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] p-6 text-center">
         <List className="w-8 h-8 text-[#1e232b] mx-auto mb-2" />
         <p className="text-sm text-[var(--text-muted)]">No orders</p>
       </div>
@@ -470,7 +470,7 @@ function OrdersWidget({ orders, onCancel }: { orders: Order[]; onCancel: (id: st
   };
 
   return (
-    <div className="bg-[var(--card-bg)] rounded-xl border border-[#1e232b] overflow-hidden">
+    <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] overflow-hidden">
       <div className="px-4 py-3 border-b border-[#1e232b] flex items-center justify-between">
         <div className="flex items-center gap-2">
           <List className="w-4 h-4 text-amber-400" />
@@ -616,7 +616,7 @@ function TradeWidget({ onRefresh }: { onRefresh: () => void }) {
   const notional = livePrice ? Number(qty || 0) * livePrice : 0;
 
   return (
-    <div className="bg-[var(--card-bg)] rounded-xl border border-[#1e232b] p-4">
+    <div className="bg-[var(--card-bg)] rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] p-4">
       <div className="flex items-center gap-2 mb-4">
         <ShoppingCart className="w-4 h-4 text-amber-400" />
         <h3 className="text-sm font-semibold text-[var(--text-primary)]">Quick Trade</h3>
@@ -628,7 +628,7 @@ function TradeWidget({ onRefresh }: { onRefresh: () => void }) {
           className={`flex-1 py-1.5 rounded-lg text-xs font-bold tracking-wider transition ${
             side === 'buy'
               ? 'bg-[var(--green-soft)]/20 text-[var(--green)] border border-[#166534]/40'
-              : 'bg-[var(--surface-bg)] text-[var(--text-muted)] border border-[#1e232b]'
+              : 'bg-[var(--surface-bg)] text-[var(--text-muted)] border dark:border-[#334155]/70 light:border-[#e2e8f0]'
           }`}
         >
           BUY
@@ -638,7 +638,7 @@ function TradeWidget({ onRefresh }: { onRefresh: () => void }) {
           className={`flex-1 py-1.5 rounded-lg text-xs font-bold tracking-wider transition ${
             side === 'sell'
               ? 'bg-[var(--red-soft)]/20 text-[var(--red)] border border-[#991b1b]/40'
-              : 'bg-[var(--surface-bg)] text-[var(--text-muted)] border border-[#1e232b]'
+              : 'bg-[var(--surface-bg)] text-[var(--text-muted)] border dark:border-[#334155]/70 light:border-[#e2e8f0]'
           }`}
         >
           SELL
@@ -670,12 +670,12 @@ function TradeWidget({ onRefresh }: { onRefresh: () => void }) {
             placeholder="QTY"
             value={qty}
             onChange={(e) => setQty(e.target.value)}
-            className="flex-1 bg-[var(--app-bg)] border border-[#1e232b] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-subtle)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)]"
+            className="flex-1 bg-[var(--app-bg)] border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-subtle)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)]"
           />
           <select
             value={orderType}
             onChange={(e) => setOrderType(e.target.value as any)}
-            className="bg-[var(--app-bg)] border border-[#1e232b] rounded-lg px-2 py-2 text-xs text-[var(--text-secondary)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)] flex-1 min-w-[80px]"
+            className="bg-[var(--app-bg)] border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg px-2 py-2 text-xs text-[var(--text-secondary)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)] flex-1 min-w-[80px]"
           >
             <option value="market">MKT</option>
             <option value="limit">LMT</option>
@@ -686,7 +686,7 @@ function TradeWidget({ onRefresh }: { onRefresh: () => void }) {
           <select
             value={timeInForce}
             onChange={(e) => setTimeInForce(e.target.value as any)}
-            className="bg-[var(--app-bg)] border border-[#1e232b] rounded-lg px-2 py-2 text-xs text-[var(--text-secondary)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)] flex-1 min-w-[80px]"
+            className="bg-[var(--app-bg)] border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg px-2 py-2 text-xs text-[var(--text-secondary)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)] flex-1 min-w-[80px]"
             title="Time in Force"
           >
             <option value="day">DAY</option>
@@ -704,7 +704,7 @@ function TradeWidget({ onRefresh }: { onRefresh: () => void }) {
             placeholder="LIMIT PRICE"
             value={limitPrice}
             onChange={(e) => setLimitPrice(e.target.value)}
-            className="w-full bg-[var(--app-bg)] border border-[#1e232b] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-subtle)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)]"
+            className="w-full bg-[var(--app-bg)] border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-subtle)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)]"
           />
         )}
 
@@ -714,7 +714,7 @@ function TradeWidget({ onRefresh }: { onRefresh: () => void }) {
             placeholder="STOP PRICE"
             value={stopPrice}
             onChange={(e) => setStopPrice(e.target.value)}
-            className="w-full bg-[var(--app-bg)] border border-[#1e232b] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-subtle)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)]"
+            className="w-full bg-[var(--app-bg)] border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-subtle)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)]"
           />
         )}
 
@@ -725,14 +725,14 @@ function TradeWidget({ onRefresh }: { onRefresh: () => void }) {
               placeholder="TRAIL $"
               value={trailPrice}
               onChange={(e) => { setTrailPrice(e.target.value); setTrailPercent(''); }}
-              className="flex-1 bg-[var(--app-bg)] border border-[#1e232b] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-subtle)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)]"
+              className="flex-1 bg-[var(--app-bg)] border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-subtle)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)]"
             />
             <input
               type="number"
               placeholder="TRAIL %"
               value={trailPercent}
               onChange={(e) => { setTrailPercent(e.target.value); setTrailPrice(''); }}
-              className="flex-1 bg-[var(--app-bg)] border border-[#1e232b] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-subtle)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)]"
+              className="flex-1 bg-[var(--app-bg)] border dark:border-[#334155]/70 light:border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-subtle)] focus:outline-none focus:border-amber-500/50 font-[family-name:var(--font-mono)]"
             />
           </div>
         )}

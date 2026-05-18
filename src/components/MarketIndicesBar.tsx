@@ -73,8 +73,8 @@ export default function MarketIndicesBar() {
         return (
           <div
             key={sym}
-            className={`flex-shrink-0 rounded-xl px-3 py-2.5 min-w-[150px] ${
-              up ? 'bg-[var(--green)]/10 border border-[var(--green)]/25' : 'bg-[var(--red)]/10 border border-[var(--red)]/25'
+            className={`flex-shrink-0 rounded-xl border dark:border-[#334155]/70 light:border-[#e2e8f0] px-3 py-2.5 min-w-[150px] ${
+              up ? 'bg-[var(--green)]/10' : 'bg-[var(--red)]/10'
             }`}
           >
             <div className="flex items-center gap-1.5">
