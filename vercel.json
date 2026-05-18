@@ -23,6 +23,10 @@
     {
       "path": "/api/cron?action=morning_brief_recommendations",
       "schedule": "10 13 * * 1-5"
+    },
+    {
+      "path": "/api/cron?action=dip_scanner",
+      "schedule": "0 10-20 * * 1-5"
     }
   ]
 }

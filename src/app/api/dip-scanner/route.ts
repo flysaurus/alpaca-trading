@@ -20,6 +20,12 @@ interface EnrichedCandidate extends DipCandidate {
 
 export async function GET(request: NextRequest) {
   const now = Date.now();
+  const historyDays = parseInt(request.nextUrl.searchParams.get('history') || '0', 10);
+
+  // ── History mode: return last N days of saved candidates grouped by date ──
+  if (historyDays > 0) {
+    return getHistoryResponse(historyDays);
+  }
 
   // Return cached response if valid
   if (responseCache && now - responseCache.timestamp < RESPONSE_CACHE_TTL_MS) {
@@ -174,4 +180,86 @@ export async function GET(request: NextRequest) {
   responseCache = { timestamp: now, data: response };
 
   return response.clone();
+}
+
+// ── History mode: fetch saved recommendations from Supabase ──
+async function getHistoryResponse(days: number) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+  if (!supabaseUrl || !supabaseKey) {
+    return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
+  }
+
+  const { createClient } = await import('@supabase/supabase-js');
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
+  const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .split('T')[0];
+
+  const { data: records, error } = await supabase
+    .from('scanner_recommendations')
+    .select('*')
+    .gte('date', startDate)
+    .order('date', { ascending: false })
+    .order('time_slot', { ascending: false })
+    .limit(200);
+
+  if (error) {
+    console.error('[dip-scanner] History query failed:', error.message);
+    return NextResponse.json({ error: 'Failed to fetch history' }, { status: 500 });
+  }
+
+  // Group by date
+  const groups: Record<string, {
+    date: string;
+    time_slots: string[];
+    candidates: Array<{
+      symbol: string;
+      score: number;
+      action: string;
+      price_at_rec: number;
+      change_pct_at_rec: number;
+      suggested_amount: number;
+      time_slot: string;
+      user_action: string;
+      safe_to_buy: boolean;
+    }>;
+  }> = {};
+
+  for (const r of (records || []) as any[]) {
+    const date = r.date;
+    if (!groups[date]) {
+      groups[date] = { date, time_slots: [], candidates: [] };
+    }
+    if (r.time_slot && !groups[date].time_slots.includes(r.time_slot)) {
+      groups[date].time_slots.push(r.time_slot);
+    }
+    groups[date].candidates.push({
+      symbol: r.symbol,
+      score: r.score || 0,
+      action: r.action || 'watch',
+      price_at_rec: r.price_at_rec || 0,
+      change_pct_at_rec: r.change_pct_at_rec || 0,
+      suggested_amount: r.suggested_amount || 0,
+      time_slot: r.time_slot || 'unknown',
+      user_action: r.user_action || 'pending',
+      safe_to_buy: r.action === 'buy',
+    });
+  }
+
+  const sortedGroups = Object.values(groups).sort(
+    (a, b) => b.date.localeCompare(a.date)
+  );
+
+  return NextResponse.json({
+    history_mode: true,
+    days,
+    start_date: startDate,
+    groups: sortedGroups,
+    total_dates: sortedGroups.length,
+    total_candidates: sortedGroups.reduce((sum, g) => sum + g.candidates.length, 0),
+    cached: false,
+  });
 }

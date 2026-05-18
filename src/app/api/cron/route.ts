@@ -475,6 +475,134 @@ export async function GET(req: Request) {
     }
   }
 
+  if (action === 'dip_scanner') {
+    try {
+      // Check if current ET hour is a target hour (6, 9, 12, 15)
+      const etHour = new Date().toLocaleString('en-US', {
+        timeZone: 'America/New_York',
+        hour: 'numeric',
+        hour12: false,
+      });
+
+      const targetHours = ['6', '9', '12', '15'];
+      if (!targetHours.includes(etHour)) {
+        return NextResponse.json({
+          action: 'dip_scanner',
+          skipped: true,
+          reason: `ET hour ${etHour} is not a target scan hour`,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      const timeSlotLabel = etHour === '6' ? '6am' : etHour === '9' ? '9am' : etHour === '12' ? '12pm' : '3pm';
+      console.log(`[Cron] Running dip scanner — time slot: ${timeSlotLabel} ET`);
+
+      // 1. Fetch market state
+      const baseUrl = new URL(req.url).origin;
+      const marketRes = await fetch(`${baseUrl}/api/market`, {
+        next: { revalidate: 60 },
+      });
+      const marketData = marketRes.ok ? await marketRes.json() : {};
+      const marketState = marketData.marketState || marketData || {};
+
+      // 2. Build watchlist from positions + defaults
+      const [positions] = await Promise.all([
+        fetchAlpacaPositions().catch(() => []),
+      ]);
+
+      const positionSymbols = (positions || []).map((p: any) => p.symbol.toUpperCase());
+      const defaultSymbols = ['AAPL', 'TSLA', 'NVDA', 'MSFT', 'GOOGL', 'AMZN', 'META', 'AMD', 'INTC', 'PLTR', 'SOFI', 'RIOT', 'COIN', 'MARA', 'CLSK'];
+      const watchlistSymbols = [...new Set([...positionSymbols, ...defaultSymbols])];
+
+      // 3. Run scanner
+      const { scanForQualityDips } = await import('@/lib/dipScanner');
+      const { classifyDipReason, isDipSafe } = await import('@/lib/dipNews');
+      type DipClassifierContext = Parameters<typeof classifyDipReason>[0];
+      const candidates = await scanForQualityDips(watchlistSymbols, marketState);
+
+      // 4. Enrich with news classification
+      const enrichedCandidates = [];
+      for (const candidate of candidates) {
+        if ((candidate.score ?? 0) < 50) continue;
+        try {
+          const newsRes = await fetch(
+            `https://data.alpaca.markets/v1beta1/news?symbols=${candidate.symbol}&limit=5`,
+            { headers: { accept: 'application/json' } }
+          );
+          let headlines: string[] = [];
+          if (newsRes.ok) {
+            const newsData = await newsRes.json();
+            headlines = (newsData.news || []).map((n: any) => n.headline).filter(Boolean);
+          }
+          const priceYesterday = candidate.current_price / (1 + candidate.change_pct / 100);
+          const ctx: DipClassifierContext = {
+            symbol: candidate.symbol,
+            changePercent: candidate.change_pct,
+            priceYesterday,
+            priceToday: candidate.current_price,
+            headlines,
+            rsi: candidate.rsi,
+            marketState: marketState.state,
+            volRatio: candidate.volume_ratio,
+          };
+          const dipReason = await classifyDipReason(ctx);
+          enrichedCandidates.push({
+            ...candidate,
+            safe_to_buy: isDipSafe(dipReason),
+            news_reason: dipReason,
+          });
+        } catch {
+          enrichedCandidates.push({ ...candidate, safe_to_buy: true, news_reason: null });
+        }
+      }
+
+      // 5. Save to Supabase
+      const { getClient, ensureUserByAlpacaId } = await import('@/lib/supabase');
+      const [account] = await Promise.all([fetchAlpacaAccount().catch(() => null)]);
+      const userId = account ? await ensureUserByAlpacaId(account.id) : '00000000-0000-0000-0000-000000000000';
+      const today = new Date().toISOString().split('T')[0];
+      const supabase = getClient();
+
+      for (const c of enrichedCandidates) {
+        await supabase.from('scanner_recommendations').upsert({
+          user_id: userId,
+          date: today,
+          time_slot: timeSlotLabel,
+          symbol: c.symbol,
+          action: c.safe_to_buy ? 'buy' : 'watch',
+          score: c.score,
+          change_pct_at_rec: c.change_pct,
+          price_at_rec: c.current_price,
+          suggested_amount: c.suggested_amount,
+          user_action: 'pending',
+        }, { onConflict: 'user_id,date,time_slot,symbol' });
+      }
+
+      // 6. Clean up old records (>5 days)
+      const fiveDaysAgo = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const { error: cleanupErr } = await supabase
+        .from('scanner_recommendations')
+        .delete({ count: 'exact' })
+        .lt('date', fiveDaysAgo);
+      if (cleanupErr) {
+        console.warn('[Cron] Scanner cleanup failed:', cleanupErr.message);
+      }
+
+      console.log(`[Cron] Dip scanner complete — ${enrichedCandidates.length} candidates saved (${timeSlotLabel})`);
+
+      return NextResponse.json({
+        action: 'dip_scanner',
+        timestamp: new Date().toISOString(),
+        time_slot: timeSlotLabel,
+        candidates_saved: enrichedCandidates.length,
+        total_scanned: candidates.length,
+      });
+    } catch (err: any) {
+      console.error('[Cron] Dip scanner failed:', err.message);
+      return NextResponse.json({ error: `Dip scanner failed: ${err.message}` }, { status: 500 });
+    }
+  }
+
   return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
 }
 
