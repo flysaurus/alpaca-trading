@@ -225,6 +225,10 @@ ${alpacaResponse.side === 'buy' ? '🟢' : '🔴'} <b>Side:</b> ${alpacaResponse
         chatId,
         text: text.trim(),
         parseMode: 'HTML',
+        idempotencyKey: {
+          orderId: alpacaResponse.id,
+          messageType: alpacaResponse.status, // 'filled', 'pending_new', 'canceled', etc.
+        },
       });
 
       console.log('[API /orders] Telegram result:', JSON.stringify(telegramResult));

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
+import { sendTelegramMessage } from '@/lib/telegram';
 
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
 function formatDate(dateStr: string): string {
@@ -29,8 +29,8 @@ export async function POST(req: Request) {
     console.log('Telegram fill route hit:', JSON.stringify(body));
 
     const { order } = body;
-    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
-      console.warn('Telegram not configured — token:', !!TELEGRAM_BOT_TOKEN, 'chatId:', !!TELEGRAM_CHAT_ID);
+    if (!TELEGRAM_CHAT_ID) {
+      console.warn('Telegram not configured — chatId:', !!TELEGRAM_CHAT_ID);
       return NextResponse.json({ error: 'Telegram not configured' }, { status: 500 });
     }
 
@@ -54,28 +54,18 @@ ${order.side === 'buy' ? '💸 <b>Debited:</b>' : '💰 <b>Credited:</b>'} $${to
 ✅ <b>Status:</b> FILLED
 `;
 
-    console.log('Sending to Telegram:', {
-      token_exists: !!TELEGRAM_BOT_TOKEN,
-      token_prefix: TELEGRAM_BOT_TOKEN?.slice(0, 10),
-      chat_id: TELEGRAM_CHAT_ID,
-      text_preview: text?.slice(0, 50),
+    const result = await sendTelegramMessage({
+      chatId: TELEGRAM_CHAT_ID,
+      text: text.trim(),
+      parseMode: 'HTML',
+      idempotencyKey: {
+        orderId: order.id,
+        messageType: 'filled',
+      },
     });
 
-    const tgRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: TELEGRAM_CHAT_ID,
-        text: text.trim(),
-        parse_mode: 'HTML',
-      }),
-    });
-
-    const tgJson = await tgRes.json();
-    console.log('Telegram API response:', JSON.stringify(tgJson));
-
-    if (!tgJson.ok) throw new Error(tgJson.description || `Telegram API error ${tgRes.status}`);
-    return NextResponse.json({ sent: true, telegram: tgJson });
+    if (!result.ok) throw new Error(result.error || 'Failed to send Telegram message');
+    return NextResponse.json({ sent: true });
   } catch (err: any) {
     console.error('Telegram fill alert error:', err.message);
     return NextResponse.json({ error: err.message }, { status: 500 });

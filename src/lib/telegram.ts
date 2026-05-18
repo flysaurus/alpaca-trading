@@ -4,6 +4,8 @@ export interface TelegramMessage {
   text: string;
   parseMode?: 'HTML' | 'Markdown' | 'MarkdownV2';
   disableNotification?: boolean;
+  /** Idempotency: skip if this order+type was already sent */
+  idempotencyKey?: { orderId: string; messageType: string };
 }
 
 // ── Telegram Bot API ────────────────────────────────────────────
@@ -17,6 +19,15 @@ function getToken(): string | null {
  * Send a message via Telegram Bot API
  */
 export async function sendTelegramMessage(msg: TelegramMessage): Promise<{ ok: boolean; error?: string }> {
+  // Idempotency check: skip if this order+type was already notified
+  if (msg.idempotencyKey) {
+    const alreadySent = await checkIfAlreadyNotified(msg.idempotencyKey.orderId, msg.idempotencyKey.messageType);
+    if (alreadySent) {
+      console.log(`[Telegram] ⏭️ Skipping duplicate notification: order=${msg.idempotencyKey.orderId} type=${msg.idempotencyKey.messageType}`);
+      return { ok: true };
+    }
+  }
+
   const token = getToken();
   if (!token) {
     return { ok: false, error: 'TELEGRAM_BOT_TOKEN not configured' };
@@ -38,6 +49,11 @@ export async function sendTelegramMessage(msg: TelegramMessage): Promise<{ ok: b
     const json = await res.json();
     if (!json.ok) {
       return { ok: false, error: json.description || `Telegram API error ${res.status}` };
+    }
+
+    // Mark as sent so future redeploys don't replay this notification
+    if (msg.idempotencyKey) {
+      await markAsNotified(msg.idempotencyKey.orderId, msg.idempotencyKey.messageType);
     }
 
     return { ok: true };
@@ -155,4 +171,87 @@ export function formatMacroAlert(event: {
 Date: ${event.date}
 Impact: ${event.impact.toUpperCase()}
 ${event.description ? `\n${event.description}` : ''}`;
+}
+
+// ── Idempotency: Prevent duplicate Telegram notifications ──────
+
+/**
+ * Check if a notification for this order+type was already sent.
+ * Prevents Vercel redeploys from replaying old trade notifications.
+ */
+export async function checkIfAlreadyNotified(orderId: string, messageType: string): Promise<boolean> {
+  try {
+    const { getClient } = await import('@/lib/supabase');
+    const supabase = getClient();
+    const { data, error } = await supabase
+      .from('recent_notifications')
+      .select('id')
+      .eq('order_id', orderId)
+      .eq('message_type', messageType)
+      .maybeSingle();
+
+    if (error) {
+      console.warn('[Telegram] Failed to check notification idempotency:', error.message);
+      return false; // On error, allow sending (better to duplicate than miss)
+    }
+
+    return !!data;
+  } catch (err: any) {
+    console.warn('[Telegram] Idempotency check error:', err.message);
+    return false;
+  }
+}
+
+/**
+ * Record that a notification was sent for this order+type.
+ * Uses upsert with unique constraint to be safe against race conditions.
+ */
+export async function markAsNotified(orderId: string, messageType: string): Promise<void> {
+  try {
+    const { getClient } = await import('@/lib/supabase');
+    const supabase = getClient();
+    const { error } = await supabase
+      .from('recent_notifications')
+      .upsert(
+        {
+          order_id: orderId,
+          message_type: messageType,
+          sent_at: new Date().toISOString(),
+        },
+        { onConflict: 'order_id,message_type' }
+      );
+
+    if (error) {
+      console.warn('[Telegram] Failed to mark notification as sent:', error.message);
+    }
+  } catch (err: any) {
+    console.warn('[Telegram] markAsNotified error:', err.message);
+  }
+}
+
+/**
+ * Delete notifications older than N days (default 7).
+ * Should be called from a daily cron job.
+ */
+export async function cleanupOldNotifications(daysOld = 7): Promise<{ deleted: number; error?: string }> {
+  try {
+    const { getClient } = await import('@/lib/supabase');
+    const supabase = getClient();
+    const cutoff = new Date(Date.now() - daysOld * 24 * 60 * 60 * 1000).toISOString();
+
+    const { error, count } = await supabase
+      .from('recent_notifications')
+      .delete({ count: 'exact' })
+      .lt('sent_at', cutoff);
+
+    if (error) {
+      console.error('[Telegram] Cleanup error:', error.message);
+      return { deleted: 0, error: error.message };
+    }
+
+    console.log(`[Telegram] Cleaned up ${count || 0} old notifications (>${daysOld}d)`);
+    return { deleted: count || 0 };
+  } catch (err: any) {
+    return { deleted: 0, error: err.message };
+  }
 }
