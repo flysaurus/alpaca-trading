@@ -38,6 +38,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import SymbolSearch from '@/components/SymbolSearch';
+import MorningRecommendationsList from '@/components/MorningRecommendationsList';
 import { useAdvisorStore } from '@/stores/advisorStore';
 import {
   type DbStrategy,
@@ -1874,6 +1875,14 @@ export default function AdvisorStrategiesTab() {
     <div className="space-y-4 pb-4">
       {/* Section A½ — Risk Score */}
       <RiskScoreWidget data={riskScore} loading={riskScoreLoading} />
+
+      {/* Section A⅔ — Morning Recommendations */}
+      <section className="mb-6">
+        <h3 className="text-lg font-semibold mb-4 dark:text-text-primary-dark light:text-text-primary-light">
+          📊 Morning Recommendations
+        </h3>
+        <MorningRecommendationsList />
+      </section>
 
       {/* Section A¾ — Market Scanner */}
       <MarketScanner onAnalyze={handleAnalyzeDip} />
