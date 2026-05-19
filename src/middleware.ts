@@ -13,6 +13,7 @@ import { createServerClient } from '@supabase/ssr';
 // Public routes that don't require authentication
 const PUBLIC_PATHS = [
   '/login',
+  '/onboarding',              // First-time user onboarding
   '/setup-keys',              // One-time Alpaca key setup
   '/authenticate-session',    // Master password entry
   '/auth/callback',

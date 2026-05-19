@@ -43,10 +43,21 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     console.error('[auth/callback] Code exchange failed:', error.message);
-    // Encode error and redirect to login
     const errorUrl = new URL('/login', requestUrl.origin);
     errorUrl.searchParams.set('error', error.message);
     return NextResponse.redirect(errorUrl);
+  }
+
+  // Check if user has completed onboarding (keys stored in vault)
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+    const { data: hashData } = await supabase
+      .rpc('vault_get_password_hash', { p_user_id: user.id });
+
+    if (!hashData) {
+      console.log('[auth/callback] New user — redirecting to onboarding');
+      return NextResponse.redirect(new URL('/onboarding', requestUrl.origin));
+    }
   }
 
   console.log('[auth/callback] Session established, redirecting to', next);
