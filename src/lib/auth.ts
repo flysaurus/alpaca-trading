@@ -9,7 +9,13 @@ function getSupabase(): SupabaseClient {
     if (!url || !key) {
       throw new Error('Supabase URL and anon key are required. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.');
     }
-    _supabase = createClient(url, key);
+    _supabase = createClient(url, key, {
+      auth: {
+        flowType: 'pkce',
+        detectSessionInUrl: true,
+        persistSession: true,
+      },
+    });
   }
   return _supabase;
 }
