@@ -1,4 +1,5 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 let _supabase: SupabaseClient | null = null;
 
@@ -9,13 +10,9 @@ function getSupabase(): SupabaseClient {
     if (!url || !key) {
       throw new Error('Supabase URL and anon key are required. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.');
     }
-    _supabase = createClient(url, key, {
-      auth: {
-        flowType: 'pkce',
-        detectSessionInUrl: true,
-        persistSession: true,
-      },
-    });
+    // Use @supabase/ssr on the client side so PKCE code verifier
+    // is stored in cookies (survives cross-origin redirects to Google).
+    _supabase = createBrowserClient(url, key);
   }
   return _supabase;
 }
