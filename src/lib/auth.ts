@@ -10,15 +10,7 @@ function getSupabase(): SupabaseClient {
     if (!url || !key) {
       throw new Error('Supabase URL and anon key are required. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.');
     }
-    // createBrowserClient stores session in cookies (not localStorage)
-    // so the server-side middleware can read it via @supabase/ssr
-    _supabase = createBrowserClient(url, key, {
-      auth: {
-        detectSessionInUrl: true,
-        autoRefreshToken: true,
-        persistSession: true,
-      },
-    });
+    _supabase = createBrowserClient(url, key);
   }
   return _supabase;
 }
