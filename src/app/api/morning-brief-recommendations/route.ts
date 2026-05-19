@@ -1,27 +1,19 @@
 import { NextResponse } from 'next/server';
+import { requireSession } from '@/lib/session';
 
 const ALPACA_TRADE_URL = 'https://paper-api.alpaca.markets';
 
-function getAlpacaCreds() {
-  return {
-    keyId: process.env.ALPACA_API_KEY || '',
-    secretKey: process.env.ALPACA_SECRET_KEY || '',
-  };
-}
-
-async function fetchAlpacaAccount() {
-  const { keyId, secretKey } = getAlpacaCreds();
+async function fetchAlpacaAccount(apiKey: string, secretKey: string) {
   const res = await fetch(`${ALPACA_TRADE_URL}/v2/account`, {
-    headers: { 'APCA-API-KEY-ID': keyId, 'APCA-API-SECRET-KEY': secretKey },
+    headers: { 'APCA-API-KEY-ID': apiKey, 'APCA-API-SECRET-KEY': secretKey },
   });
   if (!res.ok) throw new Error(`Account fetch failed: ${res.status}`);
   return res.json();
 }
 
-async function fetchAlpacaPositions() {
-  const { keyId, secretKey } = getAlpacaCreds();
+async function fetchAlpacaPositions(apiKey: string, secretKey: string) {
   const res = await fetch(`${ALPACA_TRADE_URL}/v2/positions`, {
-    headers: { 'APCA-API-KEY-ID': keyId, 'APCA-API-SECRET-KEY': secretKey },
+    headers: { 'APCA-API-KEY-ID': apiKey, 'APCA-API-SECRET-KEY': secretKey },
   });
   if (!res.ok) throw new Error(`Positions fetch failed: ${res.status}`);
   return res.json();
@@ -29,11 +21,17 @@ async function fetchAlpacaPositions() {
 
 export async function GET(req: Request) {
   try {
+    // Require valid session
+    const keys = await requireSession();
+    if (!keys) {
+      return NextResponse.json({ error: 'Session expired, re-authenticate' }, { status: 401 });
+    }
+
     // Check cache in daily_suggestions for today
     const today = new Date().toISOString().split('T')[0];
     const { getClient, ensureUserByAlpacaId } = await import('@/lib/supabase');
 
-    const account = await fetchAlpacaAccount();
+    const account = await fetchAlpacaAccount(keys.apiKey, keys.secretKey);
     const userId = await ensureUserByAlpacaId(account.id);
 
     const { data: cachedRow } = await getClient()
@@ -63,7 +61,7 @@ export async function GET(req: Request) {
     const marketState = marketData.marketState || {};
 
     // 2. Fetch portfolio
-    const positions = await fetchAlpacaPositions();
+    const positions = await fetchAlpacaPositions(keys.apiKey, keys.secretKey);
     const equity = parseFloat(account.equity || 0);
     const cash = parseFloat(account.cash || 0);
 

@@ -141,3 +141,19 @@ export async function getSessionUserId(): Promise<string | null> {
   const cookieStore = await cookies();
   return cookieStore.get(COOKIE_NAME)?.value || null;
 }
+
+/**
+ * Alias for getSessionUserId — used by API routes to identify the user.
+ */
+export const getUserId = getSessionUserId;
+
+/**
+ * Require a valid session — returns decrypted keys or null.
+ * API routes call this at the top to gate access.
+ */
+export async function requireSession(): Promise<{
+  apiKey: string;
+  secretKey: string;
+} | null> {
+  return getSessionKeys();
+}

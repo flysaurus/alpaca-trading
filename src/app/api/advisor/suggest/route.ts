@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { generateSuggestions, type AdvisorConfig } from '@/lib/ai-advisor';
+import { requireSession } from '@/lib/session';
 
 const DEFAULT_CONFIG: AdvisorConfig = {
   confidence_threshold: 70,
@@ -9,12 +10,6 @@ const DEFAULT_CONFIG: AdvisorConfig = {
   allowed_actions: ['buy', 'sell', 'hold', 'watch'],
   risk_tolerance: 'moderate',
 };
-
-function getEnvKeys() {
-  const key    = process.env.ALPACA_API_KEY    || '';
-  const secret = process.env.ALPACA_SECRET_KEY || '';
-  return { key, secret };
-}
 
 /*───────────────────────────────────────────────────────────
   POST /api/advisor/suggest
@@ -32,12 +27,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing or empty watchlist' }, { status: 400 });
     }
 
-    const { key, secret } = getEnvKeys();
-    if (!key || !secret) {
-      return NextResponse.json(
-        { error: 'Alpaca credentials not configured' },
-        { status: 500 }
-      );
+    // Require valid session (generateSuggestions calls getBars which uses session keys)
+    const keys = await requireSession();
+    if (!keys) {
+      return NextResponse.json({ error: 'Session expired, re-authenticate' }, { status: 401 });
     }
 
     const mergedCfg: AdvisorConfig = {

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { checkRateLimit, getClientIP, rateLimitHeaders } from '@/lib/ratelimit';
+import { requireSession } from '@/lib/session';
 
 const CACHE_TTL_MS = 60 * 1000;
 
@@ -43,7 +44,7 @@ export async function GET(request: Request) {
     );
   }
 
-  // Return cached data if fresh
+  // Return cached data if fresh (public data, cache is fine)
   const cached = getCached();
   if (cached) {
     console.log('[API /indices] Returning cached data');
@@ -53,15 +54,9 @@ export async function GET(request: Request) {
     );
   }
 
-  const key = process.env.ALPACA_API_KEY;
-  const secret = process.env.ALPACA_SECRET_KEY;
-
-  if (!key || !secret) {
-    console.error('[API /indices] Alpaca credentials not set');
-    return NextResponse.json(
-      { error: 'Alpaca API credentials not configured' },
-      { status: 500, headers: rateLimitHeaders(limit) }
-    );
+  const keys = await requireSession();
+  if (!keys) {
+    return NextResponse.json({ error: 'Session expired, re-authenticate' }, { status: 401 });
   }
 
   try {
@@ -70,8 +65,8 @@ export async function GET(request: Request) {
 
     const res = await fetch(`https://data.alpaca.markets/v2/stocks/snapshots?symbols=${symbols}`, {
       headers: {
-        'APCA-API-KEY-ID': key,
-        'APCA-API-SECRET-KEY': secret,
+        'APCA-API-KEY-ID': keys.apiKey,
+        'APCA-API-SECRET-KEY': keys.secretKey,
         'Accept': 'application/json',
       },
     });

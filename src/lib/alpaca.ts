@@ -27,25 +27,62 @@ export class AlpacaError extends Error {
 }
 
 // ── Client Factory ──────────────────────────────────────────────
-let _client: Alpaca | null = null;
 
-function getClient(): Alpaca {
-  if (_client) return _client;
-
-  _client = new Alpaca({
-    keyId: getKeyId(),
-    secretKey: getSecretKey(),
-    paper: IS_PAPER,
+/**
+ * Create an Alpaca client with explicit credentials.
+ * Used when the API route already has decrypted keys from the session.
+ */
+export function createAlpacaClient(
+  keyId: string,
+  secretKey: string,
+  paper: boolean = IS_PAPER
+): Alpaca {
+  return new Alpaca({
+    keyId,
+    secretKey,
+    paper,
     usePolygon: false,
   });
+}
 
-  return _client;
+/**
+ * Session-aware client factory.
+ *
+ * 1. First tries to read the session cookie and retrieve decrypted
+ *    keys from the in-memory session map (multi-tenant).
+ * 2. Falls back to env vars (ALPACA_API_KEY / ALPACA_SECRET_KEY)
+ *    for backward compatibility and non-request contexts (cron, CLI).
+ *
+ * NOTE: Client is NOT cached — each call creates a fresh instance
+ * so multi-user sessions get the correct keys.
+ */
+async function getClient(): Promise<Alpaca> {
+  // Try session-based keys first
+  try {
+    const { cookies } = await import('next/headers');
+    const cookieStore = await cookies();
+    const userId = cookieStore.get('alpaca_session_id')?.value;
+    if (userId) {
+      const { getSessionKeysForUser } = await import('./session');
+      const keys = getSessionKeysForUser(userId);
+      if (keys) {
+        return createAlpacaClient(keys.apiKey, keys.secretKey);
+      }
+    }
+  } catch {
+    // cookies() throws outside request context (cron jobs, CLI, build)
+    // Fall through to env-vars fallback
+  }
+
+  // Fall back to environment variables
+  return createAlpacaClient(getKeyId(), getSecretKey());
 }
 
 // ── Account ─────────────────────────────────────────────────────
 export async function getAccount() {
   try {
-    return await getClient().getAccount();
+    const client = await getClient();
+    return await client.getAccount();
   } catch (err: any) {
     throw new AlpacaError(err.message || 'Failed to fetch account', 502);
   }
@@ -54,7 +91,8 @@ export async function getAccount() {
 // ── Positions ───────────────────────────────────────────────────
 export async function getPositions() {
   try {
-    return await getClient().getPositions();
+    const client = await getClient();
+    return await client.getPositions();
   } catch (err: any) {
     throw new AlpacaError(err.message || 'Failed to fetch positions', 502);
   }
@@ -73,7 +111,8 @@ export async function getOrders({
   until?: string;
 } = {}) {
   try {
-    return await getClient().getOrders({
+    const client = await getClient();
+    return await client.getOrders({
       status,
       limit,
       after,
@@ -97,7 +136,7 @@ export async function placeOrder(params: {
   limit_price?: number;
 }) {
   try {
-    const client = getClient();
+    const client = await getClient();
     if (IS_PAPER) {
       console.log(`[PAPER] Order: ${params.side.toUpperCase()} ${params.qty} ${params.symbol} @ ${params.type || 'market'}`);
     }
@@ -118,7 +157,8 @@ export async function placeOrder(params: {
 
 export async function cancelOrder(orderId: string) {
   try {
-    return await getClient().cancelOrder(orderId);
+    const client = await getClient();
+    return await client.cancelOrder(orderId);
   } catch (err: any) {
     throw new AlpacaError(err.message || 'Failed to cancel order', 502);
   }
@@ -126,7 +166,7 @@ export async function cancelOrder(orderId: string) {
 
 // ── Market Data ─────────────────────────────────────────────────
 export async function getLatestQuotes(symbols: string[]) {
-  const client = getClient();
+  const client = await getClient();
   const quotes: Record<string, any> = {};
 
   await Promise.all(
@@ -152,7 +192,7 @@ export async function getBars({
   limit?: number;
 }) {
   try {
-    const client = getClient();
+    const client = await getClient();
     const resp = await client.getBarsV2(
       symbol,
       { timeframe, limit },
@@ -183,7 +223,8 @@ export async function getBars({
 
 export async function getAssets(activeOnly = true) {
   try {
-    return await getClient().getAssets({
+    const client = await getClient();
+    return await client.getAssets({
       status: activeOnly ? 'active' : undefined,
     });
   } catch (err: any) {
@@ -193,7 +234,8 @@ export async function getAssets(activeOnly = true) {
 
 export async function getClock() {
   try {
-    return await getClient().getClock();
+    const client = await getClient();
+    return await client.getClock();
   } catch (err: any) {
     throw new AlpacaError(err.message || 'Failed to fetch market clock', 502);
   }
@@ -201,7 +243,8 @@ export async function getClock() {
 
 export async function getCalendar({ start, end }: { start?: string; end?: string } = {}) {
   try {
-    return await getClient().getCalendar({ start, end });
+    const client = await getClient();
+    return await client.getCalendar({ start, end });
   } catch (err: any) {
     throw new AlpacaError(err.message || 'Failed to fetch calendar', 502);
   }
@@ -209,7 +252,7 @@ export async function getCalendar({ start, end }: { start?: string; end?: string
 
 export async function getPortfolioHistory({ period, timeframe }: { period?: string; timeframe?: string } = {}) {
   try {
-    const client = getClient();
+    const client = await getClient();
     // @ts-ignore — alpaca-trade-api typings may not include this
     return await client.getPortfolioHistory({ period: period || '1M', timeframe: timeframe || '1D' });
   } catch (err: any) {

@@ -5,16 +5,15 @@
 
 import { NextRequest } from 'next/server';
 import { calculateRiskScore } from '@/lib/riskScore';
+import { requireSession } from '@/lib/session';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
 const ALPACA_DATA_URL = 'https://data.alpaca.markets/v2';
 const ALPACA_NEWS_URL = 'https://data.alpaca.markets/v1beta1/news';
 
-async function fetchNewsDirect(): Promise<any[]> {
-  const keyId = process.env.ALPACA_API_KEY || '';
-  const secretKey = process.env.ALPACA_SECRET_KEY || '';
-  if (!keyId || !secretKey) {
+async function fetchNewsDirect(apiKey: string, secretKey: string): Promise<any[]> {
+  if (!apiKey || !secretKey) {
     console.warn('[Advisor API] Alpaca creds missing, skipping news fetch');
     return [];
   }
@@ -24,7 +23,7 @@ async function fetchNewsDirect(): Promise<any[]> {
       'https://data.alpaca.markets/v1beta1/news?limit=5&sort=desc&include_content=false',
       {
         headers: {
-          'APCA-API-KEY-ID': keyId,
+          'APCA-API-KEY-ID': apiKey,
           'APCA-API-SECRET-KEY': secretKey,
         },
         cache: 'no-store',
@@ -55,15 +54,17 @@ async function fetchNewsDirect(): Promise<any[]> {
   }
 }
 
-function getAlpacaCreds() {
+function getAlpacaCreds(sessionKeys?: { apiKey: string; secretKey: string }) {
+  if (sessionKeys) {
+    return { keyId: sessionKeys.apiKey, secretKey: sessionKeys.secretKey };
+  }
   const keyId = process.env.ALPACA_API_KEY || '';
   const secretKey = process.env.ALPACA_SECRET_KEY || '';
   return { keyId, secretKey };
 }
 
-async function fetchSpyQqqChange(): Promise<{ spy_change_pct: number; qqq_change_pct: number }> {
-  const keyId = process.env.ALPACA_API_KEY || '';
-  const secretKey = process.env.ALPACA_SECRET_KEY || '';
+async function fetchSpyQqqChange(sessionKeys?: { apiKey: string; secretKey: string }): Promise<{ spy_change_pct: number; qqq_change_pct: number }> {
+  const { keyId, secretKey } = getAlpacaCreds(sessionKeys);
   if (!keyId || !secretKey) {
     console.warn('[Advisor] Alpaca creds missing, skipping SPY/QQQ fetch');
     return { spy_change_pct: 0, qqq_change_pct: 0 };
@@ -642,6 +643,9 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Require valid session for Alpaca data access
+    const sessionKeys = await requireSession();
+
     const openAIKey = getOpenAIKey();
     const openRouterKey = getOpenRouterKey();
 
@@ -679,11 +683,13 @@ export async function POST(req: NextRequest) {
     }));
 
     // ── Fetch fresh news directly from Alpaca (server-side, 60s cache) ──
-    const freshNews = await fetchNewsDirect();
+    const freshNews = sessionKeys
+      ? await fetchNewsDirect(sessionKeys.apiKey, sessionKeys.secretKey)
+      : await fetchNewsDirect('', '');
 
     // ── Fetch real SPY/QQQ change% and VIX from Alpaca bars ──
     const [{ spy_change_pct, qqq_change_pct }, vix] = await Promise.all([
-      fetchSpyQqqChange(),
+      fetchSpyQqqChange(sessionKeys || undefined),
       fetchVix(),
     ]);
 
@@ -745,7 +751,7 @@ export async function POST(req: NextRequest) {
     let researchContext: Record<string, any> = {};
     if (detectedSymbols.length > 0) {
       try {
-        const { keyId, secretKey } = getAlpacaCreds();
+        const { keyId, secretKey } = getAlpacaCreds(sessionKeys || undefined);
         if (keyId && secretKey) {
           const quotesRes = await fetch(
             `https://data.alpaca.markets/v2/stocks/quotes?symbols=${detectedSymbols.join(',')}`,

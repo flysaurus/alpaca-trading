@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { checkRateLimit, getClientIP, rateLimitHeaders } from '@/lib/ratelimit';
+import { requireSession } from '@/lib/session';
 
 export async function GET(request: Request) {
   const ip = getClientIP(request);
@@ -11,6 +12,11 @@ export async function GET(request: Request) {
       { error: 'Rate limit exceeded' },
       { status: 429, headers: rateLimitHeaders(limit) }
     );
+  }
+
+  const keys = await requireSession();
+  if (!keys) {
+    return NextResponse.json({ error: 'Session expired, re-authenticate' }, { status: 401 });
   }
 
   try {
@@ -26,22 +32,12 @@ export async function GET(request: Request) {
       );
     }
 
-    const key = process.env.ALPACA_API_KEY || '';
-    const secret = process.env.ALPACA_SECRET_KEY || '';
-
-    if (!key || !secret) {
-      return NextResponse.json(
-        { error: 'Alpaca API credentials not configured' },
-        { status: 500, headers: rateLimitHeaders(limit) }
-      );
-    }
-
     const alpacaUrl = `https://data.alpaca.markets/v2/stocks/bars?symbols=${encodeURIComponent(symbol)}&timeframe=${encodeURIComponent(timeframe)}&limit=${limitParam}&adjustment=raw&feed=iex`;
 
     const res = await fetch(alpacaUrl, {
       headers: {
-        'APCA-API-KEY-ID': key,
-        'APCA-API-SECRET-KEY': secret,
+        'APCA-API-KEY-ID': keys.apiKey,
+        'APCA-API-SECRET-KEY': keys.secretKey,
         'Accept': 'application/json',
       },
       cache: 'no-store',

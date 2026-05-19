@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cancelOrder, AlpacaError } from '@/lib/alpaca';
 import { checkRateLimit, getClientIP, rateLimitHeaders } from '@/lib/ratelimit';
+import { requireSession } from '@/lib/session';
 
 export async function DELETE(
   request: Request,
@@ -14,6 +15,11 @@ export async function DELETE(
       { error: 'Rate limit exceeded' },
       { status: 429, headers: rateLimitHeaders(limit) }
     );
+  }
+
+  const keys = await requireSession();
+  if (!keys) {
+    return NextResponse.json({ error: 'Session expired, re-authenticate' }, { status: 401 });
   }
 
   try {

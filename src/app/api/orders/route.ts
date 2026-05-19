@@ -4,6 +4,7 @@ import { validateOrder } from '@/lib/safety';
 import { checkRateLimit, getClientIP, rateLimitHeaders } from '@/lib/ratelimit';
 import { checkRiskLimits, DEFAULT_RISK } from '@/lib/risk';
 import { sendTelegramMessage, wasNotificationSent, recordNotificationSent, NotificationMessageType } from '@/lib/telegram';
+import { requireSession } from '@/lib/session';
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', {
@@ -35,6 +36,11 @@ export async function GET(request: Request) {
       { error: 'Rate limit exceeded' },
       { status: 429, headers: rateLimitHeaders(limit) }
     );
+  }
+
+  const keys = await requireSession();
+  if (!keys) {
+    return NextResponse.json({ error: 'Session expired, re-authenticate' }, { status: 401 });
   }
 
   try {
@@ -83,6 +89,11 @@ export async function POST(request: Request) {
       { error: 'Rate limit exceeded' },
       { status: 429, headers: rateLimitHeaders(limit) }
     );
+  }
+
+  const keys = await requireSession();
+  if (!keys) {
+    return NextResponse.json({ error: 'Session expired, re-authenticate' }, { status: 401 });
   }
 
   try {

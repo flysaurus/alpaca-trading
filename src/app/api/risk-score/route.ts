@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getAccount, getPositions, getBars } from '@/lib/alpaca';
 import { calculateRiskScore, type RiskScore } from '@/lib/riskScore';
 import { checkRateLimit, getClientIP, rateLimitHeaders } from '@/lib/ratelimit';
+import { requireSession } from '@/lib/session';
 
 // RSI calculation (inline to avoid extra import)
 function calculateRSI(closes: number[], period = 14): number {
@@ -40,6 +41,11 @@ export async function GET(request: Request) {
       { error: 'Rate limit exceeded' },
       { status: 429, headers: rateLimitHeaders(limit) }
     );
+  }
+
+  const keys = await requireSession();
+  if (!keys) {
+    return NextResponse.json({ error: 'Session expired, re-authenticate' }, { status: 401 });
   }
 
   try {

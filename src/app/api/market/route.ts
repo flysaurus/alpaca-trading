@@ -2,21 +2,26 @@ import { NextResponse } from 'next/server';
 import { getClock, AlpacaError } from '@/lib/alpaca';
 import { checkRateLimit, getClientIP, rateLimitHeaders } from '@/lib/ratelimit';
 import { classifyMarketState } from '@/lib/marketState';
-
-const APCA_KEY = process.env.ALPACA_API_KEY;
-const APCA_SECRET = process.env.ALPACA_SECRET_KEY;
+import { requireSession } from '@/lib/session';
 
 let cache: { data: any; timestamp: number } | null = null;
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
-async function fetchBars(symbol: string, limit: number, start?: string, end?: string): Promise<any[]> {
+async function fetchBars(
+  symbol: string,
+  limit: number,
+  apiKey: string,
+  secretKey: string,
+  start?: string,
+  end?: string
+): Promise<any[]> {
   let url = `https://data.alpaca.markets/v2/stocks/bars?symbols=${encodeURIComponent(symbol)}&timeframe=1Day&limit=${limit}&feed=iex`;
   if (start) url += `&start=${encodeURIComponent(start)}`;
   if (end) url += `&end=${encodeURIComponent(end)}`;
   const res = await fetch(url, {
     headers: {
-      'APCA-API-KEY-ID': APCA_KEY || '',
-      'APCA-API-SECRET-KEY': APCA_SECRET || '',
+      'APCA-API-KEY-ID': apiKey,
+      'APCA-API-SECRET-KEY': secretKey,
     },
   });
   if (!res.ok) {
@@ -39,6 +44,11 @@ export async function GET(request: Request) {
       );
     }
 
+    const keys = await requireSession();
+    if (!keys) {
+      return NextResponse.json({ error: 'Session expired, re-authenticate' }, { status: 401 });
+    }
+
     // Check cache
     if (cache && Date.now() - cache.timestamp < CACHE_TTL_MS) {
       return NextResponse.json(cache.data, { headers: rateLimitHeaders(limit) });
@@ -50,14 +60,14 @@ export async function GET(request: Request) {
     const endDate = new Date().toISOString().split('T')[0];
     const startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-    // Fetch SPY 80-day bars with date range
-    const spyBars = await fetchBars('SPY', 80, startDate, endDate);
+    // Fetch SPY 80-day bars with date range using session keys
+    const spyBars = await fetchBars('SPY', 80, keys.apiKey, keys.secretKey, startDate, endDate);
     if (spyBars.length < 2) {
       throw new Error('Insufficient SPY bar data');
     }
 
-    // Fetch VIXY 2-day bars (last close = VIX proxy)
-    const vixyBars = await fetchBars('VIXY', 2);
+    // Fetch VIXY 2-day bars (last close = VIX proxy) using session keys
+    const vixyBars = await fetchBars('VIXY', 2, keys.apiKey, keys.secretKey);
     const vix = vixyBars.length > 0 ? vixyBars[vixyBars.length - 1].c : 20;
 
     // Calculate SPY change%

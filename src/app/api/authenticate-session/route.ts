@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { verifyMasterPassword, decryptKeys } from '@/lib/supabase-vault';
 import { createSession } from '@/lib/session';
 
@@ -11,49 +11,47 @@ import { createSession } from '@/lib/session';
  *
  * Body: { userId: string, masterPassword: string }
  */
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { userId, masterPassword } = body;
+    const { userId, masterPassword } = await request.json();
 
     if (!userId || !masterPassword) {
       return NextResponse.json(
-        { error: 'Missing userId or masterPassword' },
+        { error: 'Missing credentials' },
         { status: 400 }
       );
     }
 
-    // Step 1: Verify master password against stored bcrypt hash
+    // Verify master password against stored bcrypt hash
     const valid = await verifyMasterPassword(userId, masterPassword);
-
     if (!valid) {
-      console.log(`[auth-session] Invalid password for user ${userId.slice(0, 8)}...`);
       return NextResponse.json(
-        { error: 'Invalid master password' },
+        { error: 'Invalid password' },
         { status: 401 }
       );
     }
 
-    // Step 2: Decrypt Alpaca keys from Supabase Vault
+    // Decrypt keys from Supabase Vault
     const keys = await decryptKeys(userId);
-
     if (!keys) {
-      console.error(`[auth-session] Key decryption failed for user ${userId.slice(0, 8)}...`);
       return NextResponse.json(
-        { error: 'Failed to decrypt keys. Try re-entering your Alpaca keys.' },
-        { status: 500 }
+        { error: 'Keys not found' },
+        { status: 404 }
       );
     }
 
-    // Step 3: Create server-side session (in-memory key cache + HTTP-only cookie)
+    // Create server-side session (24h) — stores keys in memory Map
     await createSession(userId, keys.apiKey, keys.secretKey);
+
+    // Clear keys from local variables (they're now in the session Map only)
+    keys.apiKey = '';
+    keys.secretKey = '';
 
     console.log(`[auth-session] Session created for user ${userId.slice(0, 8)}...`);
 
     const response = NextResponse.json({ success: true });
 
-    // createSession sets the cookie via next/headers internally —
-    // but we also set it explicitly on the response object for reliability
+    // Explicitly set the session cookie on the response
     response.cookies.set('alpaca_session_id', userId, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -66,7 +64,7 @@ export async function POST(request: NextRequest) {
   } catch (err: any) {
     console.error('[auth-session] Unexpected error:', err);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: err.message || 'Internal server error' },
       { status: 500 }
     );
   }

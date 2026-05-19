@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getAccount, getPositions, AlpacaError, IS_PAPER } from '@/lib/alpaca';
 import { checkRateLimit, getClientIP, rateLimitHeaders } from '@/lib/ratelimit';
 import { calculatePortfolioRisk } from '@/lib/risk';
+import { requireSession } from '@/lib/session';
 
 export async function GET(request: Request) {
   const ip = getClientIP(request);
@@ -12,6 +13,12 @@ export async function GET(request: Request) {
       { error: 'Rate limit exceeded. Max 30 requests per minute.' },
       { status: 429, headers: rateLimitHeaders(limit) }
     );
+  }
+
+  // Require valid session
+  const keys = await requireSession();
+  if (!keys) {
+    return NextResponse.json({ error: 'Session expired, re-authenticate' }, { status: 401 });
   }
 
   try {
