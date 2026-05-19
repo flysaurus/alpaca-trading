@@ -63,6 +63,18 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  // Check if user has completed onboarding (keys stored in vault)
+  // Skip this check on the onboarding page itself
+  if (pathname !== '/onboarding') {
+    const { data: hashData } = await supabase
+      .rpc('vault_get_password_hash', { p_user_id: session.user.id });
+
+    if (!hashData) {
+      console.log('[middleware] No keys stored — redirecting to onboarding');
+      return NextResponse.redirect(new URL('/onboarding', request.url));
+    }
+  }
+
   // Session exists → attach user ID to request headers
   const response = NextResponse.next();
   response.headers.set('x-user-id', session.user.id);
