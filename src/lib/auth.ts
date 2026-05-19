@@ -1,4 +1,5 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 let _supabase: SupabaseClient | null = null;
 
@@ -9,11 +10,13 @@ function getSupabase(): SupabaseClient {
     if (!url || !key) {
       throw new Error('Supabase URL and anon key are required. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.');
     }
-    _supabase = createClient(url, key, {
+    // createBrowserClient stores session in cookies (not localStorage)
+    // so the server-side middleware can read it via @supabase/ssr
+    _supabase = createBrowserClient(url, key, {
       auth: {
         detectSessionInUrl: true,
-        persistSession: true,
         autoRefreshToken: true,
+        persistSession: true,
       },
     });
   }
@@ -33,7 +36,7 @@ export const supabase = new Proxy({} as SupabaseClient, {
 });
 
 /**
- * Sign in with Google OAuth (implicit flow).
+ * Sign in with Google OAuth.
  */
 export const signInWithGoogle = async () => {
   const { data, error } = await supabase.auth.signInWithOAuth({
