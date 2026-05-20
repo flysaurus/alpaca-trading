@@ -23,8 +23,9 @@ export async function POST(request: Request) {
     }
 
     // Validate keys with Alpaca before storing
+    // Onboarding defaults to paper trading — pass paper: true explicitly
     try {
-      const alpaca = createAlpacaClient(apiKey, secretKey);
+      const alpaca = createAlpacaClient(apiKey, secretKey, true);
       await alpaca.getAccount();
     } catch {
       return NextResponse.json(

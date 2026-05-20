@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
-    const { apiKey, secretKey } = await request.json();
+    const { apiKey, secretKey, paper } = await request.json();
 
     if (!apiKey || !secretKey) {
       return NextResponse.json(
@@ -11,8 +11,16 @@ export async function POST(request: Request) {
       );
     }
 
+    // Default to paper trading for onboarding — live users can pass { paper: false }
+    const isPaper = paper !== false;
+    const baseUrl = isPaper
+      ? 'https://paper-api.alpaca.markets'
+      : 'https://api.alpaca.markets';
+
+    console.log(`[validate-alpaca] Validating against ${isPaper ? 'paper' : 'live'} endpoint`);
+
     // Test connection with Alpaca
-    const response = await fetch('https://api.alpaca.markets/v2/account', {
+    const response = await fetch(`${baseUrl}/v2/account`, {
       headers: {
         'APCA-API-KEY-ID': apiKey,
         'APCA-API-SECRET-KEY': secretKey,
