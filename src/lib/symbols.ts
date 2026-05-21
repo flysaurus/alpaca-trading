@@ -11,13 +11,13 @@ let cachedAssets: AssetInfo[] | null = null;
 let cacheTime = 0;
 const CACHE_TTL = 3600_000; // 1 hour
 
-export async function getAllAssets(): Promise<AssetInfo[]> {
+export async function getAllAssets(keys?: { apiKey: string; secretKey: string }): Promise<AssetInfo[]> {
   if (cachedAssets && Date.now() - cacheTime < CACHE_TTL) {
     return cachedAssets;
   }
 
-  const key = process.env.ALPACA_API_KEY;
-  const secret = process.env.ALPACA_SECRET_KEY;
+  const key = keys?.apiKey || process.env.ALPACA_API_KEY;
+  const secret = keys?.secretKey || process.env.ALPACA_SECRET_KEY;
   if (!key || !secret) return [];
 
   const base = process.env.TRADING_MODE === 'live'

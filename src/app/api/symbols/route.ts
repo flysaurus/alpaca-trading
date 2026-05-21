@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAllAssets, searchSymbols } from '@/lib/symbols';
 import { checkRateLimit, getClientIP, rateLimitHeaders } from '@/lib/ratelimit';
+import { requireSession } from '@/lib/session';
 
 export async function GET(request: Request) {
   const ip = getClientIP(request);
@@ -25,7 +26,9 @@ export async function GET(request: Request) {
       );
     }
 
-    const assets = await getAllAssets();
+    // Try session keys first, fall back to env vars
+    const keys = await requireSession();
+    const assets = await getAllAssets(keys || undefined);
     const results = searchSymbols(query, assets, count);
 
     return NextResponse.json(
