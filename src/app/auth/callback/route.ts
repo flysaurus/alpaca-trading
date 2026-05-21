@@ -51,12 +51,31 @@ export async function GET(request: NextRequest) {
   // Check if user has completed onboarding (keys stored in vault)
   const { data: { user } } = await supabase.auth.getUser();
   if (user) {
-    const { data: hashData } = await supabase
-      .rpc('vault_get_password_hash', { p_user_id: user.id });
+    const userId = user.id;
+    console.log(`[auth/callback] Checking onboarding for user ${userId.slice(0, 8)}...`);
 
-    if (!hashData) {
-      console.log('[auth/callback] New user — redirecting to onboarding');
-      return NextResponse.redirect(new URL('/onboarding', requestUrl.origin));
+    const { data: hashData, error: rpcError } = await supabase
+      .rpc('vault_get_password_hash', { p_user_id: userId });
+
+    if (rpcError) {
+      console.error('[auth/callback] RPC error:', rpcError.message);
+    }
+
+    if (!hashData || rpcError) {
+      // Fallback: direct table query
+      const { data: userRow } = await supabase
+        .from('users')
+        .select('master_password_hash')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (!userRow?.master_password_hash) {
+        console.log('[auth/callback] New user — redirecting to onboarding');
+        return NextResponse.redirect(new URL('/onboarding', requestUrl.origin));
+      }
+      console.log('[auth/callback] Keys found via direct query');
+    } else {
+      console.log('[auth/callback] Keys found via RPC');
     }
   }
 

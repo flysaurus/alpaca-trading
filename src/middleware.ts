@@ -66,10 +66,29 @@ export async function middleware(request: NextRequest) {
   // Check if user has completed onboarding (keys stored in vault)
   // Skip this check on the onboarding page itself
   if (pathname !== '/onboarding') {
-    const { data: hashData } = await supabase
-      .rpc('vault_get_password_hash', { p_user_id: session.user.id });
+    const userId = session.user.id;
+    console.log(`[middleware] Checking onboarding for user ${userId.slice(0, 8)}...`);
 
-    if (!hashData) {
+    // Try RPC first
+    const { data: hashData, error: rpcError } = await supabase
+      .rpc('vault_get_password_hash', { p_user_id: userId });
+
+    if (rpcError) {
+      console.error('[middleware] RPC vault_get_password_hash error:', rpcError.message);
+
+      // Fallback: query the table directly
+      const { data: userRow } = await supabase
+        .from('users')
+        .select('master_password_hash')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (!userRow?.master_password_hash) {
+        console.log('[middleware] No keys stored (direct query also empty) — redirecting to onboarding');
+        return NextResponse.redirect(new URL('/onboarding', request.url));
+      }
+      console.log('[middleware] Keys found via direct query fallback');
+    } else if (!hashData) {
       console.log('[middleware] No keys stored — redirecting to onboarding');
       return NextResponse.redirect(new URL('/onboarding', request.url));
     }
