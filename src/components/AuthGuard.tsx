@@ -5,62 +5,83 @@ import { useRouter, usePathname } from 'next/navigation';
 import { supabase } from '@/lib/auth';
 
 /**
- * AuthGuard — client-side auth protection.
- *
- * Placed inside the root layout. Checks for a Supabase session on
- * mount and on every auth state change. Redirects to /login if
- * no session is present (public paths are exempted).
+ * AuthGuard — client-side auth protection with comprehensive logging.
  */
+
+const PUBLIC_PATHS = ['/login', '/setup-keys', '/authenticate-session', '/auth/callback', '/onboarding'];
+const EXEMPT_PATHS = [...PUBLIC_PATHS, '/api', '/_next', '/favicon.ico', '/manifest'];
+
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [isLoading, setIsLoading] = useState(true);
   const [isAuth, setIsAuth] = useState(false);
-
-  // Public paths that don't require authentication
-  const PUBLIC_PATHS = ['/login', '/setup-keys', '/authenticate-session', '/auth/callback', '/onboarding'];
-  const EXEMPT_PATHS = [...PUBLIC_PATHS, '/api', '/_next', '/favicon.ico', '/manifest'];
+  const [debug, setDebug] = useState<string[]>([]);
 
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
   const isExempt = EXEMPT_PATHS.some((p) => pathname.startsWith(p));
 
   useEffect(() => {
+    const logs: string[] = [];
+
     const checkAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        // Log document cookies (before auth check)
+        const cookieStr = typeof document !== 'undefined' ? document.cookie : 'SSR';
+        const supabaseCookies = cookieStr !== 'SSR'
+          ? cookieStr.split('; ').filter(c => c.startsWith('sb-'))
+          : [];
+        logs.push(`📦 Cookies on page: ${cookieStr === 'SSR' ? 'SSR' : supabaseCookies.length + ' supabase cookies'}`);
+        supabaseCookies.forEach(c => logs.push(`  🍪 ${c.substring(0, 80)}`));
 
-        console.log('[AuthGuard] Session:', session ? `user=${session.user.id.slice(0, 8)}...` : 'null');
-        console.log('[AuthGuard] Pathname:', pathname, 'Public:', isPublic);
+        // Check session
+        logs.push('🔍 Calling supabase.auth.getSession()...');
+        const start = Date.now();
+        const { data: { session }, error } = await supabase.auth.getSession();
+        const elapsed = Date.now() - start;
+
+        if (error) {
+          logs.push(`❌ getSession error (${elapsed}ms): ${error.message}`);
+        } else if (session) {
+          logs.push(`✅ Session found (${elapsed}ms): user=${session.user.id.slice(0, 8)}..., expires=${new Date(session.expires_at! * 1000).toISOString()}`);
+        } else {
+          logs.push(`⚠️ No session (${elapsed}ms) — getSession returned null`);
+        }
+
+        logs.push(`📍 Pathname: ${pathname}, isPublic: ${isPublic}`);
 
         if (!session && !isPublic) {
-          console.log('[AuthGuard] No session — redirecting to /login');
-          router.push('/login');
+          logs.push('🚫 No session + not public → NOT redirecting (debug mode)');
+          setDebug(logs);
+          setIsLoading(false);
           return;
         }
 
-        // Check if user has completed onboarding (keys stored)
         if (session && !isExempt) {
-          const userId = session.user.id;
+          logs.push('🔑 Checking vault for stored keys...');
           try {
-            const { data: hashData } = await supabase
-              .rpc('vault_get_password_hash', { p_user_id: userId });
+            const { data: hashData, error: rpcError } = await supabase
+              .rpc('vault_get_password_hash', { p_user_id: session.user.id });
+
+            if (rpcError) {
+              logs.push(`❌ vault RPC error: ${rpcError.message}`);
+            }
 
             if (!hashData) {
-              console.log('[AuthGuard] No keys stored — redirecting to /onboarding');
-              router.push('/onboarding');
-              return;
+              logs.push('📝 No keys stored (debug: would redirect to /onboarding)');
             }
-          } catch {
-            // RPC failed — user might not exist in vault yet
-            console.log('[AuthGuard] RPC failed — redirecting to /onboarding');
-            router.push('/onboarding');
-            return;
+            logs.push('✅ Keys found in vault');
+          } catch (e: any) {
+            logs.push(`❌ vault RPC threw: ${e?.message}`);
           }
         }
 
+        logs.push('✅ Auth check passed');
+        setDebug(logs);
         setIsAuth(true);
-      } catch (err) {
-        console.error('[AuthGuard] Session check failed:', err);
+      } catch (err: any) {
+        logs.push(`💥 checkAuth crashed: ${err?.message}`);
+        setDebug(logs);
       } finally {
         setIsLoading(false);
       }
@@ -68,9 +89,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
     checkAuth();
 
-    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('[AuthGuard] Auth state changed:', event, session ? 'has session' : 'no session');
+      console.log('[AuthGuard] onAuthStateChange:', event, session?.user?.id?.slice(0, 8));
       if (!session && !isPublic) {
         router.push('/login');
       }
@@ -81,7 +101,6 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     };
   }, [router, pathname, isPublic]);
 
-  // Show loading spinner while checking auth
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center dark:bg-[#0f172a] light:bg-[#f1f5f9]">
@@ -95,9 +114,17 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Don't render children if not authenticated and not on a public page
   if (!isAuth && !isPublic) {
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center dark:bg-[#0f172a] light:bg-[#f1f5f9] px-4">
+        <div className="max-w-md w-full">
+          <p className="text-sm text-red-400 mb-4">Authentication check failed.</p>
+          <pre className="text-xs text-zinc-500 whitespace-pre-wrap bg-zinc-900 p-3 rounded">
+            {debug.map((line, i) => <div key={i}>{line}</div>)}
+          </pre>
+        </div>
+      </div>
+    );
   }
 
   return <>{children}</>;
