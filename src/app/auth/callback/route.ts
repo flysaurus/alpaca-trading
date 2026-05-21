@@ -4,27 +4,21 @@ import { createServerClient } from '@supabase/ssr';
 /**
  * GET /auth/callback
  *
- * Server-side OAuth callback — REQUIRED by @supabase/ssr PKCE flow.
- * The PKCE code verifier is stored in an HTTP-only cookie that only
- * the server can read. This route:
- * 1. Reads the code verifier from the request cookies
- * 2. Exchanges the auth code for a Supabase session
- * 3. Sets the session cookies on the redirect response
+ * Google OAuth → exchange code → set cookies → redirect based on vault state.
+ * The cookie-setting response is created first (before we know the redirect
+ * target), then we return a new redirect with the correct URL but same cookies.
  */
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
-  const next = requestUrl.searchParams.get('next') || '/';
 
   if (!code) {
-    console.error('[auth/callback] No code in URL');
     return NextResponse.redirect(new URL('/login?error=no_code', requestUrl.origin));
   }
 
-  // Create the redirect response FIRST so cookies are set on it
-  const response = NextResponse.redirect(new URL(next, requestUrl.origin));
+  // Buffer response for cookie accumulation
+  let setCookieHeaders: string[] = [];
 
-  // Create server client with cookie read/write on the redirect response
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -34,23 +28,54 @@ export async function GET(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
+          // Buffer cookies as Set-Cookie header strings
           cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options);
+            let header = `${name}=${value}; Path=${options?.path || '/'}`;
+            if (options?.maxAge) header += `; Max-Age=${options.maxAge}`;
+            if (options?.domain) header += `; Domain=${options.domain}`;
+            if (options?.sameSite) header += `; SameSite=${typeof options.sameSite === 'boolean' ? 'Lax' : options.sameSite}`;
+            if (options?.secure) header += '; Secure';
+            if (options?.httpOnly) header += '; HttpOnly';
+            setCookieHeaders.push(header);
           });
         },
       },
     }
   );
 
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  // Step 1: Exchange code → sets cookies on cookieResponse via setAll
+  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
-  if (error) {
-    console.error('[auth/callback] Exchange failed:', error.message);
+  if (error || !data?.session) {
+    console.error('[callback] exchangeCodeForSession failed:', error?.message);
     return NextResponse.redirect(
-      new URL(`/login?error=${encodeURIComponent(error.message)}`, requestUrl.origin)
+      new URL(`/login?error=${encodeURIComponent(error?.message || 'Auth failed')}`, requestUrl.origin)
     );
   }
 
-  console.log('[auth/callback] Session established → redirecting to', next);
-  return response;
+  const userId = data.session.user.id;
+  const userEmail = data.session.user.email;
+  console.log('[callback] Session OK for:', userEmail);
+
+  // Step 2: Check vault for stored Alpaca keys
+  let redirectTo = '/onboarding';
+  try {
+    const { data: hashData } = await supabase
+      .rpc('vault_get_password_hash', { p_user_id: userId });
+    if (hashData) {
+      redirectTo = '/authenticate-session';
+    }
+  } catch (e) {
+    console.log('[callback] Vault check (new user):', e);
+  }
+
+  console.log('[callback] →', redirectTo);
+
+  // Step 3: Create redirect with correct URL, attach buffered cookies
+  const finalResponse = NextResponse.redirect(new URL(redirectTo, requestUrl.origin));
+  setCookieHeaders.forEach((header) => {
+    finalResponse.headers.append('set-cookie', header);
+  });
+
+  return finalResponse;
 }

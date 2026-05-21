@@ -1,79 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
 
 /**
- * Next.js Edge Middleware
+ * Edge Middleware — minimal, no Supabase api calls, no library imports.
  *
- * Verifies authentication via getSession() — parses the JWT locally
- * from cookies. No Supabase API call needed, so it works reliably
- * in Edge runtime (no cold starts, no network issues).
+ * Just checks for the existence of the Supabase auth cookie.
+ * If it exists → user signed in via Google → allow.
+ * If it doesn't → redirect to /login.
  *
- * getUser() was causing the redirect loop because it makes an API
- * call that can fail on Vercel Edge.
+ * No JWT validation here — AuthGuard handles that client-side.
+ * This is purely a "do you have a cookie gate."
  */
-
-const PUBLIC_ROUTES = ['/login', '/auth/callback'];
-
-function isPublic(pathname: string): boolean {
-  return PUBLIC_ROUTES.some((p) => pathname.startsWith(p));
-}
-
-async function getSessionFromCookies(request: NextRequest, response: NextResponse) {
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          // Attach refreshed tokens to the response
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options);
-          });
-        },
-      },
-    }
-  );
-
-  const { data: { session } } = await supabase.auth.getSession();
-  return session;
-}
-
-export async function middleware(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow public routes through
-  if (isPublic(pathname)) {
+  // Always-allow paths
+  const PUBLIC = ['/login', '/auth', '/_next', '/api', '/favicon.ico'];
+  if (PUBLIC.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 
-  // Allow static assets and API routes through
-  if (pathname.startsWith('/_next') || pathname.startsWith('/api') || pathname.startsWith('/favicon')) {
-    return NextResponse.next();
+  // Check for Supabase session cookie (just existence check, no API call)
+  const hasSession = request.cookies.get('sb-lhzidxwzdyxlrwkmkcdz-auth-token.0');
+
+  if (!hasSession) {
+    const loginUrl = new URL('/login', request.url);
+    return NextResponse.redirect(loginUrl);
   }
 
-  try {
-    const response = NextResponse.next();
-    const session = await getSessionFromCookies(request, response);
-
-    if (!session) {
-      console.log(`[middleware] No session for ${pathname} → redirect to /login`);
-      const loginUrl = new URL('/login', request.url);
-      return NextResponse.redirect(loginUrl);
-    }
-
-    // Session valid — pass through
-    response.headers.set('x-user-id', session.user.id);
-    return response;
-  } catch (err: any) {
-    console.error(`[middleware] Error checking ${pathname}:`, err.message);
-    // Don't block on errors — let AuthGuard handle auth client-side
-    return NextResponse.next();
-  }
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image).*)'],
 };
