@@ -227,25 +227,17 @@ export function clearSession(userId?: string): void {
 }
 
 /**
- * Require a valid session — returns decrypted keys.
- * Falls back to environment variables if no session token is present
- * (single-user / development deployments).
+ * Require a valid session — returns decrypted keys or null.
+ *
+ * This is the API route gate. If there's no valid session token
+ * in the Authorization header, it returns null → route returns 401
+ * → client redirects to /authenticate-session to enter password.
+ *
+ * Cron jobs and SSR code should use getSessionKeys() or env vars directly.
  */
 export async function requireSession(): Promise<{
   apiKey: string;
   secretKey: string;
 } | null> {
-  // Try session token first
-  const keys = await getSessionKeys();
-  if (keys) return keys;
-
-  // Fall back to environment variables
-  const envKey = process.env.ALPACA_API_KEY;
-  const envSecret = process.env.ALPACA_SECRET_KEY;
-  if (envKey && envSecret) {
-    console.log('[session] Using env var fallback for Alpaca keys');
-    return { apiKey: envKey, secretKey: envSecret };
-  }
-
-  return null;
+  return getSessionKeys();
 }
