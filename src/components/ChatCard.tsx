@@ -6,18 +6,7 @@ import { Brain, Send, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAdvisorStore } from '@/stores/advisorStore';
 import { useChatStore } from '@/stores/chat';
 import { fetchAiSuggestions, createAiSuggestion } from '@/lib/supabase';
-
-/* ── Stable anonymous user ID ──────────────────────────────────── */
-function getUserId(): string {
-  const key = 'alpaca-dashboard-user-id';
-  if (typeof window === 'undefined') return '';
-  let id = localStorage.getItem(key) || '';
-  if (!id) {
-    id = 'user-' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-    localStorage.setItem(key, id);
-  }
-  return id;
-}
+import { getSupabaseUserId } from '@/lib/auth';
 
 interface ChatCardProps {
   isExpanded: boolean;
@@ -37,9 +26,16 @@ export default function ChatCard({ isExpanded, setExpanded, alpacaAccountId }: C
 
   const [input, setInput] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string>('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const userId = getUserId();
+
+  // Get real Supabase Auth user ID on mount
+  useEffect(() => {
+    getSupabaseUserId().then((id) => {
+      if (id) setUserId(id);
+    });
+  }, []);
 
   // Auto-scroll
   useEffect(() => {

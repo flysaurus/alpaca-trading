@@ -43,3 +43,17 @@ export const signInWithGoogle = async () => {
 export const signOut = async () => {
   return supabase.auth.signOut();
 };
+
+/**
+ * Get the real Supabase Auth user ID (UUID).
+ * Returns null if not authenticated.
+ */
+export async function getSupabaseUserId(): Promise<string | null> {
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data?.user) return null;
+    return data.user.id;
+  } catch {
+    return null;
+  }
+}

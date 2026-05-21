@@ -41,6 +41,7 @@ import MorningRecommendationsList from '@/components/MorningRecommendationsList'
 import ChatCard from '@/components/ChatCard';
 import { useChatStore } from '@/stores/chat';
 import { useAdvisorStore } from '@/stores/advisorStore';
+import { getSupabaseUserId } from '@/lib/auth';
 import {
   type DbStrategy,
   type DbAccountSnapshot,
@@ -55,18 +56,6 @@ import {
 } from '@/lib/supabase';
 
 /* ── Stable anonymous user ID ──────────────────────────────────── */
-function getUserId(): string {
-  const key = 'alpaca-dashboard-user-id';
-  let id = '';
-  if (typeof window !== 'undefined') {
-    id = localStorage.getItem(key) || '';
-    if (!id) {
-      id = crypto.randomUUID();
-      localStorage.setItem(key, id);
-    }
-  }
-  return id;
-}
 
 /* ── Types ─────────────────────────────────────────────────────── */
 
@@ -789,8 +778,10 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
     avg_return_30d: number | null;
   } | null>(null);
 
-  const scannerUserId = getUserId();
+  const [userId, setUserId] = useState<string>('');
   const today = new Date().toISOString().split('T')[0];
+
+  useEffect(() => { getSupabaseUserId().then((id) => { if (id) setUserId(id); }); }, []);
 
   async function updateScannerAction(
     symbol: string,
@@ -813,7 +804,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
       const { error } = await supabase
         .from('scanner_recommendations')
         .update(patch)
-        .eq('user_id', scannerUserId)
+        .eq('user_id', userId)
         .eq('symbol', symbol)
         .eq('date', today);
 
@@ -1760,8 +1751,15 @@ export default function AdvisorStrategiesTab() {
   const [riskScore, setRiskScore] = useState<RiskScoreData | null>(null);
   const [riskScoreLoading, setRiskScoreLoading] = useState(true);
   const setStorePortfolioContext = useAdvisorStore((s) => s.setPortfolioContext);
-  const userId = getUserId();
+  const [userId, setUserId] = useState<string>('');
   const [chatExpanded, setChatExpanded] = useState(false);
+
+  // Resolve real Supabase Auth user ID
+  useEffect(() => {
+    getSupabaseUserId().then((id) => {
+      if (id) setUserId(id);
+    });
+  }, []);
 
   // Fetch portfolio context on mount
   useEffect(() => {
