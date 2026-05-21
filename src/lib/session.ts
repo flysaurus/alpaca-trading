@@ -13,6 +13,12 @@
  * The session cookie persists, so on a cold start, the user simply
  * re-enters their master password to re-populate the key cache.
  * In practice, warm instances handle most requests.
+ *
+ * ⚠️  Cookie responsibility:
+ * this module does NOT set the session cookie. Route handlers
+ * (authenticate-session, update-keys) set the cookie on their
+ * NextResponse objects. This avoids conflicts between cookies()
+ * and NextResponse.cookies.set().
  */
 
 import { cookies } from 'next/headers';
@@ -26,15 +32,22 @@ export interface AlpacaSession {
 }
 
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
-const COOKIE_NAME = 'alpaca_session_id';
+export const COOKIE_NAME = 'alpaca_session_id';
+export const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  maxAge: Math.floor(SESSION_TTL_MS / 1000),
+  path: '/',
+};
 
 // Server-only in-memory key cache
 // Keys are decrypted once per session and held here
 const sessionMap = new Map<string, AlpacaSession>();
 
 /**
- * Create a new session — stores decrypted keys in memory
- * and sets an HTTP-only cookie for identification.
+ * Create a new session — stores decrypted keys in memory only.
+ * The calling route handler MUST set the cookie via response.cookies.set().
  */
 export async function createSession(
   userId: string,
@@ -43,23 +56,11 @@ export async function createSession(
 ): Promise<void> {
   const expiresAt = Date.now() + SESSION_TTL_MS;
 
-  // Store keys in server memory (never sent to client)
   sessionMap.set(userId, {
     userId,
     apiKey,
     secretKey,
     expiresAt,
-  });
-
-  // Set HTTP-only cookie for session identification
-  // The cookie contains ONLY the user ID — keys stay in memory
-  const cookieStore = await cookies();
-  cookieStore.set(COOKIE_NAME, userId, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: Math.floor(SESSION_TTL_MS / 1000),
-    path: '/',
   });
 }
 

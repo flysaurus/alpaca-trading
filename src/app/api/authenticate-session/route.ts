@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { verifyMasterPassword, decryptKeys } from '@/lib/supabase-vault';
-import { createSession } from '@/lib/session';
+import { createSession, COOKIE_NAME, COOKIE_OPTIONS } from '@/lib/session';
 
 /**
  * POST /api/authenticate-session
@@ -49,16 +49,10 @@ export async function POST(request: Request) {
 
     console.log(`[auth-session] Session created for user ${userId.slice(0, 8)}...`);
 
+    // Set the session cookie on the response — this is the ONLY place
+    // the cookie is set during onboarding
     const response = NextResponse.json({ success: true });
-
-    // Explicitly set the session cookie on the response
-    response.cookies.set('alpaca_session_id', userId, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 24 * 60 * 60,
-      path: '/',
-    });
+    response.cookies.set(COOKIE_NAME, userId, COOKIE_OPTIONS);
 
     return response;
   } catch (err: any) {
