@@ -994,6 +994,15 @@ export default function Dashboard() {
             </div>
           )}
 
+          {/* Raw data verification — shows if JS has the values */}
+          {account && (
+            <div className="bg-blue-950 rounded-lg p-2 font-mono text-xs text-cyan-300">
+              <div>RAW: cash={account?.account?.cash} pv={account?.account?.portfolioValue} equity={account?.account?.equity}</div>
+              <div>RAW: positions={account?.positions?.length} risk_pnl={account?.risk?.unrealizedPnL}</div>
+              <div>RAW: top_positions={account?.positions?.slice(0,3).map((p:any)=>p.symbol+':'+p.marketValue).join(', ')}</div>
+            </div>
+          )}
+
           {/* Market Indices Bar — CNBC style */}
           <MarketIndicesBar />
 
