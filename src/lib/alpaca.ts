@@ -57,17 +57,12 @@ export function createAlpacaClient(
  * so multi-user sessions get the correct keys.
  */
 async function getClient(): Promise<Alpaca> {
-  // Try session-based keys first
+  // Try session-based keys first (with cold-start recovery)
   try {
-    const { cookies } = await import('next/headers');
-    const cookieStore = await cookies();
-    const userId = cookieStore.get('alpaca_session_id')?.value;
-    if (userId) {
-      const { getSessionKeysForUser } = await import('./session');
-      const keys = getSessionKeysForUser(userId);
-      if (keys) {
-        return createAlpacaClient(keys.apiKey, keys.secretKey);
-      }
+    const { getSessionKeys } = await import('./session');
+    const keys = await getSessionKeys();
+    if (keys) {
+      return createAlpacaClient(keys.apiKey, keys.secretKey);
     }
   } catch {
     // cookies() throws outside request context (cron jobs, CLI, build)

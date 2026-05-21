@@ -16,6 +16,7 @@
  */
 
 import { cookies } from 'next/headers';
+import { decryptKeys } from '@/lib/supabase-vault';
 
 export interface AlpacaSession {
   userId: string;
@@ -56,7 +57,7 @@ export async function createSession(
   cookieStore.set(COOKIE_NAME, userId, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: 'lax',
     maxAge: Math.floor(SESSION_TTL_MS / 1000),
     path: '/',
   });
@@ -65,6 +66,11 @@ export async function createSession(
 /**
  * Retrieve decrypted Alpaca keys for the current session.
  * Returns null if session is expired or not found.
+ *
+ * ⚠️  Cold-start resilience:
+ * On Vercel serverless, the in-memory Map is wiped between Lambda
+ * invocations. When a cookie exists but the Map is empty, this
+ * function recovers by re-decrypting keys from Supabase Vault.
  */
 export async function getSessionKeys(): Promise<{
   apiKey: string;
@@ -75,19 +81,40 @@ export async function getSessionKeys(): Promise<{
 
   if (!userId) return null;
 
-  const session = sessionMap.get(userId);
-  if (!session) return null;
-
-  // Check expiry
-  if (session.expiresAt < Date.now()) {
-    sessionMap.delete(userId);
-    return null;
+  // Check in-memory cache first (fast path)
+  const cached = sessionMap.get(userId);
+  if (cached) {
+    if (cached.expiresAt < Date.now()) {
+      sessionMap.delete(userId);
+      return null;
+    }
+    return {
+      apiKey: cached.apiKey,
+      secretKey: cached.secretKey,
+    };
   }
 
-  return {
-    apiKey: session.apiKey,
-    secretKey: session.secretKey,
-  };
+  // Cold-start recovery: re-decrypt from Supabase Vault
+  console.log(`[session] Cache miss for ${userId.slice(0, 8)}... – recovering from vault`);
+  try {
+    const keys = await decryptKeys(userId);
+    if (keys) {
+      // Re-populate in-memory cache for future requests
+      const expiresAt = Date.now() + SESSION_TTL_MS;
+      sessionMap.set(userId, {
+        userId,
+        apiKey: keys.apiKey,
+        secretKey: keys.secretKey,
+        expiresAt,
+      });
+      return keys;
+    }
+    console.log('[session] Vault recovery returned null — keys may not exist');
+  } catch (err: any) {
+    console.error('[session] Cold-start recovery failed:', err.message);
+  }
+
+  return null;
 }
 
 /**
