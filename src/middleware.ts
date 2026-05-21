@@ -4,42 +4,21 @@ import { createServerClient } from '@supabase/ssr';
 /**
  * Next.js Edge Middleware
  *
- * Server-side auth check on every non-public request.
- * - Creates a Supabase client with proper cookie handling
- * - Verifies the user session using getUser() (validates JWT)
- * - Redirects unauthenticated users to /login
- * - API routes and public paths are exempt
- * - Onboarding redirect is handled client-side by AuthGuard
+ * Verifies authentication via getSession() — parses the JWT locally
+ * from cookies. No Supabase API call needed, so it works reliably
+ * in Edge runtime (no cold starts, no network issues).
+ *
+ * getUser() was causing the redirect loop because it makes an API
+ * call that can fail on Vercel Edge.
  */
 
-const PUBLIC_PATHS = [
-  '/login',
-  '/onboarding',
-  '/setup-keys',
-  '/authenticate-session',
-  '/auth/callback',
-  '/api',
-  '/_next',
-  '/favicon.ico',
-  '/manifest.ts',
-];
+const PUBLIC_ROUTES = ['/login', '/auth/callback'];
 
-function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PATHS.some((prefix) => pathname.startsWith(prefix));
+function isPublic(pathname: string): boolean {
+  return PUBLIC_ROUTES.some((p) => pathname.startsWith(p));
 }
 
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  // Public paths and API routes pass through without auth check
-  if (isPublicPath(pathname)) {
-    return NextResponse.next();
-  }
-
-  const response = NextResponse.next();
-
-  // Build Supabase client that reads from request cookies
-  // and writes refreshed tokens to the response
+async function getSessionFromCookies(request: NextRequest, response: NextResponse) {
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -49,6 +28,7 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
+          // Attach refreshed tokens to the response
           cookiesToSet.forEach(({ name, value, options }) => {
             response.cookies.set(name, value, options);
           });
@@ -57,32 +37,43 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  try {
-    // getUser() validates the JWT from cookies (no extra API call needed
-    // unless the token is expired, in which case it refreshes via setAll)
-    const { data: { user }, error } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  return session;
+}
 
-    if (error || !user) {
-      console.log(`[middleware] No valid user for ${pathname}: ${error?.message || 'no user'}`);
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Allow public routes through
+  if (isPublic(pathname)) {
+    return NextResponse.next();
+  }
+
+  // Allow static assets and API routes through
+  if (pathname.startsWith('/_next') || pathname.startsWith('/api') || pathname.startsWith('/favicon')) {
+    return NextResponse.next();
+  }
+
+  try {
+    const response = NextResponse.next();
+    const session = await getSessionFromCookies(request, response);
+
+    if (!session) {
+      console.log(`[middleware] No session for ${pathname} → redirect to /login`);
       const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('next', pathname);
       return NextResponse.redirect(loginUrl);
     }
 
-    // Attach user to headers for downstream use
-    response.headers.set('x-user-id', user.id);
-    response.headers.set('x-user-email', user.email || '');
-
+    // Session valid — pass through
+    response.headers.set('x-user-id', session.user.id);
     return response;
   } catch (err: any) {
-    console.error(`[middleware] Error on ${pathname}:`, err.message);
-    // Don't block the user on transient errors — let AuthGuard handle it client-side
-    return response;
+    console.error(`[middleware] Error checking ${pathname}:`, err.message);
+    // Don't block on errors — let AuthGuard handle auth client-side
+    return NextResponse.next();
   }
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };
