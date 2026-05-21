@@ -821,6 +821,11 @@ export default function Dashboard() {
       const json = await res.json();
       setDebugInfo(prev => [...prev, `[fetchAccount] status: ${res.status}, ok: ${res.ok}, error: ${json.error || 'none'}`]);
       
+      // Show server-side diagnostics
+      if (json._diag) {
+        setDebugInfo(prev => [...prev, '--- SERVER DIAGNOSTICS ---', ...json._diag]);
+      }
+      
       if (json.error) {
         setError(json.error);
         setAccount(null);
@@ -982,6 +987,13 @@ export default function Dashboard() {
 
 
         <main className="flex-1 p-3 sm:p-4 space-y-3 overflow-y-auto overflow-x-hidden">
+          {/* Debug Panel */}
+          {debugInfo.length > 0 && (
+            <div className="bg-black/60 rounded-lg p-2 font-mono text-xs text-green-400 max-h-32 overflow-y-auto">
+              {debugInfo.map((line, i) => <div key={i} className="leading-relaxed">{line}</div>)}
+            </div>
+          )}
+
           {/* Market Indices Bar — CNBC style */}
           <MarketIndicesBar />
 
