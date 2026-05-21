@@ -776,8 +776,6 @@ export default function Dashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [marketOpen, setMarketOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [debugInfo, setDebugInfo] = useState<string[]>([]);
-
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [orderFilters, setOrderFilters] = useState<OrderFilters>({ dateRange: 'all' });
@@ -814,18 +812,8 @@ export default function Dashboard() {
 
   const fetchAccount = useCallback(async () => {
     try {
-      const token = typeof window !== 'undefined' ? sessionStorage.getItem('alpaca_session_token') : null;
-      setDebugInfo(prev => [...prev, `[fetchAccount] token: ${token ? token.substring(0,8)+'...' : 'NONE'}`]);
-      
       const res = await fetchApi('/api/account');
       const json = await res.json();
-      setDebugInfo(prev => [...prev, `[fetchAccount] status: ${res.status}, ok: ${res.ok}, error: ${json.error || 'none'}`]);
-      
-      // Show server-side diagnostics
-      if (json._diag) {
-        setDebugInfo(prev => [...prev, '--- SERVER DIAGNOSTICS ---', ...json._diag]);
-      }
-      
       if (json.error) {
         setError(json.error);
         setAccount(null);
@@ -834,7 +822,6 @@ export default function Dashboard() {
         setError(null);
       }
     } catch (err: any) {
-      setDebugInfo(prev => [...prev, `[fetchAccount] catch: ${err.message}`]);
       setError(err.message || 'Network error');
       setAccount(null);
     }
@@ -863,7 +850,6 @@ export default function Dashboard() {
   const refreshAll = useCallback(async () => {
     setLoading(true);
     setError(null);
-    setDebugInfo([`[refreshAll] starting...`]);
     await Promise.all([fetchAccount(), fetchOrders(), fetchMarket()]);
     setLoading(false);
   }, [fetchAccount, fetchOrders, fetchMarket]);
@@ -949,23 +935,13 @@ export default function Dashboard() {
   if (error || !account) {
     return (
       <div className="min-h-screen bg-[var(--app-bg)] flex items-center justify-center px-4">
-        <div className="bg-[var(--card-bg)] border border-[var(--red-soft)]/30 rounded-2xl p-8 max-w-lg w-full">
+        <div className="bg-[var(--card-bg)] border border-[var(--red-soft)]/30 rounded-2xl p-8 max-w-md w-full text-center">
           <Zap className="w-10 h-10 text-[var(--red)] mx-auto mb-4" />
-          <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2 text-center">Connection Error</h3>
-          <p className="text-sm text-[#6b7280] mb-4 text-center">{error || 'Failed to load account data'}</p>
-          
-          {/* Debug log */}
-          <div className="bg-black/50 rounded-lg p-3 mb-4 max-h-48 overflow-y-auto font-mono text-xs text-green-400">
-            {debugInfo.length === 0 ? (
-              <span className="text-gray-500">no debug entries</span>
-            ) : (
-              debugInfo.map((line, i) => <div key={i}>{line}</div>)
-            )}
-          </div>
-
+          <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">Connection Error</h3>
+          <p className="text-sm text-[#6b7280] mb-4">{error || 'Failed to load account data'}</p>
           <button
             onClick={refreshAll}
-            className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs rounded-lg transition w-full"
+            className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs rounded-lg transition"
           >
             Retry
           </button>
@@ -987,22 +963,6 @@ export default function Dashboard() {
 
 
         <main className="flex-1 p-3 sm:p-4 space-y-3 overflow-y-auto overflow-x-hidden">
-          {/* Debug Panel */}
-          {debugInfo.length > 0 && (
-            <div className="bg-black/60 rounded-lg p-2 font-mono text-xs text-green-400 max-h-32 overflow-y-auto">
-              {debugInfo.map((line, i) => <div key={i} className="leading-relaxed">{line}</div>)}
-            </div>
-          )}
-
-          {/* Raw data verification — shows if JS has the values */}
-          {account && (
-            <div className="bg-blue-950 rounded-lg p-2 font-mono text-xs text-cyan-300">
-              <div>RAW: cash={account?.account?.cash} pv={account?.account?.portfolioValue} equity={account?.account?.equity}</div>
-              <div>RAW: positions={account?.positions?.length} risk_pnl={account?.risk?.unrealizedPnL}</div>
-              <div>RAW: top_positions={account?.positions?.slice(0,3).map((p:any)=>p.symbol+':'+p.marketValue).join(', ')}</div>
-            </div>
-          )}
-
           {/* Market Indices Bar — CNBC style */}
           <MarketIndicesBar />
 
