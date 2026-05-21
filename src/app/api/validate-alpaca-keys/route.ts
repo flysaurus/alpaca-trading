@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
-    const { apiKey, secretKey, paper } = await request.json();
+    let { apiKey, secretKey, paper } = await request.json();
+
+    // Strip whitespace and invisible characters (safety net)
+    apiKey = (apiKey || '').replace(/\s+/g, '').replace(/[\u200B-\u200D\uFEFF]/g, '');
+    secretKey = (secretKey || '').replace(/\s+/g, '').replace(/[\u200B-\u200D\uFEFF]/g, '');
 
     if (!apiKey || !secretKey) {
       return NextResponse.json(
