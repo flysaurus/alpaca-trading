@@ -2,6 +2,8 @@
 // Lightweight client-side poller that detects order fills
 // and sends Telegram notifications for fill events.
 
+import { fetchApi } from '@/lib/api-helper';
+
 const NOTIFIED_KEY = 'alpaca-trading-notified-orders';
 
 function getNotifiedIds(): string[] {
@@ -31,7 +33,7 @@ function shouldNotify(order: any): boolean {
 export async function pollForFills() {
   console.log('Fill poller tick — checking orders');
   try {
-    const res = await fetch('/api/orders?status=all&limit=20');
+    const res = await fetchApi('/api/orders?status=all&limit=20');
     if (!res.ok) return;
     const { orders } = await res.json();
     let notifiedCount = 0;
@@ -47,7 +49,7 @@ export async function pollForFills() {
         notifiedCount++;
 
         // Fire-and-forget Telegram notification via internal API
-        fetch('/api/alerts/telegram-fill', {
+        fetchApi('/api/alerts/telegram-fill', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ order }),
@@ -56,7 +58,7 @@ export async function pollForFills() {
         // Fire-and-forget trade save to Supabase
         (async () => {
           try {
-            const accountRes = await fetch('/api/account');
+            const accountRes = await fetchApi('/api/account');
             const account = await accountRes.json();
             const alpacaAccountId = account?.account?.id;
             if (!alpacaAccountId) {

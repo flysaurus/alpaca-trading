@@ -84,6 +84,10 @@ export default function OnboardingPage() {
         throw new Error('Failed to create session');
       }
 
+      // Store session token in sessionStorage (survives page reloads, dies with tab)
+      const authData = await authResponse.json();
+      sessionStorage.setItem('alpaca_session_token', authData.token);
+
       // Clear sensitive data from memory
       setAlpacaData({ apiKey: '', secretKey: '', paper: true });
       setStep('complete');

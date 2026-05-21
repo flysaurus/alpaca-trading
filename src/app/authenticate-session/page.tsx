@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
+import { setSessionToken } from '@/lib/api-helper';
 
 /**
  * AuthenticateSessionPage
@@ -10,6 +11,7 @@ import { useRouter } from 'next/navigation';
  * After keys are stored, the user enters their master password
  * to decrypt the Alpaca keys server-side and create a session.
  * The session holds decrypted keys in server memory for 24 hours.
+ * On success, stores the session token in sessionStorage.
  */
 export default function AuthenticateSessionPage() {
   const router = useRouter();
@@ -43,10 +45,14 @@ export default function AuthenticateSessionPage() {
         throw new Error(data.error || 'Authentication failed');
       }
 
+      // Store session token in sessionStorage
+      const data = await response.json();
+      setSessionToken(data.token);
+
       // Clear password from memory immediately
       setMasterPassword('');
 
-      // Redirect to dashboard — session cookie is now set
+      // Redirect to dashboard
       router.push('/');
     } catch (err: any) {
       setError(err.message);

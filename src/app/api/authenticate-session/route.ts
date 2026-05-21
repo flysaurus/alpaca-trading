@@ -1,16 +1,17 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { verifyMasterPassword, decryptKeys } from '@/lib/supabase-vault';
-import { createSession, COOKIE_NAME, COOKIE_OPTIONS } from '@/lib/session';
+import { createSession, createSessionToken } from '@/lib/session';
 
 /**
  * POST /api/authenticate-session
  *
- * Receives master password from the client, verifies it against
- * the stored bcrypt hash, decrypts Alpaca keys from Supabase Vault,
- * and creates a server-side session holding the keys in memory.
+ * Verifies master password, decrypts Alpaca keys from Supabase Vault,
+ * creates a server-side session (in-memory Map), and returns a session
+ * token that the client sends in the Authorization header on subsequent
+ * requests.
  *
  * Body: { userId: string, masterPassword: string }
+ * Returns: { success: true, token: string }
  */
 export async function POST(request: Request) {
   try {
@@ -44,38 +45,12 @@ export async function POST(request: Request) {
     // Create server-side session (24h) — stores keys in memory Map
     await createSession(userId, keys.apiKey, keys.secretKey);
 
-    // Clear keys from local variables (they're now in the session Map only)
-    keys.apiKey = '';
-    keys.secretKey = '';
+    // Generate session token for the client
+    const token = createSessionToken(userId);
 
-    const timestamp = Date.now();
+    console.log(`[auth-session] Session created for ${userId.slice(0, 8)}..., token: ${token.slice(0, 16)}...`);
 
-    console.log(`[auth-session] Session created for user ${userId.slice(0, 8)}...`);
-
-    // Build response with both cookies
-    const response = NextResponse.json({
-      success: true,
-      diagnostics: {
-        cookie_name: COOKIE_NAME,
-        cookie_user_id: userId.slice(0, 8) + '...',
-        timestamp,
-        cookies_set: ['alpaca_session_id', 'alpaca_debug'],
-      },
-    });
-
-    // Set the REAL session cookie (httpOnly, secure)
-    response.cookies.set(COOKIE_NAME, userId, COOKIE_OPTIONS);
-
-    // Set a DEBUG cookie (readable by JS) to verify cookie mechanism works
-    response.cookies.set('alpaca_debug', `set_at_${timestamp}`, {
-      httpOnly: false,  // readable by JS
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 600,  // 10 minutes
-      path: '/',
-    });
-
-    return response;
+    return NextResponse.json({ success: true, token, userId });
   } catch (err: any) {
     console.error('[auth-session] Unexpected error:', err);
     return NextResponse.json(

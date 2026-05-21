@@ -17,6 +17,8 @@ export interface MarketState {
   [key: string]: unknown;
 }
 
+import { fetchApi } from '@/lib/api-helper';
+
 export interface Suggestion {
   rank: number;
   type: 'quality_dip' | 'portfolio' | 'strategy';
@@ -66,7 +68,7 @@ interface StrategyRow {
  */
 async function fetchQualityDips(): Promise<DipScannerCandidate[]> {
   try {
-    const res = await fetch('/api/dip-scanner', {
+    const res = await fetchApi('/api/dip-scanner', {
       cache: 'no-store',
     });
     if (!res.ok) return [];

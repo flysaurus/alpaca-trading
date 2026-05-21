@@ -1,4 +1,5 @@
 'use client';
+import { fetchApi } from '@/lib/api-helper';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -105,9 +106,9 @@ async function fetchMarketData() {
 
   try {
     const [indicesRes, marketRes, newsRes] = await Promise.all([
-      fetch('/api/indices').then((r) => r.json()),
-      fetch('/api/market').then((r) => r.json()),
-      fetch('/api/news?limit=5').then((r) => r.json()),
+      fetchApi('/api/indices').then((r) => r.json()),
+      fetchApi('/api/market').then((r) => r.json()),
+      fetchApi('/api/news?limit=5').then((r) => r.json()),
     ]);
 
     const indices = indicesRes?.indices || [];
@@ -389,7 +390,7 @@ function SellSignals({ portfolioContext, onAnalyze }: { portfolioContext: Portfo
                 qty: String(pos.qty),
                 equity: String(portfolioContext!.account.total_equity),
               });
-              const res = await fetch(`/api/positions/recommendation?${params}`);
+              const res = await fetchApi(`/api/positions/recommendation?${params}`);
               const data = await res.json();
               if (data.action === 'sell') {
                 return {
@@ -467,7 +468,7 @@ function SellSignals({ portfolioContext, onAnalyze }: { portfolioContext: Portfo
         ...(sellStopPrice && (sellType === 'stop' || sellType === 'stop_limit') ? { stopPrice: Number(sellStopPrice) } : {}),
       };
       console.log('Sell order payload:', JSON.stringify(orderPayload));
-      const res = await fetch('/api/orders', {
+      const res = await fetchApi('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderPayload),
@@ -831,7 +832,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
         .join(',');
 
       const [marketRes] = await Promise.all([
-        fetch('/api/market').then((r) => r.json()).catch(() => ({})),
+        fetchApi('/api/market').then((r) => r.json()).catch(() => ({})),
       ]);
 
       setMarketLabel(marketRes?.marketState?.label || 'Unknown');
@@ -888,7 +889,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
   useEffect(() => {
     async function fetchBacktest() {
       try {
-        const res = await fetch('/api/scanner/backtest');
+        const res = await fetchApi('/api/scanner/backtest');
         if (res.ok) {
           const data = await res.json();
           setBacktestStats(data);
@@ -928,7 +929,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
         ...(stopPrice && (orderType === 'stop' || orderType === 'stop_limit') ? { stopPrice: Number(stopPrice) } : {}),
       };
       console.log('Order payload:', JSON.stringify(orderPayload));
-      const res = await fetch('/api/orders', {
+      const res = await fetchApi('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderPayload),
@@ -1409,7 +1410,7 @@ function InlineStrategyCard({
       setLoading(true);
       setFetchError(null);
       try {
-        const res = await fetch(`/api/strategies?user_id=${userId}`);
+        const res = await fetchApi(`/api/strategies?user_id=${userId}`);
         const data = await res.json();
         if (res.ok) {
           const filtered = (data.strategies || []).filter((s: DbStrategy) => s.type === meta.id);
@@ -1536,7 +1537,7 @@ function StrategyForm({ type, initialData, onSave, onCancel, userId }: { type: S
     if (!name) return;
     setSaveStatus('saving');
     try {
-      const res = await fetch('/api/strategies', {
+      const res = await fetchApi('/api/strategies', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1767,9 +1768,9 @@ export default function AdvisorStrategiesTab() {
       try {
         setPortfolioLoading(true);
         const [acctRes, posRes, ordRes, marketData] = await Promise.all([
-          fetch('/api/account').then((r) => r.json()),
-          fetch('/api/positions').then((r) => r.json()),
-          fetch('/api/orders?status=filled&limit=3').then((r) => r.json()),
+          fetchApi('/api/account').then((r) => r.json()),
+          fetchApi('/api/positions').then((r) => r.json()),
+          fetchApi('/api/orders?status=filled&limit=3').then((r) => r.json()),
           fetchMarketData(),
         ]);
 
@@ -1816,7 +1817,7 @@ export default function AdvisorStrategiesTab() {
         // Fetch risk score
         setRiskScoreLoading(true);
         try {
-          const rsRes = await fetch('/api/risk-score');
+          const rsRes = await fetchApi('/api/risk-score');
           const rsData = await rsRes.json();
           if (rsData.risk_score) {
             setRiskScore(rsData.risk_score);

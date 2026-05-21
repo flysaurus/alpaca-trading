@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { fetchApi } from '@/lib/api-helper';
 import {
   TrendingUp,
   TrendingDown,
@@ -557,7 +558,7 @@ function TradeWidget({ onRefresh }: { onRefresh: () => void }) {
     const timeout = setTimeout(async () => {
       setPriceLoading(true);
       try {
-        const res = await fetch(`/api/quotes?symbols=${symbol.toUpperCase()}`);
+        const res = await fetchApi(`/api/quotes?symbols=${symbol.toUpperCase()}`);
         const json = await res.json();
         const q = json.data?.[0];
         if (q) setLivePrice(q.price);
@@ -592,7 +593,7 @@ function TradeWidget({ onRefresh }: { onRefresh: () => void }) {
         if (trailPrice) body.trailPrice = Number(trailPrice);
         else if (trailPercent) body.trailPercent = Number(trailPercent);
       }
-      const res = await fetch('/api/orders', {
+      const res = await fetchApi('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -796,7 +797,7 @@ export default function Dashboard() {
       const after4PM = etHour >= 16;
 
       if (isWeekday && after4PM) {
-        fetch('/api/cron?action=snapshot', { method: 'GET' }).catch(() => {});
+        fetchApi('/api/cron?action=snapshot', { method: 'GET' }).catch(() => {});
         sessionStorage.setItem('snapshot_taken', 'true');
       }
     } catch {
@@ -812,7 +813,7 @@ export default function Dashboard() {
 
   const fetchAccount = useCallback(async () => {
     try {
-      const res = await fetch('/api/account');
+      const res = await fetchApi('/api/account');
       const json = await res.json();
       if (json.error) {
         setError(json.error);
@@ -829,7 +830,7 @@ export default function Dashboard() {
 
   const fetchOrders = useCallback(async () => {
     try {
-      const res = await fetch('/api/orders?status=all&limit=20');
+      const res = await fetchApi('/api/orders?status=all&limit=20');
       const json = await res.json();
       if (!json.error) setOrders(json.orders || []);
     } catch (err) {
@@ -839,7 +840,7 @@ export default function Dashboard() {
 
   const fetchMarket = useCallback(async () => {
     try {
-      const res = await fetch('/api/market');
+      const res = await fetchApi('/api/market');
       const json = await res.json();
       setMarketOpen(json.isOpen || false);
     } catch (err) {
@@ -911,7 +912,7 @@ export default function Dashboard() {
 
   const cancelOrder = async (id: string) => {
     try {
-      const res = await fetch(`/api/orders/${id}`, { method: 'DELETE' });
+      const res = await fetchApi(`/api/orders/${id}`, { method: 'DELETE' });
       if (res.ok) {
         await fetchOrders();
         await fetchAccount();

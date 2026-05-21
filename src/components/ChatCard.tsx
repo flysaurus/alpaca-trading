@@ -1,4 +1,5 @@
 'use client';
+import { fetchApi } from '@/lib/api-helper';
 
 import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -169,7 +170,7 @@ export default function ChatCard({ isExpanded, setExpanded, alpacaAccountId }: C
         conversation_history: history,
       };
 
-      const res = await fetch('/api/advisor', {
+      const res = await fetchApi('/api/advisor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

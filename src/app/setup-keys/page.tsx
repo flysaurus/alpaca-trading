@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
+import { fetchApi } from '@/lib/api-helper';
 
 /**
  * SetupKeysPage
@@ -42,7 +43,7 @@ export default function SetupKeysPage() {
       if (!user) throw new Error('Not authenticated');
 
       // Send to server to encrypt + store via vault
-      const response = await fetch('/api/setup-keys', {
+      const response = await fetchApi('/api/setup-keys', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

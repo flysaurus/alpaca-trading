@@ -1,4 +1,5 @@
 'use client';
+import { fetchApi } from '@/lib/api-helper';
 
 import { useEffect, useState, useCallback } from 'react';
 import {
@@ -103,7 +104,7 @@ function TelegramSetup() {
     if (!chatId) return;
     setStatus('loading');
     try {
-      const res = await fetch('/api/telegram', {
+      const res = await fetchApi('/api/telegram', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -166,11 +167,11 @@ export default function NewsIntelligence({ embedded = false }: { embedded?: bool
   const fetchData = useCallback(async () => {
     try {
       const [newsRes, macroRes, insiderRes, alertsRes, polyRes] = await Promise.all([
-        fetch('/api/news?limit=30'),
-        fetch('/api/macro?days=21'),
-        fetch('/api/insider?days=7'),
-        fetch('/api/alerts'),
-        fetch('/api/polymarket'),
+        fetchApi('/api/news?limit=30'),
+        fetchApi('/api/macro?days=21'),
+        fetchApi('/api/insider?days=7'),
+        fetchApi('/api/alerts'),
+        fetchApi('/api/polymarket'),
       ]);
 
       const newsJson = await newsRes.json();
@@ -228,7 +229,7 @@ export default function NewsIntelligence({ embedded = false }: { embedded?: bool
   const createAlert = async () => {
     if (!alertSymbol || !alertKeywords) return;
     try {
-      const res = await fetch('/api/alerts', {
+      const res = await fetchApi('/api/alerts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -251,7 +252,7 @@ export default function NewsIntelligence({ embedded = false }: { embedded?: bool
 
   const deleteAlert = async (id: string) => {
     try {
-      await fetch(`/api/alerts?id=${id}`, { method: 'DELETE' });
+      await fetchApi(`/api/alerts?id=${id}`, { method: 'DELETE' });
       setAlerts(prev => prev.filter(a => a.id !== id));
     } catch (err) {
       console.error('Delete alert error:', err);

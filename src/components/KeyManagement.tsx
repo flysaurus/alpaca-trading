@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Key, Lock, Eye, EyeOff, Check, X, Loader2 } from 'lucide-react';
+import { fetchApi } from '@/lib/api-helper';
 
 interface KeyManagementProps {
   className?: string;
@@ -50,7 +51,7 @@ export default function KeyManagement({ className = '' }: KeyManagementProps) {
     }
 
     try {
-      const res = await fetch('/api/update-keys', {
+      const res = await fetchApi('/api/update-keys', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -102,7 +103,7 @@ export default function KeyManagement({ className = '' }: KeyManagementProps) {
     }
 
     try {
-      const res = await fetch('/api/change-password', {
+      const res = await fetchApi('/api/change-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ currentPassword, newPassword }),

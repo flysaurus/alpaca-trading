@@ -1,4 +1,5 @@
 'use client';
+import { fetchApi } from '@/lib/api-helper';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { BarChart3, ChevronUp, ChevronDown, Trash2, X, Download, Loader2 } from 'lucide-react';
@@ -102,7 +103,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
       const map: Record<string, { low: number; high: number }> = {};
       for (const p of positions) {
         try {
-          const res = await fetch(`/api/range52?symbol=${encodeURIComponent(p.symbol)}`);
+          const res = await fetchApi(`/api/range52?symbol=${encodeURIComponent(p.symbol)}`);
           const json = await res.json();
           if (json.low && json.high) {
             map[p.symbol] = { low: json.low, high: json.high };
@@ -239,7 +240,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
             body.limitPrice = Number(cfg.limitPrice);
           }
 
-          const res = await fetch('/api/orders', {
+          const res = await fetchApi('/api/orders', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body),
@@ -312,7 +313,7 @@ export default function EnhancedPositions({ positions, cash = 0, portfolioValue 
         qty: String(p.qty),
         equity: String(totalEquity),
       });
-      const res = await fetch(`/api/positions/recommendation?${params}`);
+      const res = await fetchApi(`/api/positions/recommendation?${params}`);
       const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error || 'API error');
       console.log(`[Positions] Rec for ${key} → ${data.action} (cached: ${data.cached}) @`, new Date().toISOString());

@@ -1,4 +1,5 @@
 'use client';
+import { fetchApi } from '@/lib/api-helper';
 
 import { useEffect, useState, useCallback } from 'react';
 import { TrendingUp, Clock } from 'lucide-react';
@@ -45,7 +46,7 @@ export default function MorningRecommendationsList() {
       }
 
       setLoading(true);
-      const res = await fetch('/api/morning-brief-recommendations');
+      const res = await fetchApi('/api/morning-brief-recommendations');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const json = await res.json();
