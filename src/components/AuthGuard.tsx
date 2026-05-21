@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { supabase } from '@/lib/auth';
-import { getSessionToken } from '@/lib/api-helper';
 
 /**
  * AuthGuard — client-side auth state & onboarding routing.
@@ -35,19 +34,6 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         if (!session && !isPublic) {
           console.log('[AuthGuard] → /login');
           router.push('/login');
-          return;
-        }
-
-        // On protected pages, ensure user has a session token
-        // (must have entered master password to decrypt keys)
-        const needsToken = !isPublic && 
-          pathname !== '/onboarding' && 
-          pathname !== '/authenticate-session' &&
-          pathname !== '/setup-keys';
-          
-        if (needsToken && !getSessionToken()) {
-          console.log('[AuthGuard] No session token → /authenticate-session');
-          router.push('/authenticate-session');
           return;
         }
 

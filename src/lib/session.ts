@@ -227,12 +227,25 @@ export function clearSession(userId?: string): void {
 }
 
 /**
- * Require a valid session — returns decrypted keys or null.
- * API routes call this at the top to gate access.
+ * Require a valid session — returns decrypted keys.
+ * Falls back to environment variables if no session token is present
+ * (single-user / development deployments).
  */
 export async function requireSession(): Promise<{
   apiKey: string;
   secretKey: string;
 } | null> {
-  return getSessionKeys();
+  // Try session token first
+  const keys = await getSessionKeys();
+  if (keys) return keys;
+
+  // Fall back to environment variables
+  const envKey = process.env.ALPACA_API_KEY;
+  const envSecret = process.env.ALPACA_SECRET_KEY;
+  if (envKey && envSecret) {
+    console.log('[session] Using env var fallback for Alpaca keys');
+    return { apiKey: envKey, secretKey: envSecret };
+  }
+
+  return null;
 }
