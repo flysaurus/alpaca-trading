@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Shield, RotateCcw, AlertTriangle } from 'lucide-react';
 import { getTheme, setTheme } from '@/lib/theme';
+import KeyManagement from '@/components/KeyManagement';
 
 interface RiskSettings {
   maxPositionSize: number; // % of portfolio
@@ -206,6 +207,9 @@ export default function SettingsPanel({ account }: Props) {
           <Shield className="w-4 h-4 text-red-500" />
         </a>
       </div>
+
+      {/* Key & Password Management */}
+      <KeyManagement />
 
       {/* Disclaimer */}
       <div className="flex items-start gap-2 text-[10px] text-[var(--text-muted)]">
