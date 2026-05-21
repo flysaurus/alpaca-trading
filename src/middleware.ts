@@ -36,6 +36,8 @@ export async function middleware(request: NextRequest) {
   }
 
   // Create a server-side Supabase client using the request cookies
+  const response = NextResponse.next();
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -46,8 +48,7 @@ export async function middleware(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
-            // We need a response to set cookies, but for read-only middleware
-            // we don't set cookies here. The callback route handles session setup.
+            response.cookies.set(name, value, options);
           });
         },
       },
@@ -95,7 +96,6 @@ export async function middleware(request: NextRequest) {
   }
 
   // Session exists → attach user ID to request headers
-  const response = NextResponse.next();
   response.headers.set('x-user-id', session.user.id);
   response.headers.set('x-user-email', session.user.email || '');
 
