@@ -3,7 +3,7 @@
 import { useState, FormEvent } from 'react';
 
 interface Props {
-  onSubmit: (apiKey: string, secretKey: string) => Promise<void>;
+  onSubmit: (apiKey: string, secretKey: string, paper: boolean) => Promise<void>;
   loading: boolean;
   error: string;
 }
@@ -11,6 +11,7 @@ interface Props {
 export default function AlpacaSetupScreen({ onSubmit, loading, error }: Props) {
   const [apiKey, setApiKey] = useState('');
   const [secretKey, setSecretKey] = useState('');
+  const [paper, setPaper] = useState(true);
   const [showApiKey, setShowApiKey] = useState(false);
   const [showSecretKey, setShowSecretKey] = useState(false);
 
@@ -19,7 +20,7 @@ export default function AlpacaSetupScreen({ onSubmit, loading, error }: Props) {
     // Strip whitespace, newlines, and invisible characters
     const cleanApiKey = apiKey.replace(/\s+/g, '').replace(/[\u200B-\u200D\uFEFF]/g, '');
     const cleanSecretKey = secretKey.replace(/\s+/g, '').replace(/[\u200B-\u200D\uFEFF]/g, '');
-    onSubmit(cleanApiKey, cleanSecretKey);
+    onSubmit(cleanApiKey, cleanSecretKey, paper);
   };
 
   return (
@@ -30,6 +31,40 @@ export default function AlpacaSetupScreen({ onSubmit, loading, error }: Props) {
         </h2>
         <p className="text-gray-400 text-sm">
           Your API keys are encrypted and never stored in plaintext
+        </p>
+      </div>
+
+      {/* Paper / Live toggle */}
+      <div className="bg-[#1e293b] rounded-lg p-4 space-y-2">
+        <label className="text-sm font-semibold text-white">Trading Mode</label>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setPaper(true)}
+            className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition ${
+              paper
+                ? 'bg-amber-500/20 border border-amber-500 text-amber-400'
+                : 'bg-[#0f172a] border border-[#334155] text-gray-500'
+            }`}
+          >
+            📄 Paper Trading
+          </button>
+          <button
+            type="button"
+            onClick={() => setPaper(false)}
+            className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition ${
+              !paper
+                ? 'bg-red-500/20 border border-red-500 text-red-400'
+                : 'bg-[#0f172a] border border-[#334155] text-gray-500'
+            }`}
+          >
+            🔴 Live Trading
+          </button>
+        </div>
+        <p className="text-[10px] text-gray-500">
+          {paper
+            ? 'Uses paper-api.alpaca.markets — simulated money'
+            : 'Uses api.alpaca.markets — REAL money. Be careful.'}
         </p>
       </div>
 
@@ -67,7 +102,7 @@ export default function AlpacaSetupScreen({ onSubmit, loading, error }: Props) {
             </button>
           </div>
           <p className="text-xs text-gray-400 mt-1">
-            Find at paper.alpaca.markets → Settings → API Keys
+            Find at {paper ? 'paper.alpaca.markets' : 'app.alpaca.markets'} → Settings → API Keys
           </p>
         </div>
 

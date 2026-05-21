@@ -13,7 +13,7 @@ import { encryptAndStoreKeys } from '@/lib/supabase-vault';
  */
 export async function POST(request: Request) {
   try {
-    const { userId, apiKey, secretKey, masterPassword } = await request.json();
+    const { userId, apiKey, secretKey, masterPassword, paper } = await request.json();
 
     if (!userId || !apiKey || !secretKey || !masterPassword) {
       return NextResponse.json(
@@ -23,9 +23,9 @@ export async function POST(request: Request) {
     }
 
     // Validate keys with Alpaca before storing
-    // Onboarding defaults to paper trading — pass paper: true explicitly
+    const isPaper = paper !== false;
     try {
-      const alpaca = createAlpacaClient(apiKey, secretKey, true);
+      const alpaca = createAlpacaClient(apiKey, secretKey, isPaper);
       await alpaca.getAccount();
     } catch {
       return NextResponse.json(

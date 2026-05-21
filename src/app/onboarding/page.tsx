@@ -15,11 +15,11 @@ export default function OnboardingPage() {
   const [step, setStep] = useState<OnboardingStep>('welcome');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [alpacaData, setAlpacaData] = useState({ apiKey: '', secretKey: '' });
+  const [alpacaData, setAlpacaData] = useState({ apiKey: '', secretKey: '', paper: true });
 
   const steps: OnboardingStep[] = ['welcome', 'alpaca', 'security', 'complete'];
 
-  const handleAlpacaSubmit = async (apiKey: string, secretKey: string) => {
+  const handleAlpacaSubmit = async (apiKey: string, secretKey: string, paper: boolean) => {
     setLoading(true);
     setError('');
 
@@ -27,7 +27,7 @@ export default function OnboardingPage() {
       const response = await fetch('/api/validate-alpaca-keys', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ apiKey, secretKey }),
+        body: JSON.stringify({ apiKey, secretKey, paper }),
       });
 
       if (!response.ok) {
@@ -35,7 +35,7 @@ export default function OnboardingPage() {
         throw new Error(body.error || 'Invalid Alpaca credentials');
       }
 
-      setAlpacaData({ apiKey, secretKey });
+      setAlpacaData({ apiKey, secretKey, paper });
       setStep('security');
     } catch (err: any) {
       setError(err.message);
@@ -61,6 +61,7 @@ export default function OnboardingPage() {
           apiKey: alpacaData.apiKey,
           secretKey: alpacaData.secretKey,
           masterPassword,
+          paper: alpacaData.paper,
         }),
       });
 
@@ -84,7 +85,7 @@ export default function OnboardingPage() {
       }
 
       // Clear sensitive data from memory
-      setAlpacaData({ apiKey: '', secretKey: '' });
+      setAlpacaData({ apiKey: '', secretKey: '', paper: true });
       setStep('complete');
     } catch (err: any) {
       setError(err.message);
