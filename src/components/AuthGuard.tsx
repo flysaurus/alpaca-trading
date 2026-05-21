@@ -18,9 +18,11 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [isAuth, setIsAuth] = useState(false);
 
   // Public paths that don't require authentication
-  const PUBLIC_PATHS = ['/login', '/setup-keys', '/authenticate-session', '/auth/callback'];
+  const PUBLIC_PATHS = ['/login', '/setup-keys', '/authenticate-session', '/auth/callback', '/onboarding'];
+  const EXEMPT_PATHS = [...PUBLIC_PATHS, '/api', '/_next', '/favicon.ico', '/manifest'];
 
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
+  const isExempt = EXEMPT_PATHS.some((p) => pathname.startsWith(p));
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -33,9 +35,30 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         if (!session && !isPublic) {
           console.log('[AuthGuard] No session — redirecting to /login');
           router.push('/login');
-        } else {
-          setIsAuth(true);
+          return;
         }
+
+        // Check if user has completed onboarding (keys stored)
+        if (session && !isExempt) {
+          const userId = session.user.id;
+          try {
+            const { data: hashData } = await supabase
+              .rpc('vault_get_password_hash', { p_user_id: userId });
+
+            if (!hashData) {
+              console.log('[AuthGuard] No keys stored — redirecting to /onboarding');
+              router.push('/onboarding');
+              return;
+            }
+          } catch {
+            // RPC failed — user might not exist in vault yet
+            console.log('[AuthGuard] RPC failed — redirecting to /onboarding');
+            router.push('/onboarding');
+            return;
+          }
+        }
+
+        setIsAuth(true);
       } catch (err) {
         console.error('[AuthGuard] Session check failed:', err);
       } finally {
