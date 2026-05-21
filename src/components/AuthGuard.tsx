@@ -3,15 +3,16 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { supabase } from '@/lib/auth';
+import { getSessionToken } from '@/lib/api-helper';
 
 /**
- * AuthGuard — client-side auth state & onboarding routing.
+ * AuthGuard — client-side auth & vault session routing.
  *
- * Runs AFTER middleware (which just checks cookie existence).
- * Here we actually validate the session and handle routing:
- * - No session → /login
- * - Session but no vault keys → /onboarding
- * - Session + keys → allow access
+ * Layers:
+ * 1. No Supabase session → /login
+ * 2. On token-exempt pages (onboarding, setup, auth pages) → allow
+ * 3. Protected page + no session token → /authenticate-session (enter password)
+ * 4. Protected page + valid token → allow (dashboard loads)
  */
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -19,8 +20,12 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuth, setIsAuth] = useState(false);
 
+  // Pages that don't need session token
   const PUBLIC = ['/login', '/auth/callback'];
+  const TOKEN_EXEMPT = [...PUBLIC, '/onboarding', '/authenticate-session', '/setup-keys'];
+  
   const isPublic = PUBLIC.some((p) => pathname.startsWith(p));
+  const isTokenExempt = TOKEN_EXEMPT.some((p) => pathname.startsWith(p));
 
   useEffect(() => {
     let cancelled = false;
@@ -29,14 +34,31 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       try {
         const { data: { session } } = await supabase.auth.getSession();
 
-        console.log('[AuthGuard] session:', session ? 'found' : 'null', 'path:', pathname);
+        console.log('[AuthGuard] session:', session ? 'found' : 'null', '| path:', pathname);
 
+        // Layer 1: No Supabase session
         if (!session && !isPublic) {
-          console.log('[AuthGuard] → /login');
+          console.log('[AuthGuard] No session → /login');
           router.push('/login');
           return;
         }
 
+        // Layer 2: Exempt pages — allow without token
+        if (isTokenExempt) {
+          console.log('[AuthGuard] Token-exempt page — allowing');
+          if (!cancelled) setIsAuth(true);
+          return;
+        }
+
+        // Layer 3: Protected page — require session token
+        const token = getSessionToken();
+        if (!token) {
+          console.log('[AuthGuard] No session token → /authenticate-session');
+          router.push('/authenticate-session');
+          return;
+        }
+
+        console.log('[AuthGuard] Session token found — allowing');
         if (!cancelled) setIsAuth(true);
       } catch (err) {
         console.error('[AuthGuard] error:', err);
@@ -57,7 +79,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       cancelled = true;
       subscription?.unsubscribe();
     };
-  }, [router, pathname, isPublic]);
+  }, [router, pathname, isPublic, isTokenExempt]);
 
   if (isLoading) {
     return (

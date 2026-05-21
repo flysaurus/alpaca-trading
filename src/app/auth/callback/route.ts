@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
 /**
- * GET /auth/callback
+ * GET /auth/callback — Google OAuth callback.
  *
- * Google OAuth → exchange code → set cookies → redirect based on vault state.
- * The cookie-setting response is created first (before we know the redirect
- * target), then we return a new redirect with the correct URL but same cookies.
+ * 1. Create redirect response with temp URL
+ * 2. Exchange code → cookies set on response via setAll
+ * 3. Check vault → determine real redirect URL
+ * 4. Override Location header with correct URL
  */
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
@@ -16,8 +17,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/login?error=no_code', requestUrl.origin));
   }
 
-  // Buffer response for cookie accumulation
-  let setCookieHeaders: string[] = [];
+  // Create the response FIRST — cookies accumulate on it during code exchange.
+  // We use /login as a temp Location; we'll override it after vault check.
+  const response = NextResponse.redirect(new URL('/login', requestUrl.origin));
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,22 +30,15 @@ export async function GET(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          // Buffer cookies as Set-Cookie header strings
           cookiesToSet.forEach(({ name, value, options }) => {
-            let header = `${name}=${value}; Path=${options?.path || '/'}`;
-            if (options?.maxAge) header += `; Max-Age=${options.maxAge}`;
-            if (options?.domain) header += `; Domain=${options.domain}`;
-            if (options?.sameSite) header += `; SameSite=${typeof options.sameSite === 'boolean' ? 'Lax' : options.sameSite}`;
-            if (options?.secure) header += '; Secure';
-            if (options?.httpOnly) header += '; HttpOnly';
-            setCookieHeaders.push(header);
+            response.cookies.set(name, value, options);
           });
         },
       },
     }
   );
 
-  // Step 1: Exchange code → sets cookies on cookieResponse via setAll
+  // Step 1: Exchange code → cookies set on response
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error || !data?.session) {
@@ -54,8 +49,7 @@ export async function GET(request: NextRequest) {
   }
 
   const userId = data.session.user.id;
-  const userEmail = data.session.user.email;
-  console.log('[callback] Session OK for:', userEmail);
+  console.log('[callback] Session OK for:', data.session.user.email);
 
   // Step 2: Check vault for stored Alpaca keys
   let redirectTo = '/onboarding';
@@ -71,11 +65,9 @@ export async function GET(request: NextRequest) {
 
   console.log('[callback] →', redirectTo);
 
-  // Step 3: Create redirect with correct URL, attach buffered cookies
-  const finalResponse = NextResponse.redirect(new URL(redirectTo, requestUrl.origin));
-  setCookieHeaders.forEach((header) => {
-    finalResponse.headers.append('set-cookie', header);
-  });
+  // Step 3: Override the redirect Location to the correct target
+  // The cookies are already on the response from exchangeCodeForSession
+  response.headers.set('Location', new URL(redirectTo, requestUrl.origin).toString());
 
-  return finalResponse;
+  return response;
 }
