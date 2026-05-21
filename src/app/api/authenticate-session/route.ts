@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { verifyMasterPassword, decryptKeys } from '@/lib/supabase-vault';
 import { createSession, COOKIE_NAME, COOKIE_OPTIONS } from '@/lib/session';
 
@@ -47,12 +48,32 @@ export async function POST(request: Request) {
     keys.apiKey = '';
     keys.secretKey = '';
 
+    const timestamp = Date.now();
+
     console.log(`[auth-session] Session created for user ${userId.slice(0, 8)}...`);
 
-    // Set the session cookie on the response — this is the ONLY place
-    // the cookie is set during onboarding
-    const response = NextResponse.json({ success: true });
+    // Build response with both cookies
+    const response = NextResponse.json({
+      success: true,
+      diagnostics: {
+        cookie_name: COOKIE_NAME,
+        cookie_user_id: userId.slice(0, 8) + '...',
+        timestamp,
+        cookies_set: ['alpaca_session_id', 'alpaca_debug'],
+      },
+    });
+
+    // Set the REAL session cookie (httpOnly, secure)
     response.cookies.set(COOKIE_NAME, userId, COOKIE_OPTIONS);
+
+    // Set a DEBUG cookie (readable by JS) to verify cookie mechanism works
+    response.cookies.set('alpaca_debug', `set_at_${timestamp}`, {
+      httpOnly: false,  // readable by JS
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 600,  // 10 minutes
+      path: '/',
+    });
 
     return response;
   } catch (err: any) {

@@ -10,23 +10,36 @@ export async function GET() {
   const results: Record<string, any> = {};
 
   try {
-    // List all cookie names (no values — just to see what's being sent)
+    // List all cookie names
     const cookieStore = await cookies();
     const allCookies = cookieStore.getAll();
     results.all_cookies = allCookies.map(c => c.name);
 
-    // Step 1: Check our session cookie
-    const userId = cookieStore.get('alpaca_session_id')?.value;
-    results.step1_session_cookie = userId ? `found: ${userId.slice(0, 8)}...` : 'MISSING';
+    // Check ALL our cookies
+    results.session_cookie = cookieStore.get('alpaca_session_id')?.value
+      ? `found: ${cookieStore.get('alpaca_session_id')!.value.slice(0, 8)}...`
+      : 'MISSING';
+    results.debug_cookie = cookieStore.get('alpaca_debug')?.value
+      ? `found: ${cookieStore.get('alpaca_debug')!.value}`
+      : 'MISSING';
 
-    // Step 1b: Check Supabase auth cookies
+    // Check Supabase auth
     const supabaseCookies = allCookies.filter(c => c.name.includes('sb-'));
-    results.supabase_auth_cookies = supabaseCookies.length > 0 
-      ? `${supabaseCookies.length} cookies found: ${supabaseCookies.map(c => c.name).join(', ')}`
-      : 'NONE — not logged into Supabase';
+    results.supabase_auth = supabaseCookies.length > 0
+      ? `${supabaseCookies.length} cookies: ${supabaseCookies.map(c => c.name).join(', ')}`
+      : 'NONE — not logged in';
+
+    // If even the debug cookie is missing, cookies aren't being set at all
+    if (!cookieStore.get('alpaca_session_id')?.value && !cookieStore.get('alpaca_debug')?.value) {
+      results.status = 'no_cookies_at_all';
+      results.hint = 'authenticate-session may not have been called or its cookies were dropped';
+      return NextResponse.json(results);
+    }
+
+    const userId = cookieStore.get('alpaca_session_id')!.value;
 
     if (!userId) {
-      results.status = 'no_cookie';
+      results.status = 'no_session_cookie';
       return NextResponse.json(results);
     }
 
