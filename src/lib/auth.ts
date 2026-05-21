@@ -8,9 +8,46 @@ function getSupabase(): SupabaseClient {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     if (!url || !key) {
-      throw new Error('Supabase URL and anon key are required. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.');
+      throw new Error(
+        'Supabase URL and anon key are required. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.'
+      );
     }
-    _supabase = createBrowserClient(url, key);
+
+    // @supabase/ssr v0.10+ requires cookie handlers for createBrowserClient
+    // Without these, PKCE code verifier and session tokens aren't managed correctly
+    _supabase = createBrowserClient(url, key, {
+      cookies: {
+        getAll() {
+          if (typeof document === 'undefined') return [];
+          const pairs = document.cookie.split('; ');
+          const result: { name: string; value: string }[] = [];
+          pairs.forEach((pair) => {
+            const eqIdx = pair.indexOf('=');
+            if (eqIdx > 0) {
+              result.push({
+                name: decodeURIComponent(pair.slice(0, eqIdx)),
+                value: decodeURIComponent(pair.slice(eqIdx + 1)),
+              });
+            }
+          });
+          return result;
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            let cookieStr = `${encodeURIComponent(name)}=${encodeURIComponent(value)}`;
+            if (options?.maxAge) cookieStr += `; max-age=${options.maxAge}`;
+            if (options?.domain) cookieStr += `; domain=${options.domain}`;
+            if (options?.path) cookieStr += `; path=${options.path}`;
+            if (options?.sameSite) {
+              const ss = typeof options.sameSite === 'boolean' ? 'lax' : options.sameSite.toLowerCase();
+              cookieStr += `; samesite=${ss}`;
+            }
+            if (options?.secure) cookieStr += '; secure';
+            document.cookie = cookieStr;
+          });
+        },
+      },
+    });
   }
   return _supabase;
 }
