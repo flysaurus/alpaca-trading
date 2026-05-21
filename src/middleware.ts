@@ -13,8 +13,8 @@ import { NextRequest, NextResponse } from 'next/server';
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Always-allow paths
-  const PUBLIC = ['/login', '/auth', '/_next', '/api', '/favicon.ico'];
+  // Always-allow paths (no cookie required)
+  const PUBLIC = ['/login', '/auth/callback', '/_next', '/api', '/favicon.ico'];
   if (PUBLIC.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }
