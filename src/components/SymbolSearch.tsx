@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, TrendingUp } from 'lucide-react';
+import { fetchApi } from '@/lib/api-helper';
 
 interface AssetInfo {
   symbol: string;
@@ -34,7 +35,7 @@ export default function SymbolSearch({ value, onChange, onSelect, placeholder = 
     }
     setLoading(true);
     try {
-      const res = await fetch(`/api/symbols?q=${encodeURIComponent(q)}&limit=8`);
+      const res = await fetchApi(`/api/symbols?q=${encodeURIComponent(q)}&limit=8`);
       const json = await res.json();
       setSuggestions(json.symbols || []);
     } catch {

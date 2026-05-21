@@ -10,6 +10,7 @@ import {
   createWatchlist,
   Watchlist,
 } from '@/lib/watchlists';
+import { fetchApi } from '@/lib/api-helper';
 import SymbolSearch from './SymbolSearch';
 
 interface Quote {
@@ -76,7 +77,7 @@ export default function WatchlistWidget() {
       return;
     }
     try {
-      const res = await fetch(`/api/quotes?symbols=${activeList.symbols.join(',')}`);
+      const res = await fetchApi(`/api/quotes?symbols=${activeList.symbols.join(',')}`);
       const json = await res.json();
       if (json.data) {
         const map: Record<string, Quote> = {};

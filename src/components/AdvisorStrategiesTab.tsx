@@ -840,7 +840,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
 
       // Always fetch history (5 days)
       const historyUrl = `/api/dip-scanner?history=5&watchlist=${encodeURIComponent(watchlist)}`;
-      const historyRes = await fetch(historyUrl);
+      const historyRes = await fetchApi(historyUrl);
       if (historyRes.ok) {
         const historyData = await historyRes.json();
         setHistoryGroups(historyData.groups || []);
@@ -849,7 +849,7 @@ function MarketScanner({ onAnalyze }: { onAnalyze: (symbol: string, prompt: stri
       // If market is open, also fetch live candidates for current date
       if (marketRes?.isOpen) {
         const liveUrl = `/api/dip-scanner?watchlist=${encodeURIComponent(watchlist)}`;
-        const liveRes = await fetch(liveUrl);
+        const liveRes = await fetchApi(liveUrl);
         if (liveRes.ok) {
           const liveData = await liveRes.json();
           setCandidates(liveData.candidates || []);

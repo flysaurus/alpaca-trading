@@ -11,6 +11,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { Activity, Loader2, TrendingUp, PieChart } from 'lucide-react';
+import { fetchApi } from '@/lib/api-helper';
 
 // ── Types ─────────────────────────────────────────────────────────
 interface DataPoint {
@@ -47,7 +48,7 @@ async function fetchPortfolioHistory(period: string): Promise<DataPoint[]> {
       apiPeriod = '1A';
     }
 
-    const res = await fetch(`/api/portfolio/history?period=${apiPeriod}&timeframe=1D`);
+    const res = await fetchApi(`/api/portfolio/history?period=${apiPeriod}&timeframe=1D`);
     if (!res.ok) throw new Error('Failed to fetch');
     const { history } = await res.json();
 

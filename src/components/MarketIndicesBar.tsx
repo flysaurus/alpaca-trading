@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { fetchApi } from '@/lib/api-helper';
 
 interface IndexData {
   symbol: string;
@@ -30,7 +31,7 @@ export default function MarketIndicesBar() {
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/indices?t=${Date.now()}`);
+      const res = await fetchApi(`/api/indices?t=${Date.now()}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       setData(json.data || []);
