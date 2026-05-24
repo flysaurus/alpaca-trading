@@ -229,15 +229,24 @@ export function clearSession(userId?: string): void {
 /**
  * Require a valid session — returns decrypted keys or null.
  *
- * This is the API route gate. If there's no valid session token
- * in the Authorization header, it returns null → route returns 401
- * → client redirects to /authenticate-session to enter password.
- *
- * Cron jobs and SSR code should use getSessionKeys() or env vars directly.
+ * AUTH DISABLED: Falls back to env vars when no session token present.
+ * To re-enable: revert to just `return getSessionKeys();`
  */
 export async function requireSession(): Promise<{
   apiKey: string;
   secretKey: string;
 } | null> {
-  return getSessionKeys();
+  // Try session token first
+  const sessionKeys = await getSessionKeys();
+  if (sessionKeys) return sessionKeys;
+
+  // AUTH DISABLED: fall back to env vars directly
+  const envKey = process.env.ALPACA_API_KEY;
+  const envSecret = process.env.ALPACA_SECRET_KEY;
+  if (envKey && envSecret) {
+    console.log('[session] AUTH DISABLED — using env vars directly');
+    return { apiKey: envKey, secretKey: envSecret };
+  }
+
+  return null;
 }

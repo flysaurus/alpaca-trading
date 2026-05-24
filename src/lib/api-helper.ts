@@ -45,15 +45,16 @@ export async function fetchApi(
     headers,
   });
 
-  // Handle session expiration — redirect to password entry
-  if (response.status === 401 && !_redirecting) {
-    const body = await response.clone().json().catch(() => ({}));
-    if (body.error?.includes('session') || body.error?.includes('expired') || body.error?.includes('authenticate')) {
-      _redirecting = true;
-      clearSessionToken();
-      window.location.href = '/authenticate-session';
-    }
-  }
+  // AUTH DISABLED: session redirect commented out
+  // // Handle session expiration — redirect to password entry
+  // if (response.status === 401 && !_redirecting) {
+  //   const body = await response.clone().json().catch(() => ({}));
+  //   if (body.error?.includes('session') || body.error?.includes('expired') || body.error?.includes('authenticate')) {
+  //     _redirecting = true;
+  //     clearSessionToken();
+  //     window.location.href = '/authenticate-session';
+  //   }
+  // }
 
   return response;
 }

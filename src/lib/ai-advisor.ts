@@ -1,12 +1,10 @@
 // ── AI Trading Advisor ───────────────────────────────────────────
 // Orchestrates multiple signals into AI-generated trading suggestions
+// Now powered by the real Recommendation Engine (DeepSeek) instead of mock data
 
 import { getBars } from './alpaca';
-// Note: getNewsSentiment, getInsiderActivity, getUpcomingMacroEvents don't exist
-// in the respective modules. The collect* functions below use mock implementations.
-// import { getNewsSentiment } from './news';
-// import { getInsiderActivity } from './insider';
-// import { getUpcomingMacroEvents } from './macro';
+import { generateRecommendation } from './ai/recommendationEngine';
+import type { RecommendationInput, RecommendationOutput } from './ai';
 
 const RISK_KEY = 'alpaca-trading-risk-threshold';
 
@@ -404,7 +402,7 @@ export async function generateSuggestions(
 
   for (const symbol of watchlist) {
     try {
-      // Collect all signals
+      // Collect all signals (real price data, mock sentiment/insider for now)
       const [priceAction, newsSentiment, insiderActivity, macroContext, portfolioExposure] = await Promise.all([
         collectPriceAction(symbol),
         collectNewsSentiment(symbol),
@@ -413,22 +411,64 @@ export async function generateSuggestions(
         collectPortfolioExposure(symbol),
       ]);
 
-      // Build AI prompt
-      const prompt = buildPrompt(symbol, {
-        priceAction,
-        newsSentiment,
-        insiderActivity,
-        macroContext,
-        portfolioExposure,
-      });
+      // ── Build input for the real Recommendation Engine ──
+      const recInput: RecommendationInput = {
+        symbol,
+        priceAction: {
+          current_price: priceAction.current_price,
+          price_change_30d: priceAction.price_change_30d,
+          rsi: priceAction.rsi,
+          rsi_interpretation: priceAction.rsi_interpretation,
+          macd: {
+            trend: priceAction.macd.trend,
+            macd: priceAction.macd.macd,
+            signal: priceAction.macd.signal,
+          },
+          volume_trend: {
+            trend: priceAction.volume_trend.trend,
+          },
+        },
+        newsSentiment: {
+          sentiment_score_7d: newsSentiment.sentiment_score_7d,
+          recent_headlines: newsSentiment.recent_headlines,
+          sentiment_trend: newsSentiment.sentiment_trend,
+        },
+        insiderActivity: {
+          net_buys_sells_90d: insiderActivity.net_buys_sells_90d,
+          notable_transactions: insiderActivity.notable_transactions,
+        },
+        portfolioContext: {
+          total_equity: 100000, // placeholder — caller should inject
+          cash: 50000,
+          current_exposure_pct: portfolioExposure.current_exposure_pct,
+          sector_exposure_pct: portfolioExposure.sector_exposure_pct,
+          risk_tolerance: mergedCfg.risk_tolerance,
+        },
+        marketContext: {
+          sector: macroContext.sector,
+        },
+      };
 
-      // Get AI suggestion
-      const aiResponse = await getAISuggestion(prompt, symbol, mergedCfg.risk_tolerance);
+      // ── Call the REAL recommendation engine (DeepSeek → rules fallback) ──
+      const rec: RecommendationOutput = await generateRecommendation(recInput, true);
 
-      // Validate and create suggestion
+      // ── Map verdict to action ──
+      const actionMap: Record<string, 'buy' | 'sell' | 'hold' | 'watch'> = {
+        BUY: 'buy',
+        WAIT: 'hold',
+        PASS: 'watch',
+      };
+
       const suggestion: AISuggestion = {
         symbol,
-        ...aiResponse,
+        action: actionMap[rec.verdict] || 'hold',
+        confidence: rec.confidence * 10, // 1-10 → 1-100 scale
+        reasoning: rec.summary,
+        suggested_position_size_pct: rec.suggested_position_size_pct,
+        risk_factors: rec.risk_factors,
+        time_horizon: rec.time_horizon as 'short' | 'medium' | 'long',
+        stop_loss_pct: rec.stop_loss_pct,
+        take_profit_pct: rec.take_profit_pct,
         generated_at: new Date().toISOString(),
         signals: {
           price_action: priceAction,

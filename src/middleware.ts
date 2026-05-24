@@ -1,33 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
- * Edge Middleware — minimal, no Supabase api calls, no library imports.
+ * Edge Middleware — AUTH DISABLED for direct access.
  *
- * Just checks for the existence of the Supabase auth cookie.
- * If it exists → user signed in via Google → allow.
- * If it doesn't → redirect to /login.
- *
- * No JWT validation here — AuthGuard handles that client-side.
- * This is purely a "do you have a cookie gate."
+ * To re-enable auth later: revert git diff or uncomment the session check.
+ * Currently lets everything through.
  */
 export function middleware(request: NextRequest) {
+  // AUTH DISABLED — direct access, no session check
+  return NextResponse.next();
+
+  /* === AUTH ENABLED (commented out) ===
   const { pathname } = request.nextUrl;
 
-  // Always-allow paths (no cookie required)
   const PUBLIC = ['/login', '/auth/callback', '/_next', '/api', '/favicon.ico'];
   if (PUBLIC.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 
-  // Check for Supabase session cookie (just existence check, no API call)
-  const hasSession = request.cookies.get('sb-lhzidxwzdyxlrwkmkcdz-auth-token.0');
+  const supabaseRef = 'ixjnuoslbzytubpplkot';
+  const hasSession = request.cookies.get(`sb-${supabaseRef}-auth-token.0`);
 
   if (!hasSession) {
-    const loginUrl = new URL('/login', request.url);
-    return NextResponse.redirect(loginUrl);
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 
   return NextResponse.next();
+  === */
 }
 
 export const config = {

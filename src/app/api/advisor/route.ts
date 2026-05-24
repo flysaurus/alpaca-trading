@@ -1,16 +1,17 @@
 // ── AI Advisor Chat API ─────────────────────────────────────────
 // POST { message, portfolioContext, conversation_history } → streamed LLM response
-// Primary: OpenAI gpt-4o-mini
-// Fallback: OpenRouter google/gemini-2.0-flash-exp
+// Primary: Claude (Anthropic) for conversational investing
+// Fallback: Claude via OpenRouter → DeepSeek via OpenRouter
 
 import { NextRequest } from 'next/server';
 import { calculateRiskScore } from '@/lib/riskScore';
 import { requireSession } from '@/lib/session';
+import { CHAT_ASSISTANT_SYSTEM } from '@/lib/ai/prompts';
 
+const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
 const ALPACA_DATA_URL = 'https://data.alpaca.markets/v2';
-const ALPACA_NEWS_URL = 'https://data.alpaca.markets/v1beta1/news';
 
 async function fetchNewsDirect(apiKey: string, secretKey: string): Promise<any[]> {
   if (!apiKey || !secretKey) {
@@ -184,6 +185,10 @@ function cleanKey(key: string): string {
   return key.replace(/^API\s*Key\s*/i, '').trim();
 }
 
+function getAnthropicKey(): string {
+  return cleanKey(process.env.CLAUDE_API_KEY || process.env['CLAUDE_API-KEY'] || process.env.ANTHROPIC_API_KEY || '');
+}
+
 function getOpenAIKey(): string {
   return cleanKey(process.env.OPENAI_API_KEY || '');
 }
@@ -204,240 +209,23 @@ function buildSystemPrompt(portfolioContext: Record<string, any>): string {
     ? positions.map((p: any) => `- ${p.symbol}: ${p.qty} shares, $${Number(p.market_value || 0).toFixed(2)} (${Number(p.unrealized_plpc || 0).toFixed(2)}%)`).join('\n')
     : 'No open positions.';
 
-  return `---
-## App context
-You are the AI Advisor inside alpaca-dashboard —
-a personal paper trading terminal built on
-Alpaca Markets. You help people learn about
-stocks, build investing skills, and make
-better trading decisions.
+  return `${CHAT_ASSISTANT_SYSTEM}
 
-This is paper trading — play money, so you can
-experiment without real risk. The goal is to get
-comfortable with how markets work and build
-confidence.
-
-## Your personality
-You talk like a patient friend who knows
-investing really well. You explain things
-clearly, answer "dumb questions" seriously,
-and never make anyone feel bad for not knowing
-something. But you also don't oversimplify —
-you give real data and honest analysis.
-
-You're conversational, not robotic. You use
-examples. You ask clarifying questions if
-needed. You adapt to the person — explaining
-RSI to a beginner differently than to someone
-who trades daily.
-
-## What you know about the user
-PORTFOLIO_CONTEXT every message gives you:
-- account: total_equity, positions_value, cash,
- day_pnl, buying_power
-- positions: symbol, qty, market_value,
- unrealized_pl, unrealized_plpc, current_price,
- avg_entry_price, cost_basis, rsi, rsi_signal,
- week52_high, week52_low, pct_from_52w_high
-- positions_count: exact holdings
-- active_strategies: what they're tracking
-- market: spy_change_pct, qqq_change_pct,
- vix, is_open, marketState object
-- news: top 5 fresh headlines
-- risk_score: portfolio risk analysis
-
-Use this data naturally. Example: instead of
-"Your portfolio's cash ratio is 58%," say
-"You've got $57k in cash — that's pretty solid
-to work with."
-
-## Stock Analysis Data Available
-When the user asks about any stock, you may also
-receive these additional data points (if available):
-- Earnings: next date, last EPS, beat/miss, surprise%
-- News sentiment: 5 headlines with sentiment
- (positive/negative/neutral) and overall score -1 to +1
-- Insider trading: buys vs sells (90 days), net change
-- Sector momentum: sector name, performance vs SPY
-- Short interest: %, days to cover
-- Analyst consensus: buy/hold/sell counts, avg rating (1-5)
-
-Use these in your recommendations naturally.
-Highlight red flags: high short interest + sell ratings = risk.
-Highlight green flags: insider buying + positive news = confidence.
-
-Example in your response:
-"Analyst consensus is 15 Buy / 2 Hold / 0 Sell (avg 4.8/5).
-Insider buying increased 40% last 90 days.
-Short interest at 2.1% (low risk).
-Sector outperforming SPY by 3.2%."
-
-## Two modes you work in
-
-MODE 1: PORTFOLIO ANALYSIS
-User asks about their holdings, portfolio
-health, whether to buy/sell/trim something
-they own. Use PORTFOLIO_CONTEXT + your analysis.
-
-MODE 2: RESEARCH / EDUCATION
-User asks "what's NVDA?" or "should I buy AMD?"
-or "explain the semiconductor sector." You can
-discuss ANY stock or topic. Use your knowledge
-+ market data.
-
-For MODE 2, adapt your explanation level:
-- Beginner signal: "what is X?", "should I buy?",
- "what does that mean?", "how do I know if..."
- → Explain concepts first, then the analysis
-- Intermediate signal: "how does RSI compare?",
- "what's the P/E on this?", mentions charts
- → Assume they know the basics, skip definitions
-- Advanced signal: "correlation with QQQ?",
- "support level at X?"
- → Deep dive, technical detail, no explanation
-
-## How to structure analysis
-
-BEGINNER-FIRST approach:
-Start simple. Then go deeper if they want it.
-
-For stock analysis:
-1. WHAT IS IT?
- "Nvidia makes GPUs — think of them as the
- brains behind AI computers. They're the
- essential chip that powers all this AI stuff
- everyone's talking about."
-
-2. HOW'S IT DOING RIGHT NOW?
- Current price, recent move, why it moved.
- Plain language: "Down 5% today because the
- company warned that AI spending might slow
- next quarter."
-
-3. THE DETAILS
- RSI, support/resistance, earnings, balance.
- But explain as you go: "RSI of 28 means
- technically oversold — usually bounces from here."
-
-4. FOR YOUR PORTFOLIO
- "You don't own this yet. A $500 buy would be
- about 0.5% of your portfolio — small enough
- to experiment without taking on huge risk."
-
-5. RECOMMENDATION
- Clear verdict with confidence.
- "I'd say Buy right now, confidence 7/10,
- with a stop loss at $850 if the thesis breaks."
-
-## Tone for different scenarios
-
-EXPLAINING A CONCEPT
-"RSI is basically a thermometer for stocks. Below
-30 = cold/oversold (historically bounces). Above
-70 = hot/overbought (historically pulls back).
-AAPL's at 28 right now, so it's at bargain temps."
-
-GIVING A RECOMMENDATION
-"Based on the earnings beat, strong balance sheet,
-and the price setup, I think MSFT is a solid buy
-here. Not a screaming bargain, but a good entry
-point for the next 3-6 months. Confidence: 7/10."
-
-ANSWERING CONFUSION
-"That's actually a great question — a lot of
-people get confused about this. Here's the deal:
-[clear explanation]."
-
-## What you deliverSTOCK ANALYSIS includes:
-- Company overview (what do they do, quick context)
-- Current situation (price, move, why it moved)
-- Fundamentals (revenue trend, profitability,
- balance sheet) in simple terms
-- Technical picture (RSI, where vs 52W high/low)
-- Risks (top 3 real things that could go wrong)
-- If relevant to portfolio: position sizing impact
-- Recommendation: verdict + confidence + entry
- range or stop loss
-
-PORTFOLIO QUESTIONS:
-- What's working, what's not
-- One specific thing to improve today
-- Why it matters to them specifically
-
-GENERAL MARKET QUESTIONS:
-- What happened
-- Why it matters to their portfolio
-- What they should consider doing
-
-## Formatting
-- Use ### for sections but keep it minimal
-- bold for key numbers and verdicts only
-- Short paragraphs, not walls of text
-- Use examples and comparisons
-- One clear recommendation at the end
-- Conversational flow, not a corporate report
-
-## Personality rules
-- NO: "Certainly!" "Great question!" "As you
- know..." "In conclusion..." — sounds robotic
-- YES: Natural talking, "here's the deal",
- "honestly", "the bottom line is"
-- Never patronizing. Match their knowledge level.
-- If you don't know something, say it instead
- of guessing.
-- Admit uncertainty: "I'm 60% confident here
- because there's macro risk."
-
-## Hard limits
-- Never guarantee returns
-- Never suggest position > 10% for new entry
-- Always explain the risk, not just upside
-- Decline illegal requests politely
-- Be honest about uncertainty
-
-## Example response (to "Should I buy NVDA?")
-
-"NVDA's at $924 right now, down about 5% over
-the last week on concerns that AI chip demand
-might cool off. That said, they still dominate
-the GPU market — like 85%+ of the world's AI
-chips come from them.
-
-Their balance sheet is super healthy: $40B in
-cash, barely any debt. They just beat earnings
-last quarter and guided up. The technical setup
-looks OK too — RSI around 35, so not oversold yet
-but getting there.
-
-If you threw $500 at it, you'd get maybe half a
-share. That'd be about 0.5% of your portfolio,
-which is a good experimental size.
-
-Here's my take: Nvidia's not a bargain right now,
-but it's not crazy either. The real question is
-whether you believe AI spending continues or if
-we hit a wall. If you do, this is a decent entry.
-If you think the hype is overdone, wait for more
-of a dip.
-
-Recommendation: Buy if you're bullish on AI.
-Hold cash and wait if you're skeptical.
-Confidence: 6/10 — good company but macro
-uncertainty makes me cautious."
+---
 
 ## Current Portfolio Snapshot
-- Total Equity: ${account.equity || '0.00'}
-- Positions Value: ${account.positions_value || '0.00'}
-- Cash: ${account.cash || '0.00'}
-- Buying Power: ${account.buying_power || '0.00'}
-- Day P&L: ${account.day_pnl || '0.00'}
-- Positions Count: ${portfolioContext.positions_count || 0}
+- **Total Equity:** $${account.equity || '0.00'}
+- **Positions Value:** $${account.positions_value || '0.00'}
+- **Cash:** $${account.cash || '0.00'}
+- **Buying Power:** $${account.buying_power || '0.00'}
+- **Day P&L:** $${account.day_pnl || '0.00'}
+- **Positions Count:** ${portfolioContext.positions_count || 0}
 
 ## Market Snapshot
-- SPY Change: ${market.spy_change_pct?.toFixed(2) ?? 'N/A'}%
-- QQQ Change: ${market.qqq_change_pct?.toFixed(2) ?? 'N/A'}%
-- VIX: ${market.vix ?? 'N/A'}
-- Market Status: ${market.market_status ?? 'N/A'}
+- **SPY:** ${market.spy_change_pct?.toFixed(2) ?? 'N/A'}%
+- **QQQ:** ${market.qqq_change_pct?.toFixed(2) ?? 'N/A'}%
+- **VIX:** ${market.vix ?? 'N/A'}
+- **Market Status:** ${market.market_status ?? 'N/A'}
 
 ## Positions
 ${posSummary}
@@ -449,6 +237,7 @@ interface LLMRequest {
   model: string;
   apiKey: string;
   isOpenRouter: boolean;
+  isAnthropic: boolean;
 }
 
 /*───────────────────────────────────────────────────────────
@@ -460,22 +249,59 @@ async function tryLLM(
   portfolioContext: Record<string, any>,
   conversationHistory: Array<{ role: string; content: string }>
 ): Promise<Response> {
+  const systemPrompt = buildSystemPrompt(portfolioContext || {});
+  const userContent = `${message}\n\nIMPORTANT: Respond in valid markdown only. Use ## for headings, - for bullets, **bold** for numbers.`;
+
+  console.log(`[Advisor] Sending to ${req.model} (Anthropic: ${req.isAnthropic})`);
+
+  if (req.isAnthropic) {
+    // ── Anthropic Messages API format ──
+    const anthropicMessages: Array<{ role: string; content: string }> = [];
+
+    // Convert conversation history to Anthropic format (alternating user/assistant)
+    const historyMsgs = conversationHistory.filter((m) => m.content?.trim());
+    for (const m of historyMsgs) {
+      const role = m.role === 'ai' || m.role === 'assistant' ? 'assistant' : 'user';
+      anthropicMessages.push({ role, content: m.content });
+    }
+
+    // Add current user message
+    anthropicMessages.push({ role: 'user', content: userContent });
+
+    const body: Record<string, unknown> = {
+      model: req.model,
+      max_tokens: 1024,
+      temperature: 0.3,
+      system: systemPrompt,
+      messages: anthropicMessages,
+      stream: true,
+    };
+
+    return fetch(req.url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': req.apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify(body),
+    });
+  }
+
+  // ── OpenAI-compatible format (OpenRouter, OpenAI) ──
   const messages: Array<{ role: string; content: string }> = [
-    { role: 'system', content: buildSystemPrompt(portfolioContext || {}) },
+    { role: 'system', content: systemPrompt },
     ...conversationHistory.filter((m) => m.content?.trim()),
-    { role: 'user', content: `${message}\n\nIMPORTANT: Respond in valid markdown only. Use ## for headings, - for bullets, **bold** for numbers.` },
+    { role: 'user', content: userContent },
   ];
 
   const body = {
     model: req.model,
     messages,
-    max_tokens: 400,
+    max_tokens: 1024,
     temperature: 0.3,
     stream: true,
   };
-
-  console.log(`[Advisor] Sending to ${req.model} with ${messages.length} messages`);
-  console.log(`[Advisor] Portfolio context:`, JSON.stringify(portfolioContext, null, 2));
 
   return fetch(req.url, {
     method: 'POST',
@@ -484,7 +310,7 @@ async function tryLLM(
       'Authorization': `Bearer ${req.apiKey}`,
       ...(req.isOpenRouter
         ? {
-            'HTTP-Referer': 'https://alpaca-dashboard-red.vercel.app',
+            'HTTP-Referer': 'https://alpaca-dashboard.vercel.app',
             'X-Title': 'Alpaca Trading Advisor',
           }
         : {}),
@@ -646,34 +472,58 @@ export async function POST(req: NextRequest) {
     // Require valid session for Alpaca data access
     const sessionKeys = await requireSession();
 
+    const anthropicKey = getAnthropicKey();
     const openAIKey = getOpenAIKey();
     const openRouterKey = getOpenRouterKey();
 
-    if (!openAIKey && !openRouterKey) {
+    if (!anthropicKey && !openAIKey && !openRouterKey) {
       return new Response(
-        JSON.stringify({ error: 'No AI provider configured. Set OPENAI_API_KEY or OPENROUTER_API_KEY.' }),
+        JSON.stringify({ error: 'No AI provider configured. Set CLAUDE_API_KEY, OPENAI_API_KEY, or OPENROUTER_API_KEY.' }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    // ── Build provider chain: OpenAI primary, OpenRouter fallback ──
+    // ── Build provider chain: Claude primary → DeepSeek direct → OpenRouter fallback ──
     const providers: LLMRequest[] = [];
 
-    if (openAIKey) {
+    // 1. Claude (Anthropic direct) — best for conversational investing
+    if (anthropicKey) {
       providers.push({
-        url: OPENAI_URL,
-        model: 'gpt-4o-mini',
-        apiKey: openAIKey,
+        url: ANTHROPIC_URL,
+        model: 'claude-sonnet-4-20250514',
+        apiKey: anthropicKey,
         isOpenRouter: false,
+        isAnthropic: true,
       });
     }
 
+    // 2. DeepSeek direct (for analysis/recommendations)
+    const deepseekKey = cleanKey(process.env.DEEPSEEK_API_KEY || '');
+    if (deepseekKey) {
+      providers.push({
+        url: 'https://api.deepseek.com/v1/chat/completions',
+        model: 'deepseek-chat',
+        apiKey: deepseekKey,
+        isOpenRouter: false,
+        isAnthropic: false,
+      });
+    }
+
+    // 3. OpenRouter fallbacks (Claude → DeepSeek)
     if (openRouterKey) {
       providers.push({
         url: OPENROUTER_URL,
-        model: 'google/gemini-2.0-flash-001',
+        model: 'anthropic/claude-sonnet-4-20250514',
         apiKey: openRouterKey,
         isOpenRouter: true,
+        isAnthropic: false,
+      });
+      providers.push({
+        url: OPENROUTER_URL,
+        model: 'deepseek/deepseek-chat',
+        apiKey: openRouterKey,
+        isOpenRouter: true,
+        isAnthropic: false,
       });
     }
 
@@ -840,7 +690,7 @@ export async function POST(req: NextRequest) {
             buffer += decoder.decode(value, { stream: true });
           }
 
-          // Parse SSE to extract full text
+          // Parse SSE to extract full text (handles both Anthropic & OpenAI format)
           let rawText = '';
           for (const line of buffer.split('\n')) {
             if (line.startsWith('data: ')) {
@@ -848,8 +698,27 @@ export async function POST(req: NextRequest) {
               if (data === '[DONE]') continue;
               try {
                 const parsed = JSON.parse(data);
-                const delta = parsed.choices?.[0]?.delta?.content;
-                if (delta) rawText += delta;
+
+                // Anthropic SSE format: { type: 'content_block_delta', delta: { type: 'text_delta', text: '...' } }
+                if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
+                  rawText += parsed.delta.text;
+                }
+                // Anthropic content_block_start with text
+                else if (parsed.type === 'content_block_start' && parsed.content_block?.text) {
+                  rawText += parsed.content_block.text;
+                }
+                // OpenAI SSE format: { choices: [{ delta: { content: '...' } }] }
+                else if (parsed.choices?.[0]?.delta?.content) {
+                  rawText += parsed.choices[0].delta.content;
+                }
+                // OpenAI message format (non-streaming fallback)
+                else if (parsed.choices?.[0]?.message?.content) {
+                  rawText = parsed.choices[0].message.content;
+                }
+                // Anthropic message format (non-streaming fallback)
+                else if (parsed.content?.[0]?.text) {
+                  rawText = parsed.content[0].text;
+                }
               } catch {
                 // Ignore malformed lines
               }

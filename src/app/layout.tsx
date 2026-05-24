@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import AuthGuard from "@/components/AuthGuard";
+// import AuthGuard from "@/components/AuthGuard"; // AUTH DISABLED — direct access
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const mono = JetBrains_Mono({
@@ -51,7 +51,8 @@ export default function RootLayout({
         `}} />
       </head>
       <body className={`${inter.variable} ${mono.variable} bg-[var(--app-bg)] text-[var(--text-primary)] min-h-screen antialiased transition-colors duration-200`}>
-        <AuthGuard>{children}</AuthGuard>
+        {/* <AuthGuard>{children}</AuthGuard> */}
+        {children /* AUTH DISABLED — direct access */}
       </body>
     </html>
   );
