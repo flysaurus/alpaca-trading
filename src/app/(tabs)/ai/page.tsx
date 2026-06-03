@@ -23,6 +23,10 @@ import {
   Bot,
 } from 'lucide-react';
 import { useDashboard } from '@/lib/dashboard-context';
+import SuggestionTracker from '@/components/SuggestionTracker';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import AIThinkingIndicator from '@/components/AIThinkingIndicator';
 
 // ── Types ───────────────────────────────────────────────────────
 interface AISignal {
@@ -371,6 +375,98 @@ export default function AIPage() {
   const [signals, setSignals] = useState<AISignal[]>(MOCK_SIGNALS);
   const [loading, setLoading] = useState(false);
 
+  // Chat state
+  const [messages, setMessages] = useState<Array<{
+    id: string; role: 'user' | 'assistant'; content: string;
+    type?: string; basketId?: string; basketName?: string;
+    stockCount?: number; stocks?: any[];
+  }>>([])
+  const [input, setInput] = useState('')
+  const [thinking, setThinking] = useState(false)
+  const [thinkingMode, setThinkingMode] = useState('general')
+  const [responseMode, setResponseMode] = useState<'summary' | 'detailed'>('summary')
+  const [remainingMessages, setRemainingMessages] = useState<number | null>(null)
+  const [remainingAnalysis, setRemainingAnalysis] = useState<number | null>(null)
+
+  // Load chat history on mount
+  const loadChatHistory = async () => {
+    try {
+      const res = await fetch('/api/chat/history', {
+        headers: { 'x-user-id': 'default' },
+      })
+      const data = await res.json()
+      if (data.messages?.length > 0) {
+        setMessages(data.messages.map((m: any) => ({
+          id: m.id,
+          role: m.role,
+          content: m.content,
+          type: 'text',
+          basketId: undefined,
+          basketName: undefined,
+          stockCount: undefined,
+          stocks: undefined,
+        })))
+      }
+    } catch (err) {
+      // Silent fail — start with empty chat
+      console.error('History load error:', err)
+    }
+  }
+
+  // Clear chat history
+  const handleClearChat = async () => {
+    setMessages([])
+    await fetch('/api/chat/history', {
+      method: 'DELETE',
+      headers: { 'x-user-id': 'default' },
+    }).catch(() => {})
+  }
+
+  // Quick prompt handler
+  const quickPrompt = async (text: string, mode: string) => {
+    if (thinking) return
+    setThinking(true)
+    setThinkingMode(mode)
+    const userMsg = { id: Date.now().toString(), role: 'user' as const, content: text }
+    setMessages(prev => [...prev, userMsg])
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': 'default' },
+        body: JSON.stringify({ message: text, mode, responseMode }),
+      })
+      const data = await res.json()
+      setMessages(prev => [...prev, {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: data.content,
+        type: data.type,
+        basketId: data.basketId,
+        basketName: data.basketName,
+        stockCount: data.stockCount,
+        stocks: data.stocks,
+      }])
+      if (data.remaining !== undefined) setRemainingMessages(data.remaining)
+    } catch (err) {
+      setMessages(prev => [...prev, {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: 'Something went wrong. Please try again.',
+      }])
+    } finally {
+      setThinking(false)
+    }
+  }
+
+  // Free-text submit
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!input.trim() || thinking) return
+    quickPrompt(input.trim(), 'general')
+    setInput('')
+  }
+
   const refreshSignals = useCallback(async () => {
     setLoading(true);
     // In production, this would call /api/advisor/suggest
@@ -379,6 +475,19 @@ export default function AIPage() {
       setLoading(false);
     }, 800);
   }, []);
+
+  // Lazy tracking — silently update suggestion performance in background
+  useEffect(() => {
+    fetch('/api/ai/suggestions/track', {
+      method: 'POST',
+      headers: { 'x-user-id': 'default' },
+    }).catch(() => {}) // ignore errors silently
+  }, [])
+
+  // Load chat history on mount
+  useEffect(() => {
+    loadChatHistory()
+  }, [])
 
   const buyCount = signals.filter((s) => s.action === 'buy').length;
   const sellCount = signals.filter((s) => s.action === 'sell').length;
@@ -399,6 +508,14 @@ export default function AIPage() {
         >
           <Sparkles className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
           {loading ? 'Scanning...' : 'Rescan'}
+        </button>
+        <button
+          onClick={handleClearChat}
+          disabled={messages.length === 0}
+          className="flex items-center gap-1 px-2 py-1.5 bg-[var(--card-bg)] border border-[var(--border)] rounded-lg text-[10px] font-semibold text-[var(--text-muted)] hover:text-red-400 transition disabled:opacity-30"
+          title="Clear chat history"
+        >
+          🗑️
         </button>
       </div>
 
@@ -433,6 +550,196 @@ export default function AIPage() {
           ))}
         </div>
       </div>
+
+      {/* Quick Prompt Pills */}
+      <div className="flex flex-wrap gap-2">
+        {[
+          { label: '📊 Portfolio Health', text: 'How is my portfolio doing? Any changes needed?', mode: 'health' },
+          { label: '⚠️ Risk Check', text: 'Check my risk exposure. Any positions too concentrated?', mode: 'health' },
+          { label: '💡 Opportunities', text: 'What are the best buying opportunities right now?', mode: 'opportunities' },
+          { label: '📈 Market Trends', text: 'What market trends should I be watching?', mode: 'research' },
+          { label: '🔍 Research', text: 'Research', mode: 'research' },
+          { label: '💰 Tax Check', text: 'Check for tax loss harvesting opportunities', mode: 'tax' },
+        ].map((prompt) => (
+          <button
+            key={prompt.label}
+            onClick={() => quickPrompt(prompt.text, prompt.mode)}
+            disabled={thinking}
+            className="px-3 py-1.5 bg-[var(--card-bg)] border border-[var(--border)] rounded-full text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent)]/30 transition disabled:opacity-50"
+          >
+            {prompt.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Chat Messages */}
+      {messages.length > 0 && (
+        <div className="space-y-3 max-h-96 overflow-y-auto">
+          {messages.map((msg) => (
+            <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                msg.role === 'user'
+                  ? 'bg-[var(--accent)]/15 border border-[var(--accent)]/20'
+                  : 'bg-[var(--card-bg)] border border-[var(--border)]'
+              }`}>
+                {msg.role === 'assistant' ? (
+                  <div className="prose prose-invert prose-xs max-w-none">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        table: (props: any) => (
+                          <div className="overflow-x-auto my-3 -mx-1">
+                            <table className="w-full text-xs border-collapse min-w-full" {...props} />
+                          </div>
+                        ),
+                        thead: (props: any) => (
+                          <thead className="border-b border-slate-600" {...props} />
+                        ),
+                        th: (props: any) => (
+                          <th className="text-left py-2 pr-3 text-cyan-400 font-medium text-xs whitespace-nowrap" {...props} />
+                        ),
+                        td: (props: any) => (
+                          <td className="py-1.5 pr-3 text-white/85 border-b border-slate-700/40 text-xs" {...props} />
+                        ),
+                        tr: (props: any) => (
+                          <tr className="hover:bg-slate-700/20" {...props} />
+                        ),
+                        strong: (props: any) => (
+                          <strong className="text-yellow-400 font-semibold" {...props} />
+                        ),
+                        p: (props: any) => (
+                          <p className="mb-2 leading-relaxed" {...props} />
+                        ),
+                        ul: (props: any) => (
+                          <ul className="list-disc list-inside mb-2 space-y-1" {...props} />
+                        ),
+                        li: (props: any) => (
+                          <li className="text-white/85" {...props} />
+                        ),
+                        h2: (props: any) => (
+                          <h2 className="text-white font-semibold text-sm mt-3 mb-1" {...props} />
+                        ),
+                        h3: (props: any) => (
+                          <h3 className="text-cyan-400 font-medium text-xs mt-2 mb-1 uppercase tracking-wide" {...props} />
+                        ),
+                        blockquote: (props: any) => (
+                          <blockquote className="border-l-2 border-cyan-500 pl-3 text-slate-400 italic my-2" {...props} />
+                        ),
+                        code: (props: any) => (
+                          <code className="bg-slate-700 text-cyan-300 px-1 py-0.5 rounded text-xs" {...props} />
+                        ),
+                      }}
+                    >
+                      {msg.content}
+                    </ReactMarkdown>
+                  </div>
+                ) : (
+                  <p className="text-sm text-[var(--text-primary)]">{msg.content}</p>
+                )}
+
+                {/* Theme basket action card */}
+                {msg.type === 'theme_basket' && msg.basketId && (
+                  <div className="mt-3 bg-slate-800 border border-cyan-500/30 rounded-2xl p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-cyan-400 text-sm">🧺</span>
+                      <span className="text-white text-sm font-medium">{msg.basketName}</span>
+                      <span className="text-slate-400 text-xs">{msg.stockCount} stocks scored</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {msg.stocks?.map((s: any) => (
+                        <div key={s.symbol} className="flex items-center gap-1 bg-slate-700 rounded-lg px-2 py-1">
+                          <span className="text-white text-xs font-medium">{s.symbol}</span>
+                          <span className={`text-xs ${
+                            s.conviction === 'high' ? 'text-green-400' :
+                            s.conviction === 'medium' ? 'text-yellow-400' : 'text-slate-400'
+                          }`}>
+                            {s.compositeScore}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => router.push(`/trade/basket/${msg.basketId}`)}
+                        className="flex-1 bg-cyan-500 text-white text-sm font-medium py-2.5 rounded-xl hover:bg-cyan-600 transition"
+                      >
+                        Review &amp; Order →
+                      </button>
+                      <button
+                        className="px-4 py-2.5 rounded-xl border border-slate-600 text-slate-400 text-sm hover:text-white hover:border-slate-500 transition"
+                      >
+                        Watch
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Thinking Indicator */}
+      {thinking && <AIThinkingIndicator mode={thinkingMode} />}
+
+      {/* Response Mode Toggle */}
+      <div className="flex items-center gap-2 justify-end">
+        <span className="text-[10px] text-[var(--text-muted)]">Response:</span>
+        <button
+          onClick={() => setResponseMode('summary')}
+          className={`text-[10px] px-2 py-1 rounded-md font-medium transition ${
+            responseMode === 'summary'
+              ? 'bg-cyan-500/20 text-cyan-400'
+              : 'text-slate-400 hover:text-slate-300'
+          }`}
+        >
+          Summary
+        </button>
+        <button
+          onClick={() => setResponseMode('detailed')}
+          className={`text-[10px] px-2 py-1 rounded-md font-medium transition ${
+            responseMode === 'detailed'
+              ? 'bg-cyan-500/20 text-cyan-400'
+              : 'text-slate-400 hover:text-slate-300'
+          }`}
+        >
+          Detailed
+        </button>
+      </div>
+
+      {/* Chat Input */}
+      <form onSubmit={handleSubmit} className="relative">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Ask about markets, stocks, or portfolio..."
+          disabled={thinking}
+          className="w-full bg-[var(--card-bg)] border border-[var(--border)] rounded-xl px-4 py-3 pr-12 text-sm text-[var(--text-primary)] placeholder:text-slate-600 focus:outline-none focus:border-cyan-500/50 transition disabled:opacity-50"
+        />
+        <button
+          type="submit"
+          disabled={thinking || !input.trim()}
+          className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-cyan-500 text-black rounded-lg disabled:opacity-30 transition"
+        >
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M5 12h14M12 5l7 7-7 7" />
+          </svg>
+        </button>
+      </form>
+
+      {/* Usage limit display */}
+      {remainingMessages !== null && (
+        <p className="text-center text-slate-600 text-xs -mt-2">
+          {remainingMessages} messages remaining today
+          {remainingAnalysis !== null && (
+            <span> · {remainingAnalysis} deep analyses</span>
+          )}
+        </p>
+      )}
+
+      {/* AI Suggestion Tracker */}
+      <SuggestionTracker />
 
       {/* Deployed Strategies */}
       <div>

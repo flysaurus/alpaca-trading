@@ -241,6 +241,8 @@ function Divider() {
 
 export default function SettingsPanel({ account }: Props) {
   const [risk, setRisk] = useState<RiskSettings>(RISK_DEFAULTS);
+  const [investorStyle, setInvestorStyle] = useState<string>('lynch')
+  const [riskTolerance, setRiskTolerance] = useState<string>('moderate')
   const [notif, setNotif] = useState<NotificationSettings>(NOTIF_DEFAULTS);
   const [theme, setThemeState] = useState<'dark' | 'light'>('dark');
   const [apiHealth, setApiHealth] = useState<'checking' | 'ok' | 'error'>('checking');
@@ -300,6 +302,30 @@ export default function SettingsPanel({ account }: Props) {
     setTheme(next);
     toast.trigger();
   };
+
+  const handleStyleChange = async (value: string) => {
+    setInvestorStyle(value)
+    try {
+      await fetch('/api/user/preferences', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': 'default' },
+        body: JSON.stringify({ investor_style: value }),
+      })
+      toast.trigger()
+    } catch { /* ignore */ }
+  }
+
+  const handleRiskChange = async (value: string) => {
+    setRiskTolerance(value)
+    try {
+      await fetch('/api/user/preferences', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': 'default' },
+        body: JSON.stringify({ risk_tolerance: value }),
+      })
+      toast.trigger()
+    } catch { /* ignore */ }
+  }
 
   return (
     <div className="space-y-4">
@@ -419,6 +445,90 @@ export default function SettingsPanel({ account }: Props) {
               style={{ width: `${Math.min(100, Math.max(0, riskScore))}%` }}
             />
           </div>
+        </div>
+      </Section>
+
+      {/* ═══════════════════════════════════════════════════════════
+          INVESTOR STYLE & RISK TOLERANCE
+          ═══════════════════════════════════════════════════════════ */}
+      <Section title="Investor Profile">
+        {/* Investor Style */}
+        <div className="py-2">
+          <p className="text-sm font-semibold text-[var(--text-primary)] mb-1">Investor Style</p>
+          <p className="text-[11px] text-[var(--text-muted)] mb-3">
+            Shapes how AI scores and recommends stocks
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { value: 'lynch', label: 'Peter Lynch', emoji: '📈', desc: 'Growth at reasonable price' },
+              { value: 'buffett', label: 'Warren Buffett', emoji: '🏰', desc: 'Value with wide moat' },
+              { value: 'livermore', label: 'Jesse Livermore', emoji: '⚡', desc: 'Trend following, momentum' },
+              { value: 'munger', label: 'Charlie Munger', emoji: '🧠', desc: 'Quality compounders' },
+              { value: 'soros', label: 'George Soros', emoji: '🌍', desc: 'Macro & reflexivity' },
+            ].map((option) => (
+              <button
+                key={option.value}
+                onClick={() => handleStyleChange(option.value)}
+                className={`flex flex-col items-center p-3 rounded-xl border transition ${
+                  investorStyle === option.value
+                    ? 'border-cyan-500 bg-cyan-500/10'
+                    : 'border-[var(--border)] bg-[var(--app-bg)] hover:border-[var(--text-muted)]'
+                }`}
+              >
+                <span className="text-2xl mb-1">{option.emoji}</span>
+                <span
+                  className={`text-xs font-medium ${
+                    investorStyle === option.value ? 'text-cyan-400' : 'text-[var(--text-secondary)]'
+                  }`}
+                >
+                  {option.label}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <Divider />
+
+        {/* Risk Tolerance */}
+        <div className="py-2">
+          <p className="text-sm font-semibold text-[var(--text-primary)] mb-1">Risk Tolerance</p>
+          <p className="text-[11px] text-[var(--text-muted)] mb-3">
+            Adjusts stock recommendations within your style approach
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { value: 'conservative', label: 'Conservative', emoji: '🛡️', desc: 'Lower volatility, established names' },
+              { value: 'moderate', label: 'Moderate', emoji: '⚖️', desc: 'Balanced risk and reward' },
+              { value: 'aggressive', label: 'Aggressive', emoji: '🚀', desc: 'Higher growth, higher risk' },
+            ].map((option) => (
+              <button
+                key={option.value}
+                onClick={() => handleRiskChange(option.value)}
+                className={`flex flex-col items-center p-3 rounded-xl border transition ${
+                  riskTolerance === option.value
+                    ? 'border-cyan-500 bg-cyan-500/10'
+                    : 'border-[var(--border)] bg-[var(--app-bg)] hover:border-[var(--text-muted)]'
+                }`}
+              >
+                <span className="text-2xl mb-1">{option.emoji}</span>
+                <span
+                  className={`text-xs font-medium ${
+                    riskTolerance === option.value ? 'text-cyan-400' : 'text-[var(--text-secondary)]'
+                  }`}
+                >
+                  {option.label}
+                </span>
+              </button>
+            ))}
+          </div>
+          <p className="text-[var(--text-muted)] text-xs mt-3 text-center">
+            {[
+              { value: 'conservative', desc: 'Lower volatility, established names' },
+              { value: 'moderate', desc: 'Balanced risk and reward' },
+              { value: 'aggressive', desc: 'Higher growth, higher risk' },
+            ].find((o) => o.value === riskTolerance)?.desc || ''}
+          </p>
         </div>
       </Section>
 

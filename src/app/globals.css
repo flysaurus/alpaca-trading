@@ -74,3 +74,20 @@
 
 /* Reduce overall font size by 15% */
 html { font-size: 85%; }
+
+/* ── Custom Animations ──────────────────────────────────────── */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Tailwind v4 Theme Extensions ────────────────────────────── */
+@theme {
+  --animate-slide-up: slide-up 0.3s ease-out;
+}
