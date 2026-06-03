@@ -1,8 +1,8 @@
 import { supabase } from './supabase'
 
 const DAILY_LIMITS = {
-  messages: 20,
-  deepAnalysis: 5,
+  messages: 75,
+  deepAnalysis: 25,
 }
 
 export async function checkUsageLimit(
@@ -35,10 +35,13 @@ export async function checkUsageLimit(
   const allowed = count < limit
   const remaining = Math.max(0, limit - count)
 
+  // Midnight EST (America/New_York)
   const now = new Date()
-  const midnight = new Date()
-  midnight.setUTCHours(24, 0, 0, 0)
-  const diffMs = midnight.getTime() - now.getTime()
+  const etNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }))
+  const etMidnight = new Date(etNow)
+  etMidnight.setDate(etMidnight.getDate() + 1)
+  etMidnight.setHours(0, 0, 0, 0)
+  const diffMs = etMidnight.getTime() - etNow.getTime()
   const diffHrs = Math.floor(diffMs / 3600000)
   const diffMins = Math.floor((diffMs % 3600000) / 60000)
   const resetsIn = `${diffHrs}h ${diffMins}m`

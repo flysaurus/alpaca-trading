@@ -519,6 +519,12 @@ export default function AIPage() {
         </button>
       </div>
 
+      {/* Greeting */}
+      <div className="mb-1">
+        <p className="text-base font-semibold text-[var(--text-primary)]">Welcome back, M.</p>
+        <p className="text-xs text-[var(--text-muted)]">AI-powered portfolio analysis and market intelligence.</p>
+      </div>
+
       {/* Market Brief */}
       <MarketBrief />
 
@@ -731,9 +737,9 @@ export default function AIPage() {
       {/* Usage limit display */}
       {remainingMessages !== null && (
         <p className="text-center text-slate-600 text-xs -mt-2">
-          {remainingMessages} messages remaining today
+          {remainingMessages}/75 messages remaining today
           {remainingAnalysis !== null && (
-            <span> · {remainingAnalysis} deep analyses</span>
+            <span> · {remainingAnalysis}/25 deep analyses remaining</span>
           )}
         </p>
       )}
